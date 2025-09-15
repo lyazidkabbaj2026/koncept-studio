@@ -1,16 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx create-next-app:*)",
-      "Bash(mkdir:*)",
-      "Bash(cmd //c:*)",
-      "Bash(netstat:*)",
+      "Bash(npx tsc:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /C:*)",
+      "Bash(Get-Process -Name \"node\")",
+      "Bash(Stop-Process -Force)",
+      "Bash(Get-Process -Name \"node\" -ErrorAction SilentlyContinue)",
+      "Bash(tasklist)",
       "Bash(findstr:*)",
-      "Bash(npx shadcn-ui@latest add:*)",
-      "Bash(npx shadcn@latest add:*)",
-      "Bash(curl:*)",
-      "Bash(npm install:*)",
-      "Bash(node:*)"
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

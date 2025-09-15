@@ -1,25 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { authService } from '@/lib/services'
+import { useFormEventHandler, useAsyncData } from '@/hooks'
+import { ErrorAlert } from '@/components/common'
+import { MESSAGES } from '@/constants'
+import type { SubscriptionPlan } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
+import { signupSchema, validateInput, sanitizeString } from '@/lib/validation'
+import { PlanSelectorModal } from '@/components/subscription/plan-selector-modal'
 
-interface SubscriptionPlan {
-  id: string
-  name: string
-  type: string
-  credits: number
-  price_dhs: number
-  validity_months: number
-  weekly_limit?: number
-  description?: string
-}
 
 export default function SignupForm() {
   const [formData, setFormData] = useState({
@@ -29,83 +22,91 @@ export default function SignupForm() {
     phone: '',
     desiredPlan: '',
   })
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
+
+  // Fetch subscription plans
+  const { data: plansData, loading: plansLoading } = useAsyncData<SubscriptionPlan[]>(
+    async () => {
+      const { subscriptionService } = await import('@/lib/services')
+      return subscriptionService.getAvailablePlans()
+    },
+    []
+  )
+
+  const plans = plansData || []
   
   const router = useRouter()
-  const supabase = createClient()
 
-  useEffect(() => {
-    const fetchPlans = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('subscription_plans')
-          .select('*')
-          .order('type', { ascending: true })
-          .order('price_dhs', { ascending: true })
-
-        if (error) throw error
-        setPlans(data || [])
-      } catch (err) {
-        console.error('Error fetching plans:', err)
-      }
-    }
-
-    fetchPlans()
-  }, [supabase])
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
-
-  const handleSelectChange = (name: string) => (value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    try {
-      const { error: authError, data } = await supabase.auth.signUp({
+  const { loading, error, handleFormSubmit } = useFormEventHandler(
+    async () => {
+      // Validate form data
+      const validation = validateInput(signupSchema, {
         email: formData.email,
         password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName,
-            phone: formData.phone,
-            desired_plan: formData.desiredPlan,
-          }
-        }
+        fullName: formData.fullName,
+        phone: formData.phone || undefined,
+        desiredPlan: formData.desiredPlan || undefined,
+      })
+
+      if (!validation.success) {
+        setValidationErrors(validation.errors || [])
+        throw new Error(MESSAGES.ERRORS.VALIDATION)
+      }
+
+      if (!formData.fullName.trim()) {
+        setValidationErrors(['Le nom complet est requis'])
+        throw new Error(MESSAGES.ERRORS.VALIDATION)
+      }
+
+      const { user, error: authError } = await authService.signUp({
+        email: validation.data.email,
+        password: validation.data.password,
+        fullName: validation.data.fullName,
+        phone: validation.data.phone,
+        desiredPlan: validation.data.desiredPlan,
       })
 
       if (authError) {
-        setError(authError.message)
-        return
+        if (authError.message.includes('already registered')) {
+          throw new Error(MESSAGES.ERRORS.AUTH.EMAIL_EXISTS)
+        } else if (authError.message.includes('weak password')) {
+          throw new Error(MESSAGES.ERRORS.AUTH.WEAK_PASSWORD)
+        } else {
+          throw new Error(authError.message)
+        }
       }
 
-      if (data.user) {
-        // Profile should be created automatically by the database trigger
-        // with all the data from the auth metadata
+      if (user) {
         router.push('/espace')
         router.refresh()
       }
-    } catch (err) {
-      setError('Une erreur s\'est produite lors de l\'inscription')
-    } finally {
-      setLoading(false)
+    },
+    {
+      defaultErrorMessage: MESSAGES.ERRORS.AUTH.SIGNUP_FAILED,
+      onSuccess: () => setValidationErrors([]),
+    }
+  )
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    // Sanitize input to prevent XSS
+    const sanitizedValue = sanitizeString(value)
+    setFormData(prev => ({ ...prev, [name]: sanitizedValue }))
+    
+    // Clear validation errors when user starts typing
+    if (validationErrors.length > 0) {
+      setValidationErrors([])
     }
   }
 
+
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+    <form onSubmit={(e) => handleFormSubmit(e, formData)} className="space-y-6">
+      <ErrorAlert error={error} />
+      
+      {validationErrors.length > 0 && (
+        <ErrorAlert error={validationErrors} title="Erreurs de validation" />
       )}
       
       <div className="space-y-2">
@@ -115,7 +116,7 @@ export default function SignupForm() {
           name="fullName"
           type="text"
           required
-          placeholder="Jean Dupont"
+          placeholder={MESSAGES.PLACEHOLDERS.NAME}
           value={formData.fullName}
           onChange={handleChange}
         />
@@ -129,7 +130,7 @@ export default function SignupForm() {
           type="email"
           autoComplete="email"
           required
-          placeholder="votre@email.com"
+          placeholder={MESSAGES.PLACEHOLDERS.EMAIL}
           value={formData.email}
           onChange={handleChange}
         />
@@ -141,7 +142,7 @@ export default function SignupForm() {
           id="phone"
           name="phone"
           type="tel"
-          placeholder="06 12 34 56 78"
+          placeholder={MESSAGES.PLACEHOLDERS.PHONE}
           value={formData.phone}
           onChange={handleChange}
         />
@@ -149,42 +150,12 @@ export default function SignupForm() {
 
       <div className="space-y-2">
         <Label>Abonnement souhaité *</Label>
-        <Select
-          value={formData.desiredPlan}
-          onValueChange={handleSelectChange('desiredPlan')}
-          required
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Choisissez un abonnement" />
-          </SelectTrigger>
-          <SelectContent>
-            {plans.map(plan => (
-              <SelectItem key={plan.id} value={plan.name}>
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium">{plan.name}</span>
-                    {plan.description && (
-                      <span className="text-xs text-muted-foreground">{plan.description}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className="text-xs">
-                      {plan.type === 'carnet' ? 'Carnet' : 
-                       plan.type === 'personal_training' ? 'Personal Training' : 
-                       'Abonnement'}
-                    </Badge>
-                    <span className="text-sm font-bold">{plan.price_dhs} DHS</span>
-                  </div>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {plans.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            Chargement des plans d'abonnement...
-          </p>
-        )}
+        <PlanSelectorModal
+          plans={plans}
+          selectedPlan={formData.desiredPlan}
+          onSelectPlan={(planName) => setFormData(prev => ({ ...prev, desiredPlan: planName }))}
+          isLoading={plansLoading}
+        />
       </div>
 
       <div className="space-y-2">
@@ -195,7 +166,7 @@ export default function SignupForm() {
           type="password"
           autoComplete="new-password"
           required
-          placeholder="••••••••"
+          placeholder={MESSAGES.PLACEHOLDERS.PASSWORD}
           value={formData.password}
           onChange={handleChange}
         />
@@ -207,7 +178,7 @@ export default function SignupForm() {
         className="w-full"
         size="lg"
       >
-        {loading ? 'Création du compte...' : 'Créer mon compte'}
+        {loading ? MESSAGES.LOADING.AUTH.SIGNING_UP : 'Créer mon compte'}
       </Button>
     </form>
   )

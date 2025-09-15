@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { ClassForm } from '@/components/admin/class-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
+import { IconArrowLeft } from '@tabler/icons-react'
 import Link from 'next/link'
 
 export default async function NewClassPage() {
@@ -32,7 +32,7 @@ export default async function NewClassPage() {
         <div className="flex items-center gap-4 mb-8">
           <Button variant="outline" size="sm" asChild>
             <Link href="/admin/classes">
-              <ArrowLeft className="h-4 w-4" />
+              <IconArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
           <div>

@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Calendar, Clock, User, MapPin, CheckCircle, XCircle, AlertTriangle, ArrowLeft } from 'lucide-react'
+import { IconIconCalendar, IconIconClock, IconIconUser, IconIconMapPin, IconCircleCheck, IconCircleX, IconAlertTriangle, IconArrowLeft } from '@tabler/icons-react'
 import Link from 'next/link'
 
 interface Booking {
@@ -52,11 +52,11 @@ interface WaitlistEntry {
   }
 }
 
-interface UserReservationsViewProps {
+interface IconUserReservationsViewProps {
   userId: string
 }
 
-export function UserReservationsView({ userId }: UserReservationsViewProps) {
+export function IconUserReservationsView({ userId }: IconUserReservationsViewProps) {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -222,7 +222,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
         <div className="mb-8 flex items-center gap-4">
           <Link href="/espace">
             <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4" />
+              <IconArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
           <div>
@@ -257,7 +257,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
             {upcomingBookings.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <IconCalendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <h3 className="font-medium mb-2">Aucune réservation à venir</h3>
                   <p className="text-muted-foreground mb-4">
                     Consultez le planning pour réserver vos prochains cours
@@ -287,7 +287,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                                 {getDifficultyLabel(booking.class_schedules.classes.difficulty_level)}
                               </Badge>
                               <Badge variant="default" className="flex items-center gap-1">
-                                <CheckCircle className="h-3 w-3" />
+                                <IconCircleCheck className="h-3 w-3" />
                                 Confirmé
                               </Badge>
                             </div>
@@ -300,19 +300,19 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
 
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <IconCalendar className="h-4 w-4 text-muted-foreground" />
                               <span>{format(startTime, 'EEEE d MMM', { locale: fr })}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <IconClock className="h-4 w-4 text-muted-foreground" />
                               <span>{format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
+                              <IconUser className="h-4 w-4 text-muted-foreground" />
                               <span>{booking.class_schedules.classes.coach}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                              <IconMapPin className="h-4 w-4 text-muted-foreground" />
                               <span>{booking.class_schedules.classes.location}</span>
                             </div>
                           </div>
@@ -345,7 +345,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
             {upcomingWaitlist.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
-                  <AlertTriangle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <IconAlertTriangle className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <h3 className="font-medium mb-2">Aucune liste d'attente</h3>
                   <p className="text-muted-foreground">
                     Vous n'êtes sur aucune liste d'attente actuellement
@@ -386,19 +386,19 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
 
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <IconCalendar className="h-4 w-4 text-muted-foreground" />
                               <span>{format(startTime, 'EEEE d MMM', { locale: fr })}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <IconClock className="h-4 w-4 text-muted-foreground" />
                               <span>{format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
+                              <IconUser className="h-4 w-4 text-muted-foreground" />
                               <span>{entry.class_schedules.classes.coach}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                              <IconMapPin className="h-4 w-4 text-muted-foreground" />
                               <span>{entry.class_schedules.classes.location}</span>
                             </div>
                           </div>
@@ -434,7 +434,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
             {pastBookings.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <IconCalendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <h3 className="font-medium mb-2">Aucun historique</h3>
                   <p className="text-muted-foreground">
                     Vos cours passés apparaîtront ici
@@ -480,19 +480,19 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
 
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <IconCalendar className="h-4 w-4 text-muted-foreground" />
                               <span>{format(startTime, 'EEEE d MMM', { locale: fr })}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <IconClock className="h-4 w-4 text-muted-foreground" />
                               <span>{format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
+                              <IconUser className="h-4 w-4 text-muted-foreground" />
                               <span>{booking.class_schedules.classes.coach}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                              <IconMapPin className="h-4 w-4 text-muted-foreground" />
                               <span>{booking.class_schedules.classes.location}</span>
                             </div>
                           </div>
@@ -500,7 +500,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
 
                         <div className="flex flex-col items-end gap-2">
                           <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'} className={statusColor}>
-                            {booking.status === 'confirmed' ? <CheckCircle className="h-3 w-3 mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}
+                            {booking.status === 'confirmed' ? <IconCircleCheck className="h-3 w-3 mr-1" /> : <IconCircleX className="h-3 w-3 mr-1" />}
                             {statusLabel}
                           </Badge>
                           {booking.cancelled_at && (

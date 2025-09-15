@@ -267,40 +267,6 @@ export function SubscriptionProgress({ subscriptionStatus, userEmail, userName }
           </div>
         </CardContent>
       </Card>
-
-      {/* User Info Card */}
-      <Card className="animate-in fade-in-0 slide-in-from-bottom-6" style={{ animationDelay: '400ms' }}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <IconUser size={20} />
-            Informations de votre compte
-          </CardTitle>
-          <CardDescription>
-            Vos informations personnelles
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Nom</div>
-              <div className="font-medium">{userName || 'Non renseigné'}</div>
-            </div>
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Email</div>
-              <div className="font-medium break-all">{userEmail || 'Non renseigné'}</div>
-            </div>
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Statut</div>
-              <Badge variant={subscriptionStatus === 'active' ? 'default' : 'secondary'}>
-                {subscriptionStatus === 'pending' && 'En attente'}
-                {subscriptionStatus === 'contacted' && 'Contacté'}
-                {subscriptionStatus === 'active' && 'Actif'}
-                {subscriptionStatus === 'inactive' && 'Inactif'}
-              </Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

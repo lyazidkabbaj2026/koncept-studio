@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ConditionalNavbar } from "@/components/nav/conditional-navbar";
 import { ThemeProvider } from "@/components/theme-provider";
+import ErrorBoundary from "@/components/error-boundary";
 import { Toaster } from "sonner";
-import { headers } from 'next/headers';
 
 export const metadata: Metadata = {
   title: "Koncept Studio",
@@ -15,9 +15,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const headersList = await headers()
-  const pathname = headersList.get('x-invoke-path') || headersList.get('x-pathname') || ''
-  
   return (
     <html lang="fr" suppressHydrationWarning>
       <body>
@@ -27,8 +24,10 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ConditionalNavbar pathname={pathname} />
-          {children}
+          <ErrorBoundary>
+            <ConditionalNavbar />
+            {children}
+          </ErrorBoundary>
           <Toaster />
         </ThemeProvider>
       </body>

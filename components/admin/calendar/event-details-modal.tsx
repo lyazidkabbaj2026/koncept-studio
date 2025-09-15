@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, Clock, MapPin, User, Users, Edit, Trash2, X, AlertTriangle, Repeat } from 'lucide-react'
+import { IconCalendar, IconClock, IconMapPin, IconUser, IconUsers, IconEdit, IconTrash, IconX, IconAlertTriangle, IconRepeat } from '@tabler/icons-react'
 
 interface EventDetailsModalProps {
   event: CalendarEvent
@@ -173,7 +173,7 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
               <h3 className="text-xl font-semibold">{event.title}</h3>
               {event.is_recurring && (
                 <Badge variant="outline" className="flex items-center gap-1">
-                  <Repeat className="h-3 w-3" />
+                  <IconRepeat className="h-3 w-3" />
                   Récurrent
                 </Badge>
               )}
@@ -188,31 +188,31 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
           {/* Event Details */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <IconCalendar className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">
-                {format(startDate, 'EEEE d MMMM yyyy', { locale: fr }).replace(/(^\w|\s\w)/g, c => c.toUpperCase())}
+                {format(startDate, 'EEEE d MMMM yyyy', { locale: fr }).replace(/(^\w|\s\w)/g, (c) => c.toUpperCase())}
               </span>
             </div>
 
             <div className="flex items-center space-x-3">
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <IconClock className="h-4 w-4 text-muted-foreground" />
               <span>
                 {format(startDate, 'HH:mm')} - {format(endDate, 'HH:mm')} ({duration} min)
               </span>
             </div>
 
             <div className="flex items-center space-x-3">
-              <User className="h-4 w-4 text-muted-foreground" />
+              <IconUser className="h-4 w-4 text-muted-foreground" />
               <span>{event.coach}</span>
             </div>
 
             <div className="flex items-center space-x-3">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <IconMapPin className="h-4 w-4 text-muted-foreground" />
               <span>{event.location}</span>
             </div>
 
             <div className="flex items-center space-x-3">
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <IconUsers className="h-4 w-4 text-muted-foreground" />
               <div className="flex items-center space-x-2">
                 <span>{event.current_bookings} / {event.max_capacity} participants</span>
                 <Badge variant={occupancyRate >= 80 ? 'destructive' : occupancyRate >= 50 ? 'default' : 'secondary'}>
@@ -239,14 +239,14 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
                 className="flex-1"
                 onClick={() => onEdit(event)}
               >
-                <Edit className="h-4 w-4 mr-2" />
+                <IconEdit className="h-4 w-4 mr-2" />
                 Modifier
               </Button>
 
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" className="flex-1">
-                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    <IconAlertTriangle className="h-4 w-4 mr-2" />
                     Annuler
                   </Button>
                 </AlertDialogTrigger>
@@ -276,7 +276,7 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" className="w-full" size="sm">
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <IconTrash className="h-4 w-4 mr-2" />
                     {event.is_recurring ? 'Supprimer cette occurrence' : 'Supprimer le cours'}
                   </Button>
                 </AlertDialogTrigger>
@@ -307,7 +307,7 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" className="w-full" size="sm">
-                      <Trash2 className="h-4 w-4 mr-2" />
+                      <IconTrash className="h-4 w-4 mr-2" />
                       Supprimer toute la série
                     </Button>
                   </AlertDialogTrigger>

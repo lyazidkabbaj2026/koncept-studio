@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Calendar, Clock, Users } from 'lucide-react'
+import { IconCalendar, IconClock, IconUsers } from '@tabler/icons-react'
 
 export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
@@ -80,21 +80,21 @@ export default function CalendarPage() {
           start: startOfDay(selectedDate),
           end: endOfDay(selectedDate)
         }
-        periodLabel = format(selectedDate, 'EEEE d MMMM', { locale: fr }).replace(/(^\w|\s\w)/g, c => c.toUpperCase())
+        periodLabel = format(selectedDate, 'EEEE d MMMM', { locale: fr }).replace(/(^\w|\s\w)/g, (c) => c.toUpperCase())
         break
       case 'week':
         dateRange = {
           start: startOfWeek(selectedDate, { weekStartsOn: 1 }),
           end: endOfWeek(selectedDate, { weekStartsOn: 1 })
         }
-        periodLabel = `Semaine du ${format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'd MMM', { locale: fr }).replace(/(^\w|\s\w)/g, c => c.toUpperCase())}`
+        periodLabel = `Semaine du ${format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'd MMM', { locale: fr }).replace(/(^\w|\s\w)/g, (c) => c.toUpperCase())}`
         break
       case 'month':
         dateRange = {
           start: startOfMonth(selectedDate),
           end: endOfMonth(selectedDate)
         }
-        periodLabel = format(selectedDate, 'MMMM yyyy', { locale: fr }).replace(/^\w/, c => c.toUpperCase())
+        periodLabel = format(selectedDate, 'MMMM yyyy', { locale: fr }).replace(/^\w/, (c) => c.toUpperCase())
         break
       default:
         dateRange = {
@@ -137,7 +137,7 @@ export default function CalendarPage() {
           <h1 className="text-3xl font-bold">Planning des Cours</h1>
         </div>
         <div className="text-center py-12">
-          <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <IconCalendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-muted-foreground">Chargement du calendrier...</p>
         </div>
       </div>
@@ -155,8 +155,8 @@ export default function CalendarPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cours - {stats.periodLabel.replace(/(\b\w)/g, c => c.toUpperCase())}</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Cours - {stats.periodLabel.replace(/(\b\w)/g, (c) => c.toUpperCase())}</CardTitle>
+            <IconCalendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.eventsCount}</div>
@@ -165,8 +165,8 @@ export default function CalendarPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Réservations - {stats.periodLabel.replace(/(\b\w)/g, c => c.toUpperCase())}</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Réservations - {stats.periodLabel.replace(/(\b\w)/g, (c) => c.toUpperCase())}</CardTitle>
+            <IconUsers className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.bookingPercentage}%</div>
@@ -176,8 +176,8 @@ export default function CalendarPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Annulations - {stats.periodLabel.replace(/(\b\w)/g, c => c.toUpperCase())}</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Annulations - {stats.periodLabel.replace(/(\b\w)/g, (c) => c.toUpperCase())}</CardTitle>
+            <IconClock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.cancellationPercentage}%</div>

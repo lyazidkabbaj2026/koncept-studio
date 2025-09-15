@@ -14,8 +14,16 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuBadge,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarSeparator,
 } from '@/components/ui/sidebar'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -26,46 +34,72 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Calendar, Users, Settings, Home, LogOut, Dumbbell, CalendarDays, CreditCard, UserCheck } from 'lucide-react'
+import { IconCalendar, IconUsers, IconSettings, IconHome, IconLogout, IconBarbell, IconCalendarEvent, IconCreditCard, IconUserCheck, IconChevronRight, IconUserCog, IconMessageCircle } from '@tabler/icons-react'
 import { SidebarThemeToggle } from '@/components/theme-toggle'
 
 const navigation = [
   {
     title: 'Dashboard',
     href: '/admin',
-    icon: Home,
+    icon: IconHome,
   },
   {
     title: 'Classes',
     href: '/admin/classes',
-    icon: Dumbbell,
+    icon: IconBarbell,
   },
   {
     title: 'Planning',
     href: '/admin/calendar',
-    icon: CalendarDays,
+    icon: IconCalendarEvent,
   },
   {
     title: 'Forfaits',
     href: '/admin/subscription-plans',
-    icon: CreditCard,
+    icon: IconCreditCard,
   },
   {
-    title: 'Utilisateurs en Attente',
-    href: '/admin/pending-users',
-    icon: UserCheck,
+    title: 'IconUsers',
+    icon: IconUsers,
+    isCollapsible: true,
+    subItems: [
+      {
+        title: 'All active user info',
+        href: '/admin/users',
+        icon: IconUsers,
+      },
+      {
+        title: 'Pending users to contact',
+        href: '/admin/users/pending',
+        icon: IconUserCheck,
+      },
+      {
+        title: 'Contacted users to assign',
+        href: '/admin/users/contacted',
+        icon: IconMessageCircle,
+      },
+    ],
   },
   {
-    title: 'Users',
-    href: '/admin/users',
-    icon: Users,
-  },
-  {
-    title: 'Settings',
+    title: 'IconSettings',
     href: '/admin/settings',
-    icon: Settings,
+    icon: IconSettings,
   },
 ]
+
+interface NavigationSubItem {
+  title: string
+  href: string
+  icon: React.ElementType
+}
+
+interface NavigationItem {
+  title: string
+  href?: string
+  icon: React.ElementType
+  isCollapsible?: boolean
+  subItems?: NavigationSubItem[]
+}
 
 interface UserProfile {
   full_name: string | null
@@ -75,7 +109,7 @@ interface UserProfile {
 export function AdminSidebar() {
   const pathname = usePathname()
   const [user, setUser] = useState<UserProfile | null>(null)
-  const [unresolvedUsersCount, setUnresolvedUsersCount] = useState(0)
+  const [unresolvedIconUsersCount, setUnresolvedIconUsersCount] = useState(0)
   const supabase = createClient()
 
   useEffect(() => {
@@ -95,7 +129,7 @@ export function AdminSidebar() {
       }
     }
     
-    const getUnresolvedUsersCount = async () => {
+    const getUnresolvedIconUsersCount = async () => {
       const { count, error } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
@@ -103,12 +137,12 @@ export function AdminSidebar() {
         .in('subscription_status', ['pending', 'contacted'])
 
       if (!error && count !== null) {
-        setUnresolvedUsersCount(count)
+        setUnresolvedIconUsersCount(count)
       }
     }
     
     getUser()
-    getUnresolvedUsersCount()
+    getUnresolvedIconUsersCount()
     
     // Set up real-time subscription to update the count
     const channel = supabase
@@ -116,7 +150,7 @@ export function AdminSidebar() {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'profiles' },
         () => {
-          getUnresolvedUsersCount()
+          getUnresolvedIconUsersCount()
         }
       )
       .subscribe()
@@ -131,7 +165,7 @@ export function AdminSidebar() {
       <SidebarHeader className="border-b px-6 py-4">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Calendar className="h-4 w-4" />
+            <IconCalendar className="h-4 w-4" />
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold">Koncept Studio</span>
@@ -142,35 +176,82 @@ export function AdminSidebar() {
       
       <SidebarContent className="px-3 py-4">
         <SidebarMenu>
-          {navigation.slice(0, -1).map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild isActive={pathname === item.href}>
-                <Link href={item.href} className="flex items-center gap-3 px-3 py-2">
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-              {item.title === 'Users' && unresolvedUsersCount > 0 && (
-                <SidebarMenuBadge>
-                  {unresolvedUsersCount}
-                </SidebarMenuBadge>
-              )}
-            </SidebarMenuItem>
-          ))}
-          
+          {navigation.slice(0, -1).map((item) => {
+            if (item.isCollapsible && item.subItems) {
+              const isOpen = item.subItems.some(subItem => pathname === subItem.href) || pathname.startsWith('/admin/users')
+
+              return (
+                <Collapsible
+                  key={item.title}
+                  asChild
+                  defaultOpen={isOpen}
+                  className="group/collapsible"
+                >
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton className="flex items-center gap-3 px-3 py-2">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                        <IconChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    {item.title === 'IconUsers' && unresolvedIconUsersCount > 0 && (
+                      <SidebarMenuBadge>
+                        {unresolvedIconUsersCount}
+                      </SidebarMenuBadge>
+                    )}
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {item.subItems.map((subItem) => (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
+                              <Link href={subItem.href} className="flex items-center gap-3 px-3 py-2">
+                                <subItem.icon className="h-4 w-4" />
+                                <span>{subItem.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              )
+            }
+
+            // Only render items with href (non-collapsible items)
+            if (!item.href) return null
+
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild isActive={pathname === item.href}>
+                  <Link href={item.href} className="flex items-center gap-3 px-3 py-2">
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
+
           <SidebarSeparator className="-mx-3 w-auto my-2" />
-          
-          {navigation.slice(-1).map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild isActive={pathname === item.href}>
-                <Link href={item.href} className="flex items-center gap-3 px-3 py-2">
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-          
+
+          {navigation.slice(-1).map((item) => {
+            // Only render items with href
+            if (!item.href) return null
+
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild isActive={pathname === item.href}>
+                  <Link href={item.href} className="flex items-center gap-3 px-3 py-2">
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
+
           <SidebarMenuItem>
             <SidebarThemeToggle />
           </SidebarMenuItem>
@@ -215,7 +296,7 @@ export function AdminSidebar() {
             <form action={logout} className="w-full">
               <DropdownMenuItem asChild>
                 <button type="submit" className="w-full text-left flex items-center">
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <IconLogout className="mr-2 h-4 w-4" />
                   Se déconnecter
                 </button>
               </DropdownMenuItem>

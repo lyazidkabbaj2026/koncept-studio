@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Trash2 } from 'lucide-react'
+import { IconTrash } from '@tabler/icons-react'
 import { deleteClass } from '@/app/actions/classes'
 
 interface DeleteClassButtonProps {
@@ -39,7 +39,7 @@ export function DeleteClassButton({ classId, className }: DeleteClassButtonProps
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button variant="outline" size="sm" className="text-red-600" disabled={loading}>
-          <Trash2 className="h-3 w-3" />
+          <IconTrash className="h-3 w-3" />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

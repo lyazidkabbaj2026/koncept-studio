@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock } from 'lucide-react'
+import { IconChevronLeft, IconChevronRight, IconPlus, IconCalendar, IconClock } from '@tabler/icons-react'
 import { cn } from '@/lib/utils'
 
 export type CalendarEvent = {
@@ -132,7 +132,7 @@ export function CalendarView({
                       className="absolute inset-0 w-full h-full opacity-0 hover:opacity-100 transition-opacity"
                       onClick={() => onCreateEvent?.(timeSlot)}
                     >
-                      <Plus className="h-4 w-4" />
+                      <IconPlus className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
@@ -277,17 +277,17 @@ export function CalendarView({
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm" onClick={handlePrevious}>
-              <ChevronLeft className="h-4 w-4" />
+              <IconChevronLeft className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="sm" onClick={handleNext}>
-              <ChevronRight className="h-4 w-4" />
+              <IconChevronRight className="h-4 w-4" />
             </Button>
           </div>
           
           <h2 className="text-2xl font-bold">
-            {view === 'month' && format(currentDate, 'MMMM yyyy', { locale: fr }).replace(/^\w/, c => c.toUpperCase())}
-            {view === 'week' && `Semaine du ${format(startOfWeek(currentDate, { locale: fr }), 'd MMMM', { locale: fr }).replace(/(\b\w)/g, c => c.toUpperCase())}`}
-            {view === 'day' && format(currentDate, 'EEEE d MMMM yyyy', { locale: fr }).replace(/(\b\w)/g, c => c.toUpperCase())}
+            {view === 'month' && format(currentDate, 'MMMM yyyy', { locale: fr }).replace(/^\w/, (c) => c.toUpperCase())}
+            {view === 'week' && `Semaine du ${format(startOfWeek(currentDate, { locale: fr }), 'd MMMM', { locale: fr }).replace(/(\b\w)/g, (c) => c.toUpperCase())}`}
+            {view === 'day' && format(currentDate, 'EEEE d MMMM yyyy', { locale: fr }).replace(/(\b\w)/g, (c) => c.toUpperCase())}
           </h2>
         </div>
 
@@ -304,7 +304,7 @@ export function CalendarView({
           </Select>
           
           <Button onClick={() => onCreateEvent?.(currentDate)}>
-            <Plus className="h-4 w-4 mr-2" />
+            <IconPlus className="h-4 w-4 mr-2" />
             Planifier
           </Button>
         </div>

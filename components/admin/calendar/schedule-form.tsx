@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Calendar, Clock, Repeat, X } from 'lucide-react'
+import { IconCalendar, IconClock, IconRepeat, IconX } from '@tabler/icons-react'
 
 interface ScheduleFormProps {
   event?: CalendarEvent | null
@@ -434,7 +434,7 @@ export function ScheduleForm({ event, selectedDate, onClose }: ScheduleFormProps
                 onCheckedChange={(checked) => handleInputChange('is_recurring', checked)}
               />
               <Label htmlFor="is_recurring" className="flex items-center space-x-2">
-                <Repeat className="h-4 w-4" />
+                <IconRepeat className="h-4 w-4" />
                 <span>Cours récurrent</span>
               </Label>
             </div>
@@ -577,7 +577,7 @@ export function ScheduleForm({ event, selectedDate, onClose }: ScheduleFormProps
                                   handleRecurrenceChange('exceptionDates', newExceptions)
                                 }}
                               >
-                                <X className="h-3 w-3" />
+                                <IconX className="h-3 w-3" />
                               </Button>
                             </Badge>
                           ))}

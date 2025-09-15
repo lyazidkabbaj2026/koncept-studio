@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { IconUserCheck, IconMessage, IconCreditCard, IconUsers, IconUserPlus, IconPhone, IconUserMinus } from '@tabler/icons-react'
+import { IconUserCheck, IconMessage, IconCreditCard, IconUsers, IconUserPlus, IconPhone, IconUserMinus, IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
@@ -31,6 +31,13 @@ interface User {
   desired_plan?: string
   subscription_status: 'pending' | 'contacted' | 'active' | 'inactive' | 'expired'
   created_at: string
+  active_subscription?: {
+    id: string
+    status: string
+    credits_remaining: number
+    end_date: string
+    plan_name: string
+  } | null
 }
 
 interface SubscriptionPlan {
@@ -61,19 +68,29 @@ export default function UsersPage() {
     start_date: format(new Date(), 'yyyy-MM-dd')
   })
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0)
+  const [totalCount, setTotalCount] = useState(0)
+  const pageSize = 25
+
   const supabase = createClient()
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 0) => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .neq('role', 'admin')
-        .order('created_at', { ascending: false })
+      // Use optimized admin function instead of separate queries
+      const { data, error } = await supabase.rpc('get_admin_users_data', {
+        page_offset: page * pageSize,
+        page_limit: pageSize
+      })
 
       if (error) throw error
-      setUsers(data || [])
+
+      if (data) {
+        setUsers(data.users || [])
+        setTotalCount(data.total_count || 0)
+        setCurrentPage(page)
+      }
     } catch (err: any) {
       console.error('Error fetching users:', err)
       setError(`Erreur lors du chargement des utilisateurs: ${err.message}`)
@@ -86,7 +103,7 @@ export default function UsersPage() {
     try {
       const { data, error } = await supabase
         .from('subscription_plans')
-        .select('*')
+        .select('id, name, type, credits, price_dhs, validity_months, weekly_limit')
         .order('price_dhs', { ascending: true })
 
       if (error) throw error
@@ -97,7 +114,7 @@ export default function UsersPage() {
   }
 
   useEffect(() => {
-    fetchUsers()
+    fetchUsers(0)
     fetchPlans()
   }, [])
 
@@ -110,7 +127,7 @@ export default function UsersPage() {
 
       if (error) throw error
 
-      await fetchUsers()
+      await fetchUsers(currentPage)
       toast.success('Utilisateur marqué comme contacté')
     } catch (err: any) {
       console.error('Error updating user:', err)
@@ -158,14 +175,14 @@ export default function UsersPage() {
 
       if (userError) throw userError
 
-      await fetchUsers()
+      await fetchUsers(currentPage)
       setShowSubscriptionDialog(false)
       setSelectedUser(null)
       setSubscriptionForm({
         plan_id: '',
         start_date: format(new Date(), 'yyyy-MM-dd')
       })
-      
+
       toast.success(`Abonnement assigné à ${selectedUser.full_name}`)
     } catch (err: any) {
       console.error('Error assigning subscription:', err)
@@ -192,7 +209,7 @@ export default function UsersPage() {
 
       if (subscriptionError) throw subscriptionError
 
-      await fetchUsers()
+      await fetchUsers(currentPage)
       toast.success(`Utilisateur ${userName} désactivé`)
     } catch (err: any) {
       console.error('Error deactivating user:', err)
@@ -236,12 +253,19 @@ export default function UsersPage() {
   }
 
   const stats = getStats()
+  const totalPages = Math.ceil(totalCount / pageSize)
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 0 && newPage < totalPages) {
+      fetchUsers(newPage)
+    }
+  }
 
   if (loading && users.length === 0) {
     return (
       <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Utilisateurs</h1>
+          <h1 className="text-3xl font-bold">All Active User Info</h1>
         </div>
         <div className="text-center py-12">
           <p className="text-muted-foreground">Chargement des utilisateurs...</p>
@@ -435,6 +459,35 @@ export default function UsersPage() {
             </Table>
           </CardContent>
         </Card>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Page {currentPage + 1} sur {totalPages} • {totalCount} utilisateurs au total
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 0}
+            >
+              <IconChevronLeft className="h-4 w-4" />
+              Précédent
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages - 1}
+            >
+              Suivant
+              <IconChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* Subscription Assignment Dialog */}

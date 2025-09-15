@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { ChevronLeft, ChevronRight, Calendar, Clock, User, MapPin, AlertTriangle, CheckCircle, Users, Info, Star, Activity } from 'lucide-react'
+import { IconChevronLeft, IconChevronRight, IconCalendar, IconClock, IconUser, IconMapPin, IconAlertTriangle, IconCircleCheck, IconUsers, IconInfoCircle, IconStar, IconActivity } from '@tabler/icons-react'
 import { cn } from '@/lib/utils'
 
 interface UserProfile {
@@ -64,14 +64,20 @@ interface UserCalendarViewProps {
   subscriptionRequest?: SubscriptionRequest
 }
 
-export function UserCalendarView({ user, subscription, subscriptionRequest }: UserCalendarViewProps) {
+export function UserCalendarView({ user, subscription: initialSubscription, subscriptionRequest }: UserCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [events, setEvents] = useState<ClassEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedEvent, setSelectedEvent] = useState<ClassEvent | null>(null)
   const [showEventModal, setShowEventModal] = useState(false)
+  const [subscription, setSubscription] = useState(initialSubscription)
   const supabase = createClient()
+
+  // Sync subscription state with props
+  useEffect(() => {
+    setSubscription(initialSubscription)
+  }, [initialSubscription])
 
   // Calculate 7 consecutive days starting from next available class
   const [weekStartDate, setWeekStartDate] = useState<Date>(new Date())
@@ -94,82 +100,67 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
   const fetchEvents = async () => {
     try {
       setLoading(true)
-      
-      const now = new Date()
-      
-      // Check if today has any future classes first
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      const { data: todayClassesData, error: todayClassesError } = await supabase
-        .from('calendar_events')
-        .select('start_datetime')
-        .gte('start_datetime', now.toISOString())
-        .gte('start_datetime', today.toISOString())
-        .lt('start_datetime', addDays(today, 1).toISOString())
-        .order('start_datetime')
-        .limit(1)
-        .single()
 
-      let calculatedWeekStart
-      
-      if (todayClassesData) {
-        // If today has future classes, start from today
-        calculatedWeekStart = today
-      } else {
-        // Otherwise, find the next available class date
-        const { data: nextClassData, error: nextClassError } = await supabase
-          .from('calendar_events')
-          .select('start_datetime')
-          .gte('start_datetime', now.toISOString())
-          .order('start_datetime')
-          .limit(1)
-          .single()
-        
-        if (nextClassError && nextClassError.code !== 'PGRST116') { // PGRST116 = no rows found
-          console.warn('Error finding next class:', nextClassError)
-        }
-        
-        const nextClassDate = nextClassData ? new Date(nextClassData.start_datetime) : now
-        calculatedWeekStart = new Date(nextClassDate.getFullYear(), nextClassDate.getMonth(), nextClassDate.getDate())
-      }
-      
-      const calculatedWeekEnd = addDays(calculatedWeekStart, 6)
-      
-      setWeekStartDate(calculatedWeekStart)
-      
-      // Fetch events for the calculated week, but only future classes
+      const now = new Date()
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+      // Use optimized view instead of calendar_events
       const { data: eventsData, error: eventsError } = await supabase
-        .from('calendar_events')
+        .from('calendar_events_optimized')
         .select('*')
-        .gte('start_datetime', now.toISOString()) // Only future classes
-        .gte('start_datetime', calculatedWeekStart.toISOString())
-        .lte('start_datetime', calculatedWeekEnd.toISOString())
+        .gte('start_datetime', now.toISOString())
         .order('start_datetime')
+        .limit(50) // Limit results for performance
 
       if (eventsError) throw eventsError
 
-      // Fetch user's bookings
-      const { data: bookingsData, error: bookingsError } = await supabase
-        .from('class_bookings')
-        .select('schedule_id, id, status')
-        .eq('user_id', user.id)
-        .in('status', ['confirmed', 'pending'])
+      // Set week start based on first available class or today
+      const firstEventDate = eventsData && eventsData.length > 0
+        ? new Date(eventsData[0].start_datetime)
+        : now
 
-      if (bookingsError) throw bookingsError
+      const calculatedWeekStart = new Date(
+        firstEventDate.getFullYear(),
+        firstEventDate.getMonth(),
+        firstEventDate.getDate()
+      )
 
-      // Fetch user's waitlist positions
-      const { data: waitlistData, error: waitlistError } = await supabase
-        .from('class_waitlist')
-        .select('schedule_id, position')
-        .eq('user_id', user.id)
+      // Only show today if it has future classes, otherwise start from next available day
+      const finalWeekStart = isSameDay(calculatedWeekStart, today) || isAfter(calculatedWeekStart, today)
+        ? calculatedWeekStart
+        : today
 
-      if (waitlistError) throw waitlistError
+      setWeekStartDate(finalWeekStart)
 
-      // Combine the data
-      const eventsWithBookingStatus = eventsData?.map(event => ({
+      // Filter events for the week
+      const weekEnd = addDays(finalWeekStart, 6)
+      const weekEvents = eventsData?.filter(event => {
+        const eventDate = new Date(event.start_datetime)
+        return eventDate >= finalWeekStart && eventDate <= weekEnd
+      }) || []
+
+      // Fetch user's bookings and waitlist in parallel
+      const [bookingsResult, waitlistResult] = await Promise.all([
+        supabase
+          .from('class_bookings')
+          .select('schedule_id, id, status')
+          .eq('user_id', user.id)
+          .in('status', ['confirmed']),
+        supabase
+          .from('class_waitlist')
+          .select('schedule_id, position')
+          .eq('user_id', user.id)
+      ])
+
+      if (bookingsResult.error) throw bookingsResult.error
+      if (waitlistResult.error) throw waitlistResult.error
+
+      // Combine the data efficiently
+      const eventsWithBookingStatus = weekEvents.map(event => ({
         ...event,
-        user_booking: bookingsData?.find(b => b.schedule_id === event.id),
-        user_waitlist_position: waitlistData?.find(w => w.schedule_id === event.id)?.position
-      })) || []
+        user_booking: bookingsResult.data?.find(b => b.schedule_id === event.id),
+        user_waitlist_position: waitlistResult.data?.find(w => w.schedule_id === event.id)?.position
+      }))
 
       setEvents(eventsWithBookingStatus)
     } catch (err: any) {
@@ -180,18 +171,156 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
   }
 
   const handleBookClass = async (event: ClassEvent) => {
+    console.log('🎯 BOOKING FUNCTION CALLED - handleBookClass triggered for event:', event.id)
     try {
-      const { data, error } = await supabase.rpc('book_class', {
-        user_uuid: user.id,
-        schedule_uuid: event.id
-      })
+      setLoading(true)
+      console.log('Attempting to book class:', event.id, 'for user:', user.id)
 
-      if (error) throw error
+      // Direct booking implementation (bypassing the problematic RPC function)
+      console.log('Implementing direct booking...')
+
+      // First, check if the class still has capacity and user can book
+      const { data: scheduleData, error: scheduleError } = await supabase
+        .from('class_schedules')
+        .select(`
+          id,
+          class_id,
+          current_bookings,
+          classes!inner(
+            id,
+            max_capacity,
+            title
+          )
+        `)
+        .eq('id', event.id)
+        .single()
+
+      if (scheduleError) {
+        console.error('Error fetching schedule:', scheduleError)
+        throw new Error('Erreur lors de la vérification de la classe')
+      }
+
+      console.log('Schedule data:', scheduleData)
+
+      if (!scheduleData) {
+        throw new Error('Classe non trouvée')
+      }
+
+      // Check if class is full
+      if (scheduleData.current_bookings >= scheduleData.classes.max_capacity) {
+        throw new Error('Cette classe est complète')
+      }
+
+      // Check if user already has a booking for this class
+      const { data: existingBooking, error: bookingCheckError } = await supabase
+        .from('class_bookings')
+        .select('id, status')
+        .eq('user_id', user.id)
+        .eq('schedule_id', event.id)
+        .maybeSingle()
+
+      if (bookingCheckError) {
+        console.error('Error checking existing booking:', bookingCheckError)
+        throw new Error('Erreur lors de la vérification des réservations')
+      }
+
+      if (existingBooking) {
+        throw new Error('Vous avez déjà réservé cette classe')
+      }
+
+      // Create the booking
+      console.log('Creating booking with subscription:', subscription?.id)
+      const { data: newBooking, error: bookingError } = await supabase
+        .from('class_bookings')
+        .insert({
+          user_id: user.id,
+          schedule_id: event.id,
+          subscription_id: subscription?.id,
+          status: 'confirmed'
+        })
+        .select()
+        .single()
+
+      if (bookingError) {
+        console.error('Error creating booking:', bookingError)
+        throw new Error('Erreur lors de la création de la réservation')
+      }
+
+      console.log('Booking created:', newBooking)
+
+      // Update subscription credits
+      if (subscription) {
+        console.log('Updating credits for subscription:', {
+          id: subscription.id,
+          type: subscription.subscription_plans?.type,
+          current_weekly_used: subscription.weekly_credits_used,
+          current_remaining: subscription.credits_remaining,
+          weekly_limit: subscription.subscription_plans?.weekly_limit
+        })
+
+        if (subscription.subscription_plans?.type === 'abonnement') {
+          // Update weekly credits used for subscription plans
+          console.log('Updating weekly credits...')
+          const { error: updateError } = await supabase
+            .from('user_subscriptions')
+            .update({ weekly_credits_used: subscription.weekly_credits_used + 1 })
+            .eq('id', subscription.id)
+
+          if (updateError) {
+            console.error('Error updating weekly credits:', updateError)
+            throw new Error('Erreur lors de la mise à jour des crédits hebdomadaires')
+          } else {
+            console.log('Weekly credits updated successfully')
+          }
+        } else {
+          // Update credits remaining for credit-based plans
+          console.log('Updating remaining credits...')
+          const { error: updateError } = await supabase
+            .from('user_subscriptions')
+            .update({
+              credits_remaining: subscription.credits_remaining - 1,
+              credits_used: (subscription.credits_used || 0) + 1
+            })
+            .eq('id', subscription.id)
+
+          if (updateError) {
+            console.error('Error updating credits:', updateError)
+            throw new Error('Erreur lors de la mise à jour des crédits')
+          } else {
+            console.log('Credits updated successfully')
+          }
+        }
+      } else {
+        console.warn('No subscription found, cannot update credits')
+      }
+
+      console.log('Booking successful, updating local subscription state...')
+
+      // Update local subscription state to reflect the credit deduction
+      if (subscription) {
+        const updatedSubscription = { ...subscription }
+
+        if (subscription.subscription_plans?.type === 'abonnement') {
+          updatedSubscription.weekly_credits_used = subscription.weekly_credits_used + 1
+        } else {
+          updatedSubscription.credits_remaining = subscription.credits_remaining - 1
+          updatedSubscription.credits_used = (subscription.credits_used || 0) + 1
+        }
+
+        setSubscription(updatedSubscription)
+        console.log('Updated local subscription:', updatedSubscription)
+      }
 
       // Refresh events to show updated booking status
       await fetchEvents()
+
+      console.log('Events refreshed successfully')
+      setError('')  // Clear any previous errors
     } catch (err: any) {
-      setError(err.message)
+      console.error('Booking error:', err)
+      setError(err.message || 'Erreur lors de la réservation')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -321,23 +450,56 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
   }
 
   const canUserBook = (event: ClassEvent) => {
+    console.log('canUserBook check for event:', event.id, {
+      event: event,
+      subscription: subscription,
+      user_booking: event.user_booking,
+      is_past: isPast(new Date(event.start_datetime)),
+      current_bookings: event.current_bookings,
+      max_capacity: event.max_capacity,
+      start_datetime: event.start_datetime
+    })
+
     // User already booked
-    if (event.user_booking) return false
-    
+    if (event.user_booking) {
+      console.log('User already booked this class')
+      return false
+    }
+
     // Class has started or passed
-    if (isPast(new Date(event.start_datetime))) return false
-    
+    if (isPast(new Date(event.start_datetime))) {
+      console.log('Class has already started or passed')
+      return false
+    }
+
     // No valid subscription
-    if (!subscription) return false
-    
+    if (!subscription) {
+      console.log('No valid subscription found')
+      return false
+    }
+
     // Class is full (but can join waitlist)
-    if (event.current_bookings >= event.max_capacity) return false
-    
+    if (event.current_bookings >= event.max_capacity) {
+      console.log('Class is full')
+      return false
+    }
+
     // Check subscription limits
     if (subscription.subscription_plans.type === 'abonnement') {
-      return subscription.weekly_credits_used < (subscription.subscription_plans.weekly_limit || 0)
+      const canBook = subscription.weekly_credits_used < (subscription.subscription_plans.weekly_limit || 0)
+      console.log('Weekly subscription check:', {
+        weekly_credits_used: subscription.weekly_credits_used,
+        weekly_limit: subscription.subscription_plans.weekly_limit,
+        canBook
+      })
+      return canBook
     } else {
-      return subscription.credits_remaining > 0
+      const canBook = subscription.credits_remaining > 0
+      console.log('Credit subscription check:', {
+        credits_remaining: subscription.credits_remaining,
+        canBook
+      })
+      return canBook
     }
   }
 
@@ -366,7 +528,7 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
               <p className="text-muted-foreground">Consultez les cours disponibles</p>
             </div>
             <Alert className="mb-6">
-              <AlertTriangle className="h-4 w-4" />
+              <IconAlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 <div className="font-medium mb-2">Configuration en cours</div>
                 <p className="text-sm">
@@ -393,7 +555,7 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
           </div>
 
           <Alert className="mb-6">
-            <AlertTriangle className="h-4 w-4" />
+            <IconAlertTriangle className="h-4 w-4" />
             <AlertDescription>
               <div className="font-medium mb-2">
                 {isContacted ? 'Paiement en attente' : 'Compte en attente de validation'}
@@ -421,7 +583,7 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
                 ))}
               </div>
               <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <IconCalendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Le planning sera disponible après activation de votre abonnement</p>
               </div>
             </CardContent>
@@ -436,49 +598,53 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {/* Header */}
         <div className="mb-6 lg:mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 space-y-4 lg:space-y-0">
-            <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 mb-6">
+            <div className="flex-1">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 text-gradient">
                 Planning des cours
               </h1>
               <p className="text-muted-foreground text-sm sm:text-base">
                 Consultez et réservez vos cours à venir
               </p>
             </div>
-            
-            <Card className="lg:min-w-[280px]">
-              <CardContent className="p-4">
-                <div className="text-center lg:text-right">
-                  <div className="text-xs sm:text-sm text-muted-foreground mb-1">Votre abonnement</div>
-                  <div className="font-semibold text-sm sm:text-base mb-2">{subscription.subscription_plans.name}</div>
-                  {subscription.subscription_plans.type === 'abonnement' ? (
-                    <div className="flex items-center justify-center lg:justify-end gap-2">
-                      <div className="text-xs sm:text-sm text-muted-foreground">
-                        {subscription.weekly_credits_used} / {subscription.subscription_plans.weekly_limit} cette semaine
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        Abonnement
-                      </Badge>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center lg:justify-end gap-2">
-                      <div className="text-xs sm:text-sm text-muted-foreground">
-                        {subscription.credits_remaining} crédits restants
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        Carnet
-                      </Badge>
-                    </div>
-                  )}
+
+            {subscription && (
+              <div className="glass-effect rounded-xl p-4 sm:p-6 shadow-soft min-w-fit">
+                <div className="text-center">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                    {subscription.subscription_plans?.type === 'abonnement' ? 'Cette semaine' : 'Crédits'}
+                  </div>
+                  <div className="text-2xl lg:text-3xl font-bold text-primary mb-1">
+                    {subscription.subscription_plans?.type === 'abonnement'
+                      ? `${(subscription.subscription_plans.weekly_limit || 0) - subscription.weekly_credits_used}`
+                      : subscription.credits_remaining
+                    }
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {subscription.subscription_plans?.type === 'abonnement'
+                      ? `sur ${subscription.subscription_plans.weekly_limit || 0}`
+                      : 'restants'
+                    }
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            )}
           </div>
 
-          <div className="flex justify-center lg:justify-end">
-            <Badge variant="secondary" className="text-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <Badge variant="secondary" className="text-xs w-fit">
               Seuls les cours futurs sont affichés
             </Badge>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 border border-primary bg-primary/10 rounded"></div>
+                <span>Réservé</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 border border-muted-foreground bg-muted rounded"></div>
+                <span>Liste d'attente</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -525,32 +691,33 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
               </div>
 
               {/* Calendar Body */}
-              <div className="grid grid-cols-7 min-h-[600px]">
+              <div className="hidden lg:grid lg:grid-cols-7 min-h-[600px] rounded-b-xl overflow-hidden border border-border bg-card">
                 {weekDays.map(day => {
                   const dayEvents = getEventsForDate(day)
                   const isCurrentDay = isToday(day)
 
                   return (
                     <div key={day.toISOString()} className={cn(
-                      "border-r border-border/50 last:border-r-0 p-3 bg-background/50",
-                      isCurrentDay && "bg-primary/5"
+                      "border-r border-border last:border-r-0 p-3 transition-colors",
+                      isCurrentDay && "bg-primary/5",
+                      dayEvents.length === 0 && "bg-muted/10"
                     )}>
                       {dayEvents.length === 0 ? (
                         <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
                           Aucun cours
                         </div>
                       ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           {dayEvents.map(event => {
                             const startTime = new Date(event.start_datetime)
                             const occupancyRate = Math.round((event.current_bookings / event.max_capacity) * 100)
 
                             return (
                               <Card key={event.id} className={cn(
-                                "border-l-4 transition-all hover:shadow-lg cursor-pointer group",
-                                event.user_booking && "border-l-green-500 bg-green-50/80 dark:bg-green-950/30 hover:bg-green-50 dark:hover:bg-green-950/40",
-                                event.user_waitlist_position && "border-l-yellow-500 bg-yellow-50/80 dark:bg-yellow-950/30 hover:bg-yellow-50 dark:hover:bg-yellow-950/40",
-                                !event.user_booking && !event.user_waitlist_position && "border-l-primary bg-primary/5 hover:bg-primary/10"
+                                "border-l-4 transition-all hover:shadow-soft cursor-pointer group bg-card/50 hover:bg-card border-border",
+                                event.user_booking && "border-l-primary bg-primary/10 hover:bg-primary/20",
+                                event.user_waitlist_position && "border-l-muted-foreground bg-muted hover:bg-muted/80",
+                                !event.user_booking && !event.user_waitlist_position && "border-l-border bg-background hover:bg-muted/50"
                               )}
                               onClick={() => handleEventClick(event)}>
                                 <CardContent className="p-3">
@@ -558,7 +725,7 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
                                     <div>
                                       <h4 className="font-semibold text-sm leading-tight group-hover:text-primary transition-colors">{event.title}</h4>
                                       <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                                        <Clock className="h-3 w-3" />
+                                        <IconClock className="h-3 w-3" />
                                         <span>{format(startTime, 'HH:mm')}</span>
                                       </div>
                                     </div>
@@ -576,7 +743,7 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
                                       {event.user_booking ? (
                                         <>
                                           <Badge variant="default" className="text-xs w-full justify-center">
-                                            <CheckCircle className="h-3 w-3 mr-1" />
+                                            <IconCircleCheck className="h-3 w-3 mr-1" />
                                             Réservé
                                           </Badge>
                                           <Button
@@ -646,30 +813,27 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
         </div>
 
         {/* Mobile/Tablet List View */}
-        <div className="lg:hidden space-y-4">
+        <div className="lg:hidden space-y-6">
           {weekDays.map(day => {
             const dayEvents = getEventsForDate(day)
             const isCurrentDay = isToday(day)
 
             return (
               <Card key={day.toISOString()} className={cn(
-                "shadow-md transition-all",
-                isCurrentDay && "ring-2 ring-primary/20 bg-primary/5"
+                "shadow-soft transition-all border-l-4",
+                isCurrentDay ? "border-l-primary bg-primary/5" : "border-l-border"
               )}>
-                <CardHeader className={cn(
-                  "pb-3",
-                  isCurrentDay && "bg-primary/10"
-                )}>
+                <CardHeader className="pb-3">
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className={cn(
-                        "text-center",
-                        isCurrentDay && "text-primary"
+                        "flex flex-col items-center justify-center w-12 h-12 rounded-xl font-bold bg-muted text-muted-foreground transition-colors",
+                        isCurrentDay && "bg-primary text-primary-foreground"
                       )}>
-                        <div className="text-2xl font-bold">
+                        <div className="text-lg leading-none">
                           {format(day, 'd')}
                         </div>
-                        <div className="text-xs text-muted-foreground capitalize">
+                        <div className="text-xs leading-none mt-1 uppercase tracking-wide">
                           {format(day, 'MMM', { locale: fr })}
                         </div>
                       </div>
@@ -693,7 +857,7 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
                 <CardContent className="pt-0">
                   {dayEvents.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
-                      <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <IconCalendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p>Aucun cours prévu</p>
                     </div>
                   ) : (
@@ -705,8 +869,8 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
                         return (
                           <Card key={event.id} className={cn(
                             "border-l-4 transition-all cursor-pointer hover:shadow-md",
-                            event.user_booking && "border-l-green-500 bg-green-50/80 dark:bg-green-950/20",
-                            event.user_waitlist_position && "border-l-yellow-500 bg-yellow-50/80 dark:bg-yellow-950/20",
+                            event.user_booking && "border-l-primary bg-primary/10",
+                            event.user_waitlist_position && "border-l-muted-foreground bg-muted",
                             !event.user_booking && !event.user_waitlist_position && "border-l-primary bg-primary/5"
                           )}
                           onClick={() => handleEventClick(event)}>
@@ -726,19 +890,19 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
 
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                   <div className="flex items-center gap-2">
-                                    <Clock className="h-4 w-4 text-muted-foreground" />
+                                    <IconClock className="h-4 w-4 text-muted-foreground" />
                                     <span>{format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}</span>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <User className="h-4 w-4 text-muted-foreground" />
+                                    <IconUser className="h-4 w-4 text-muted-foreground" />
                                     <span>{event.coach}</span>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                                    <IconMapPin className="h-4 w-4 text-muted-foreground" />
                                     <span>{event.location}</span>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <Users className="h-4 w-4 text-muted-foreground" />
+                                    <IconUsers className="h-4 w-4 text-muted-foreground" />
                                     <span>{event.current_bookings}/{event.max_capacity}</span>
                                   </div>
                                 </div>
@@ -747,7 +911,7 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
                                   {event.user_booking ? (
                                     <>
                                       <Badge variant="default" className="flex-1 justify-center">
-                                        <CheckCircle className="h-3 w-3 mr-1" />
+                                        <IconCircleCheck className="h-3 w-3 mr-1" />
                                         Réservé
                                       </Badge>
                                       <Button
@@ -830,7 +994,7 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
                       </Badge>
                       {selectedEvent.user_booking && (
                         <Badge variant="default" className="text-sm">
-                          <CheckCircle className="h-3 w-3 mr-1" />
+                          <IconCircleCheck className="h-3 w-3 mr-1" />
                           Réservé
                         </Badge>
                       )}
@@ -903,7 +1067,7 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
-                        <Info className="h-4 w-4" />
+                        <IconInfoCircle className="h-4 w-4" />
                         Description
                       </CardTitle>
                     </CardHeader>
@@ -918,7 +1082,7 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
+                        <IconClock className="h-4 w-4" />
                         Horaires
                       </CardTitle>
                     </CardHeader>
@@ -947,7 +1111,7 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
-                        <Users className="h-4 w-4" />
+                        <IconUsers className="h-4 w-4" />
                         Participants
                       </CardTitle>
                     </CardHeader>
@@ -995,7 +1159,7 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
-                        <User className="h-4 w-4" />
+                        <IconUser className="h-4 w-4" />
                         Coach
                       </CardTitle>
                     </CardHeader>
@@ -1007,7 +1171,7 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
+                        <IconMapPin className="h-4 w-4" />
                         Lieu
                       </CardTitle>
                     </CardHeader>
@@ -1019,7 +1183,7 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
-                        <Activity className="h-4 w-4" />
+                        <IconActivity className="h-4 w-4" />
                         Niveau
                       </CardTitle>
                     </CardHeader>
@@ -1030,8 +1194,8 @@ export function UserCalendarView({ user, subscription, subscriptionRequest }: Us
                         </Badge>
                         <div className="flex">
                           {[1, 2, 3, 4, 5].map((level) => (
-                            <Star 
-                              key={level} 
+                            <IconStar
+                              key={level}
                               className={cn(
                                 "h-4 w-4",
                                 level <= (selectedEvent.difficulty_level === 'beginner' ? 1 : 

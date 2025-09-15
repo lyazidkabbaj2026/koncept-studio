@@ -9,20 +9,20 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  Calendar, 
-  Clock, 
-  CreditCard, 
-  User, 
-  AlertTriangle, 
-  CheckCircle, 
-  XCircle, 
-  ArrowLeft,
-  TrendingUp,
-  BarChart3,
-  Target,
-  Timer
-} from 'lucide-react'
+import {
+  IconCalendar,
+  IconClock,
+  IconCreditCard,
+  IconUser,
+  IconAlertTriangle,
+  IconCircleCheck,
+  IconCircleX,
+  IconArrowLeft,
+  IconTrendingUp,
+  IconBarChart,
+  IconTarget,
+  IconClock as IconTimer
+} from '@tabler/icons-react'
 import Link from 'next/link'
 
 interface UserProfile {
@@ -181,7 +181,7 @@ export function UserSubscriptionView({
         <div className="mb-8 flex items-center gap-4">
           <Link href="/espace">
             <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4" />
+              <IconArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
           <div>
@@ -200,7 +200,7 @@ export function UserSubscriptionView({
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl">Abonnement actuel</CardTitle>
                   <Badge className={getStatusColor(currentSubscription.status)}>
-                    <CheckCircle className="h-3 w-3 mr-1" />
+                    <IconCircleCheck className="h-3 w-3 mr-1" />
                     {getStatusLabel(currentSubscription.status)}
                   </Badge>
                 </div>
@@ -276,7 +276,7 @@ export function UserSubscriptionView({
           <div className="mb-8">
             {subscriptionRequests.length > 0 ? (
               <Alert className="border-l-4 border-l-yellow-500">
-                <AlertTriangle className="h-4 w-4" />
+                <IconAlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <div className="font-medium mb-2">Demande d'abonnement en cours</div>
                   <p className="text-sm">
@@ -292,7 +292,7 @@ export function UserSubscriptionView({
               </Alert>
             ) : (
               <Alert className="border-l-4 border-l-blue-500">
-                <AlertTriangle className="h-4 w-4" />
+                <IconAlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <div className="font-medium mb-2">Aucun abonnement actif</div>
                   <p className="text-sm">
@@ -310,7 +310,7 @@ export function UserSubscriptionView({
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
+                  <IconBarChart className="h-5 w-5" />
                   Statistiques d'utilisation
                 </CardTitle>
               </CardHeader>
@@ -319,7 +319,7 @@ export function UserSubscriptionView({
                   <div className="text-center space-y-2">
                     <div className="flex items-center justify-center">
                       <div className="bg-primary/10 p-3 rounded-full">
-                        <Timer className="h-6 w-6 text-primary" />
+                        <IconTimer className="h-6 w-6 text-primary" />
                       </div>
                     </div>
                     <div className="text-2xl font-bold">{thisWeekBookings.length}</div>
@@ -328,7 +328,7 @@ export function UserSubscriptionView({
                   <div className="text-center space-y-2">
                     <div className="flex items-center justify-center">
                       <div className="bg-green-100 p-3 rounded-full">
-                        <TrendingUp className="h-6 w-6 text-green-600" />
+                        <IconTrendingUp className="h-6 w-6 text-green-600" />
                       </div>
                     </div>
                     <div className="text-2xl font-bold">{thisMonthBookings.length}</div>
@@ -337,7 +337,7 @@ export function UserSubscriptionView({
                   <div className="text-center space-y-2">
                     <div className="flex items-center justify-center">
                       <div className="bg-blue-100 p-3 rounded-full">
-                        <Target className="h-6 w-6 text-blue-600" />
+                        <IconTarget className="h-6 w-6 text-blue-600" />
                       </div>
                     </div>
                     <div className="text-2xl font-bold">{currentSubscription.credits_used}</div>
@@ -365,7 +365,7 @@ export function UserSubscriptionView({
             {subscriptionHistory.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
-                  <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <IconCreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <h3 className="font-medium mb-2">Aucun historique</h3>
                   <p className="text-muted-foreground">
                     Votre historique d'abonnements apparaîtra ici
@@ -383,7 +383,7 @@ export function UserSubscriptionView({
                             <h3 className="font-semibold">{subscription.subscription_plans.name}</h3>
                             <Badge variant="outline">{getTypeLabel(subscription.subscription_plans.type)}</Badge>
                             <Badge className={getStatusColor(subscription.status)}>
-                              {subscription.status === 'active' ? <CheckCircle className="h-3 w-3 mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}
+                              {subscription.status === 'active' ? <IconCircleCheck className="h-3 w-3 mr-1" /> : <IconCircleX className="h-3 w-3 mr-1" />}
                               {getStatusLabel(subscription.status)}
                             </Badge>
                           </div>
@@ -420,7 +420,7 @@ export function UserSubscriptionView({
             {subscriptionRequests.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
-                  <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <IconUser className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <h3 className="font-medium mb-2">Aucune demande</h3>
                   <p className="text-muted-foreground">
                     Vos demandes d'abonnement apparaîtront ici

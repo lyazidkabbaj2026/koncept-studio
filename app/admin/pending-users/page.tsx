@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { Phone, Mail, Calendar, CreditCard, MessageCircle, UserCheck, UserPlus } from 'lucide-react'
+import { IconPhone, IconMail, IconCalendar, IconCreditCard, IconMessageCircle, IconUserCheck, IconUserPlus } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -241,7 +241,7 @@ export default function PendingUsersPage() {
       {users.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
-            <UserCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <IconUserCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-2">Aucun utilisateur en attente</h3>
             <p className="text-muted-foreground">
               Tous les utilisateurs ont été traités ou aucune nouvelle inscription n'est en attente.
@@ -260,7 +260,7 @@ export default function PendingUsersPage() {
                   </Badge>
                 </div>
                 <CardDescription className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-1" />
+                  <IconCalendar className="h-4 w-4 mr-1" />
                   Inscrit le {format(new Date(user.created_at), 'dd MMM yyyy', { locale: fr })}
                 </CardDescription>
               </CardHeader>
@@ -268,20 +268,20 @@ export default function PendingUsersPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2 text-sm">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <IconMail className="h-4 w-4 text-muted-foreground" />
                     <span>{user.email}</span>
                   </div>
                   
                   {user.phone && (
                     <div className="flex items-center space-x-2 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <IconPhone className="h-4 w-4 text-muted-foreground" />
                       <span>{user.phone}</span>
                     </div>
                   )}
                   
                   {user.desired_plan && (
                     <div className="flex items-center space-x-2 text-sm">
-                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      <IconCreditCard className="h-4 w-4 text-muted-foreground" />
                       <span>Plan souhaité: {user.desired_plan}</span>
                     </div>
                   )}
@@ -293,7 +293,7 @@ export default function PendingUsersPage() {
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button variant="outline" size="sm" className="flex-1">
-                          <MessageCircle className="h-4 w-4 mr-1" />
+                          <IconMessageCircle className="h-4 w-4 mr-1" />
                           Contacter
                         </Button>
                       </DialogTrigger>
@@ -329,7 +329,7 @@ export default function PendingUsersPage() {
                       setShowAssignSubscription(true)
                     }}
                   >
-                    <UserPlus className="h-4 w-4 mr-1" />
+                    <IconUserPlus className="h-4 w-4 mr-1" />
                     Assigner Abonnement
                   </Button>
                 </div>

@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { X } from 'lucide-react'
+import { IconX } from '@tabler/icons-react'
 
 interface ClassFormData {
   title: string
@@ -244,7 +244,7 @@ export function ClassForm({ initialData, classId }: ClassFormProps) {
               {formData.tags.map((tag, index) => (
                 <Badge key={index} variant="secondary" className="flex items-center gap-1">
                   {tag}
-                  <X
+                  <IconX
                     className="h-3 w-3 cursor-pointer"
                     onClick={() => removeTag(tag)}
                   />
