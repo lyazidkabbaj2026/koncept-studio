@@ -3,39 +3,65 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authService } from '@/lib/services'
-import { useFormEventHandler } from '@/hooks'
-import { ErrorAlert } from '@/components/common'
 import { MESSAGES } from '@/constants'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { toast } from 'sonner'
 
 export default function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  const { loading, error, handleFormSubmit } = useFormEventHandler(
-    async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (loading) return
+
+    setLoading(true)
+
+    try {
       const { user, error } = await authService.signIn({ email, password })
 
       if (error) {
-        throw new Error(MESSAGES.ERRORS.AUTH.INVALID_CREDENTIALS)
+        toast.error(MESSAGES.ERRORS.AUTH.INVALID_CREDENTIALS, {
+          style: {
+            backgroundColor: 'var(--background)',
+            color: 'var(--foreground)',
+            border: '1px solid var(--border)',
+          }
+        })
+        return
       }
 
       if (user) {
+        toast.success('Connexion réussie', {
+          style: {
+            backgroundColor: 'var(--background)',
+            color: 'var(--foreground)',
+            border: '1px solid var(--border)',
+          }
+        })
         router.push('/espace')
         router.refresh()
       }
-    },
-    {
-      defaultErrorMessage: MESSAGES.ERRORS.AUTH.LOGIN_FAILED,
+    } catch (error) {
+      toast.error(MESSAGES.ERRORS.AUTH.LOGIN_FAILED, {
+        style: {
+          backgroundColor: 'var(--background)',
+          color: 'var(--foreground)',
+          border: '1px solid var(--border)',
+        }
+      })
+    } finally {
+      setLoading(false)
     }
-  )
+  }
 
   return (
-    <form onSubmit={(e) => handleFormSubmit(e, { email, password })} className="space-y-8">
-      <ErrorAlert error={error} />
+    <form onSubmit={handleSubmit} className="space-y-8">
 
       <div className="space-y-6">
         <div className="space-y-3">

@@ -127,7 +127,7 @@ export const MESSAGES = {
   PLACEHOLDERS: {
     EMAIL: "votre@email.com",
     PASSWORD: "••••••••",
-    NAME: "Jean Dupont",
+    NAME: "Votre nom",
     PHONE: "06 12 34 56 78",
     SEARCH: "Rechercher...",
     SELECT: "Sélectionner...",
