@@ -10,6 +10,8 @@ export interface SignupData {
   email: string
   password: string
   fullName: string
+  phone?: string
+  desiredPlan?: string
 }
 
 export interface AuthResult {

@@ -70,16 +70,17 @@ const formatPlanDetails = (plan: SubscriptionPlan) => {
     details.push(`${plan.credits} crédits`)
   }
 
-  if (plan.validity_months) {
-    details.push(`${plan.validity_months} mois`)
+  if (plan.duration_days) {
+    if (plan.duration_days >= 30) {
+      const months = Math.floor(plan.duration_days / 30)
+      details.push(`${months} mois`)
+    } else {
+      details.push(`${plan.duration_days} jours`)
+    }
   }
 
-  if (plan.validity_days) {
-    details.push(`${plan.validity_days} jours`)
-  }
-
-  if (plan.weekly_limit) {
-    details.push(`${plan.weekly_limit}/sem max`)
+  if (plan.weekly_credits) {
+    details.push(`${plan.weekly_credits}/sem max`)
   }
 
   return details.join(' • ')
@@ -91,19 +92,19 @@ const groupPlansByType = (plans: SubscriptionPlan[]) => {
   }
 
   const grouped = plans.reduce((acc, plan) => {
-    if (!plan || !plan.type) return acc
+    if (!plan || !plan.plan_type) return acc
 
-    if (!acc[plan.type]) {
-      acc[plan.type] = []
+    if (!acc[plan.plan_type]) {
+      acc[plan.plan_type] = []
     }
-    acc[plan.type].push(plan)
+    acc[plan.plan_type].push(plan)
     return acc
   }, {} as Record<string, SubscriptionPlan[]>)
 
   // Sort each group by price
   Object.keys(grouped).forEach(type => {
     if (grouped[type] && Array.isArray(grouped[type])) {
-      grouped[type].sort((a, b) => (a?.price_dhs || 0) - (b?.price_dhs || 0))
+      grouped[type].sort((a, b) => (a?.price || 0) - (b?.price || 0))
     }
   })
 
@@ -137,7 +138,7 @@ export function PlanSelectorModal({ plans, selectedPlan, onSelectPlan, isLoading
             {selectedPlanData ? (
               <>
                 {(() => {
-                  const config = getPlanTypeConfig(selectedPlanData.type)
+                  const config = getPlanTypeConfig(selectedPlanData.plan_type)
                   const IconComponent = config.icon
                   return <IconComponent className="h-5 w-5 text-foreground" />
                 })()}
@@ -162,7 +163,7 @@ export function PlanSelectorModal({ plans, selectedPlan, onSelectPlan, isLoading
           <div className="flex items-center gap-2">
             {selectedPlanData && (
               <span className="text-sm font-semibold">
-                {selectedPlanData.price_dhs} DHS
+                {selectedPlanData.price} DHS
               </span>
             )}
             <IconChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -227,12 +228,12 @@ export function PlanSelectorModal({ plans, selectedPlan, onSelectPlan, isLoading
                         <CardContent className="pt-0">
                           <div className="text-center py-4">
                             <div className="text-3xl font-bold">
-                              {plan.price_dhs}
+                              {plan.price}
                               <span className="text-lg font-medium text-muted-foreground ml-1">
                                 DHS
                               </span>
                             </div>
-                            {plan.type === 'abonnement' && (
+                            {plan.plan_type === 'abonnement' && (
                               <div className="text-sm text-muted-foreground mt-1">/mois</div>
                             )}
                           </div>

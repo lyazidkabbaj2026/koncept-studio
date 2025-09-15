@@ -19,7 +19,7 @@ import {
   IconCircleX,
   IconArrowLeft,
   IconTrendingUp,
-  IconBarChart,
+  IconChartBar,
   IconTarget,
   IconClock as IconTimer
 } from '@tabler/icons-react'
@@ -310,7 +310,7 @@ export function UserSubscriptionView({
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <IconBarChart className="h-5 w-5" />
+                  <IconChartBar className="h-5 w-5" />
                   Statistiques d'utilisation
                 </CardTitle>
               </CardHeader>

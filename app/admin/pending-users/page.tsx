@@ -72,7 +72,7 @@ export default function PendingUsersPage() {
       setUsers(data || [])
     } catch (err) {
       console.error('Error fetching users:', err)
-      setError(`Erreur lors du chargement des utilisateurs: ${err.message}`)
+      setError(`Erreur lors du chargement des utilisateurs: ${err instanceof Error ? err.message : 'Erreur inconnue'}`)
     } finally {
       setLoading(false)
     }

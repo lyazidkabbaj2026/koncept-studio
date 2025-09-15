@@ -88,9 +88,7 @@ export const subscriptionPlanSchema = z.object({
   name: z.string()
     .min(2, 'Plan name must be at least 2 characters')
     .max(50, 'Plan name cannot exceed 50 characters'),
-  type: z.enum(['package', 'abonnement'], {
-    errorMap: () => ({ message: 'Plan type must be either package or abonnement' })
-  }),
+  type: z.enum(['package', 'abonnement']),
   price: z.number()
     .min(0, 'Price cannot be negative')
     .max(500, 'Price cannot exceed 500€'),

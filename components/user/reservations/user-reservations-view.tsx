@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { IconIconCalendar, IconIconClock, IconIconUser, IconIconMapPin, IconCircleCheck, IconCircleX, IconAlertTriangle, IconArrowLeft } from '@tabler/icons-react'
+import { IconCalendar, IconClock, IconUser, IconMapPin, IconCircleCheck, IconCircleX, IconAlertTriangle, IconArrowLeft } from '@tabler/icons-react'
 import Link from 'next/link'
 
 interface Booking {
@@ -52,11 +52,11 @@ interface WaitlistEntry {
   }
 }
 
-interface IconUserReservationsViewProps {
+interface UserReservationsViewProps {
   userId: string
 }
 
-export function IconUserReservationsView({ userId }: IconUserReservationsViewProps) {
+export function UserReservationsView({ userId }: UserReservationsViewProps) {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([])
   const [loading, setLoading] = useState(true)

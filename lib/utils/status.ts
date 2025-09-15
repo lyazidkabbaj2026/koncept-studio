@@ -56,6 +56,7 @@ export const STATUS_LABELS = {
   scheduled: 'Programmé',
   ongoing: 'En cours',
   completed: 'Terminé',
+  classCancelled: 'Annulé',
 
   // Booking status
   confirmed: 'Confirmé',

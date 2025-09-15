@@ -52,12 +52,12 @@ export default async function UserPlanningPage() {
       .select(`
         id,
         status,
-        subscription_plans!inner(name)
+        subscription_plans(name)
       `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle()
 
     subscriptionRequest = data
   }

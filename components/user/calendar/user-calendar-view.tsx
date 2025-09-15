@@ -26,8 +26,8 @@ interface Subscription {
   end_date: string
   subscription_plans: {
     name: string
-    type: 'carnet' | 'personal_training' | 'abonnement'
-    weekly_limit?: number
+    plan_type: 'carnet' | 'personal_training' | 'abonnement'
+    weekly_credits?: number
   }
 }
 
@@ -61,7 +61,7 @@ interface ClassEvent {
 interface UserCalendarViewProps {
   user: UserProfile
   subscription?: Subscription
-  subscriptionRequest?: SubscriptionRequest
+  subscriptionRequest?: any
 }
 
 export function UserCalendarView({ user, subscription: initialSubscription, subscriptionRequest }: UserCalendarViewProps) {
@@ -203,7 +203,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
       }
 
       // Check if class is full
-      if (scheduleData.current_bookings >= scheduleData.classes.max_capacity) {
+      if (scheduleData.current_bookings >= scheduleData.classes[0]?.max_capacity) {
         throw new Error('Cette classe est complète')
       }
 
@@ -245,7 +245,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
       // Update subscription credits
       if (subscription) {
 
-        if (subscription.subscription_plans?.type === 'abonnement') {
+        if (subscription.subscription_plans?.plan_type === 'abonnement') {
           // Update weekly credits used for subscription plans
           const { error: updateError } = await supabase
             .from('user_subscriptions')
@@ -262,8 +262,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
           const { error: updateError } = await supabase
             .from('user_subscriptions')
             .update({
-              credits_remaining: subscription.credits_remaining - 1,
-              credits_used: (subscription.credits_used || 0) + 1
+              credits_remaining: subscription.credits_remaining - 1
             })
             .eq('id', subscription.id)
 
@@ -282,11 +281,10 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
       if (subscription) {
         const updatedSubscription = { ...subscription }
 
-        if (subscription.subscription_plans?.type === 'abonnement') {
+        if (subscription.subscription_plans?.plan_type === 'abonnement') {
           updatedSubscription.weekly_credits_used = subscription.weekly_credits_used + 1
         } else {
           updatedSubscription.credits_remaining = subscription.credits_remaining - 1
-          updatedSubscription.credits_used = (subscription.credits_used || 0) + 1
         }
 
         setSubscription(updatedSubscription)
@@ -452,8 +450,8 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
     }
 
     // Check subscription limits
-    if (subscription.subscription_plans.type === 'abonnement') {
-      const canBook = subscription.weekly_credits_used < (subscription.subscription_plans.weekly_limit || 0)
+    if (subscription.subscription_plans.plan_type === 'abonnement') {
+      const canBook = subscription.weekly_credits_used < (subscription.subscription_plans.weekly_credits || 0)
       return canBook
     } else {
       const canBook = subscription.credits_remaining > 0
@@ -570,17 +568,17 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
               <div className="glass-effect rounded-xl p-4 sm:p-6 shadow-soft min-w-fit">
                 <div className="text-center">
                   <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
-                    {subscription.subscription_plans?.type === 'abonnement' ? 'Cette semaine' : 'Crédits'}
+                    {subscription.subscription_plans?.plan_type === 'abonnement' ? 'Cette semaine' : 'Crédits'}
                   </div>
                   <div className="text-2xl lg:text-3xl font-bold text-primary mb-1">
-                    {subscription.subscription_plans?.type === 'abonnement'
-                      ? `${(subscription.subscription_plans.weekly_limit || 0) - subscription.weekly_credits_used}`
+                    {subscription.subscription_plans?.plan_type === 'abonnement'
+                      ? `${(subscription.subscription_plans.weekly_credits || 0) - subscription.weekly_credits_used}`
                       : subscription.credits_remaining
                     }
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {subscription.subscription_plans?.type === 'abonnement'
-                      ? `sur ${subscription.subscription_plans.weekly_limit || 0}`
+                    {subscription.subscription_plans?.plan_type === 'abonnement'
+                      ? `sur ${subscription.subscription_plans.weekly_credits || 0}`
                       : 'restants'
                     }
                   </div>
