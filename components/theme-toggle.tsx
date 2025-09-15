@@ -90,12 +90,12 @@ export function SidebarThemeToggle() {
       {theme === "light" ? (
         <>
           <IconSun className="h-4 w-4" />
-          <span>Clair</span>
+          <span>Thème clair</span>
         </>
       ) : (
         <>
           <IconMoon className="h-4 w-4" />
-          <span>Sombre</span>
+          <span>Thème sombre</span>
         </>
       )}
     </Button>

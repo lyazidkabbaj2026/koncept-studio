@@ -59,7 +59,7 @@ const navigation = [
     icon: IconCreditCard,
   },
   {
-    title: 'IconUsers',
+    title: 'Utilisateurs',
     icon: IconUsers,
     isCollapsible: true,
     subItems: [
@@ -81,7 +81,7 @@ const navigation = [
     ],
   },
   {
-    title: 'IconSettings',
+    title: 'Paramètres',
     href: '/admin/settings',
     icon: IconSettings,
   },
