@@ -35,8 +35,14 @@ interface User {
     id: string
     status: string
     credits_remaining: number
+    credits_used?: number
+    weekly_credits_used?: number
+    start_date?: string
     end_date: string
     plan_name: string
+    plan_type?: string
+    plan_price?: number
+    weekly_limit?: number
   } | null
 }
 
@@ -63,6 +69,7 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [showContactDialog, setShowContactDialog] = useState(false)
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false)
+  const [showSubscriptionDetailsDialog, setShowSubscriptionDetailsDialog] = useState(false)
   const [subscriptionForm, setSubscriptionForm] = useState<SubscriptionFormData>({
     plan_id: '',
     start_date: format(new Date(), 'yyyy-MM-dd')
@@ -422,10 +429,13 @@ export default function UsersPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDeactivateUser(user.id, user.full_name)}
+                            onClick={() => {
+                              setSelectedUser(user)
+                              setShowSubscriptionDetailsDialog(true)
+                            }}
                           >
-                            <IconUserMinus className="h-4 w-4 mr-1" />
-                            Désactiver
+                            <IconCreditCard className="h-4 w-4 mr-1" />
+                            Voir abonnement
                           </Button>
                         )}
                         {user.subscription_status === 'expired' && (
@@ -489,6 +499,167 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+
+      {/* Subscription Details Dialog */}
+      <Dialog open={showSubscriptionDetailsDialog} onOpenChange={setShowSubscriptionDetailsDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Détails de l'abonnement</DialogTitle>
+          </DialogHeader>
+
+          {selectedUser && selectedUser.active_subscription && (
+            <div className="space-y-6">
+              {/* User Info */}
+              <div>
+                <h4 className="text-sm font-medium mb-2 text-foreground">Utilisateur</h4>
+                <div className="bg-muted/20 rounded-lg p-3">
+                  <p className="text-sm font-medium">{selectedUser.full_name}</p>
+                  <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                  {selectedUser.phone && (
+                    <p className="text-sm text-muted-foreground">{selectedUser.phone}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Plan Details */}
+              <div>
+                <h4 className="text-sm font-medium mb-2 text-foreground">Détails du plan</h4>
+                <div className="bg-muted/20 rounded-lg p-3 space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h5 className="text-xs font-medium text-muted-foreground mb-1">Plan</h5>
+                      <p className="text-sm font-medium">{selectedUser.active_subscription.plan_name}</p>
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-medium text-muted-foreground mb-1">Statut</h5>
+                      <Badge variant="secondary">
+                        {selectedUser.active_subscription.status === 'active' ? 'Actif' :
+                         selectedUser.active_subscription.status === 'expired' ? 'Expiré' :
+                         selectedUser.active_subscription.status === 'cancelled' ? 'Annulé' :
+                         selectedUser.active_subscription.status}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h5 className="text-xs font-medium text-muted-foreground mb-1">Date de début</h5>
+                      <p className="text-sm">
+                        {selectedUser.active_subscription.start_date
+                          ? format(new Date(selectedUser.active_subscription.start_date), 'dd/MM/yyyy', { locale: fr })
+                          : 'Non spécifiée'
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-medium text-muted-foreground mb-1">Date d'expiration</h5>
+                      <p className="text-sm font-medium">
+                        {format(new Date(selectedUser.active_subscription.end_date), 'dd/MM/yyyy', { locale: fr })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Credits Info */}
+              <div>
+                <h4 className="text-sm font-medium mb-2 text-foreground">Utilisation des crédits</h4>
+                <div className="bg-muted/20 rounded-lg p-3 space-y-3">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <h5 className="text-xs font-medium text-muted-foreground mb-1">Restants</h5>
+                      <p className="text-lg font-bold font-mono text-green-600 dark:text-green-400">
+                        {selectedUser.active_subscription.credits_remaining}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <h5 className="text-xs font-medium text-muted-foreground mb-1">Utilisés</h5>
+                      <p className="text-lg font-bold font-mono text-blue-600 dark:text-blue-400">
+                        {selectedUser.active_subscription.credits_used || 0}
+                      </p>
+                    </div>
+                    {selectedUser.active_subscription.weekly_limit && (
+                      <div className="text-center">
+                        <h5 className="text-xs font-medium text-muted-foreground mb-1">Cette semaine</h5>
+                        <p className="text-lg font-bold font-mono text-orange-600 dark:text-orange-400">
+                          {selectedUser.active_subscription.weekly_credits_used || 0}/{selectedUser.active_subscription.weekly_limit}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedUser.active_subscription.plan_price && (
+                    <div className="pt-2 border-t border-border">
+                      <div className="text-center">
+                        <h5 className="text-xs font-medium text-muted-foreground mb-1">Prix du plan</h5>
+                        <p className="text-sm font-medium">{selectedUser.active_subscription.plan_price} DHS</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-3 pt-4 border-t border-border">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSubscriptionDetailsDialog(false)}
+                  className="w-full"
+                >
+                  Fermer
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    handleDeactivateUser(selectedUser.id, selectedUser.full_name)
+                    setShowSubscriptionDetailsDialog(false)
+                  }}
+                  className="w-full border-foreground text-foreground hover:bg-foreground hover:text-background"
+                >
+                  <IconUserMinus className="h-4 w-4 mr-2" />
+                  Désactiver l'utilisateur
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {selectedUser && !selectedUser.active_subscription && (
+            <div className="space-y-6">
+              {/* User Info */}
+              <div>
+                <h4 className="text-sm font-medium mb-2 text-foreground">Utilisateur</h4>
+                <div className="bg-muted/20 rounded-lg p-3">
+                  <p className="text-sm font-medium">{selectedUser.full_name}</p>
+                  <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                  {selectedUser.phone && (
+                    <p className="text-sm text-muted-foreground">{selectedUser.phone}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* No Subscription */}
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                  <IconCreditCard className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground font-medium">Aucun abonnement actif trouvé</p>
+                <p className="text-sm text-muted-foreground mt-1">Cet utilisateur n'a pas d'abonnement actif</p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-center pt-4 border-t border-border">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSubscriptionDetailsDialog(false)}
+                  className="w-full"
+                >
+                  Fermer
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Subscription Assignment Dialog */}
       <Dialog open={showSubscriptionDialog} onOpenChange={setShowSubscriptionDialog}>

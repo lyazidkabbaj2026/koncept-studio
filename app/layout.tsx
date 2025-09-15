@@ -36,7 +36,29 @@ export default async function RootLayout({
             <ConditionalNavbar />
             {children}
           </ErrorBoundary>
-          <Toaster />
+          <Toaster
+            position="top-center"
+            expand={true}
+            richColors={true}
+            closeButton={true}
+            toastOptions={{
+              style: {
+                background: 'hsl(var(--background))',
+                color: 'hsl(var(--foreground))',
+                border: '1px solid hsl(var(--border))',
+                fontSize: '16px',
+                padding: '16px 20px',
+                minHeight: '60px',
+                maxWidth: '500px',
+                borderRadius: '8px',
+                boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                backdropFilter: 'none',
+                opacity: '1',
+              },
+              className: 'toast-custom',
+            }}
+            theme="system"
+          />
         </ThemeProvider>
       </body>
     </html>

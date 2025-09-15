@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { IconCalendar, IconClock, IconUser, IconMapPin, IconCircleCheck, IconCircleX, IconAlertTriangle, IconArrowLeft } from '@tabler/icons-react'
+import { IconCalendar, IconClock, IconUser, IconMapPin, IconCircleCheck, IconCircleX, IconAlertTriangle } from '@tabler/icons-react'
 import Link from 'next/link'
 
 interface Booking {
@@ -166,16 +166,8 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
   }
 
   const getDifficultyColor = (level: string) => {
-    switch (level.toLowerCase()) {
-      case 'beginner':
-        return 'bg-green-100 text-green-800'
-      case 'intermediate':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'advanced':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
+    // Use theme-aware colors for all difficulty levels
+    return 'bg-muted text-foreground'
   }
 
   const getDifficultyLabel = (level: string) => {
@@ -216,21 +208,14 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8 flex items-center gap-4">
-          <Link href="/espace">
-            <Button variant="outline" size="sm">
-              <IconArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Mes réservations</h1>
-            <p className="text-muted-foreground mt-2">
-              Gérez vos cours réservés et votre liste d'attente
-            </p>
-          </div>
+        <div className="mb-8 text-center sm:text-left">
+          <h1 className="text-3xl lg:text-4xl font-bold text-gradient mb-3">Mes réservations</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Gérez vos cours réservés et votre liste d'attente
+          </p>
         </div>
 
         {error && (
@@ -240,7 +225,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
         )}
 
         <Tabs defaultValue="upcoming" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-3 bg-muted/50">
             <TabsTrigger value="upcoming">
               À venir ({upcomingBookings.length})
             </TabsTrigger>
@@ -255,10 +240,10 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
           {/* Upcoming Bookings */}
           <TabsContent value="upcoming" className="space-y-4">
             {upcomingBookings.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <IconCalendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <h3 className="font-medium mb-2">Aucune réservation à venir</h3>
+              <Card className="glass-effect shadow-soft">
+                <CardContent className="text-center py-12">
+                  <IconCalendar className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <h3 className="font-semibold text-lg mb-2">Aucune réservation à venir</h3>
                   <p className="text-muted-foreground mb-4">
                     Consultez le planning pour réserver vos prochains cours
                   </p>
@@ -274,7 +259,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                 const canCancel = isFuture(startTime)
 
                 return (
-                  <Card key={booking.id} className="border-l-4 border-l-green-500">
+                  <Card key={booking.id} className="glass-effect shadow-soft border-l-4 border-l-primary">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="space-y-3 flex-1">
@@ -283,10 +268,10 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                               <h3 className="font-semibold text-lg">
                                 {booking.class_schedules.classes.title}
                               </h3>
-                              <Badge className={getDifficultyColor(booking.class_schedules.classes.difficulty_level)}>
+                              <Badge variant="secondary">
                                 {getDifficultyLabel(booking.class_schedules.classes.difficulty_level)}
                               </Badge>
-                              <Badge variant="default" className="flex items-center gap-1">
+                              <Badge variant="secondary" className="flex items-center gap-1">
                                 <IconCircleCheck className="h-3 w-3" />
                                 Confirmé
                               </Badge>
@@ -327,7 +312,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                             variant="outline"
                             size="sm"
                             onClick={() => handleCancelBooking(booking)}
-                            className="text-red-600 hover:text-red-700"
+                            className="border-foreground text-foreground hover:bg-foreground hover:text-background"
                           >
                             Annuler
                           </Button>
@@ -343,10 +328,10 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
           {/* Waitlist */}
           <TabsContent value="waitlist" className="space-y-4">
             {upcomingWaitlist.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <IconAlertTriangle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <h3 className="font-medium mb-2">Aucune liste d'attente</h3>
+              <Card className="glass-effect shadow-soft">
+                <CardContent className="text-center py-12">
+                  <IconAlertTriangle className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <h3 className="font-semibold text-lg mb-2">Aucune liste d'attente</h3>
                   <p className="text-muted-foreground">
                     Vous n'êtes sur aucune liste d'attente actuellement
                   </p>
@@ -361,7 +346,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                 )
 
                 return (
-                  <Card key={entry.id} className="border-l-4 border-l-yellow-500">
+                  <Card key={entry.id} className="glass-effect shadow-soft border-l-4 border-l-primary">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="space-y-3 flex-1">
@@ -370,7 +355,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                               <h3 className="font-semibold text-lg">
                                 {entry.class_schedules.classes.title}
                               </h3>
-                              <Badge className={getDifficultyColor(entry.class_schedules.classes.difficulty_level)}>
+                              <Badge variant="secondary">
                                 {getDifficultyLabel(entry.class_schedules.classes.difficulty_level)}
                               </Badge>
                               <Badge variant="secondary">
@@ -417,7 +402,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                           variant="outline"
                           size="sm"
                           onClick={() => handleLeaveWaitlist(entry)}
-                          className="text-red-600 hover:text-red-700"
+                          className="border-foreground text-foreground hover:bg-foreground hover:text-background"
                         >
                           Quitter
                         </Button>
@@ -432,10 +417,10 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
           {/* History */}
           <TabsContent value="history" className="space-y-4">
             {pastBookings.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <IconCalendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <h3 className="font-medium mb-2">Aucun historique</h3>
+              <Card className="glass-effect shadow-soft">
+                <CardContent className="text-center py-12">
+                  <IconCalendar className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <h3 className="font-semibold text-lg mb-2">Aucun historique</h3>
                   <p className="text-muted-foreground">
                     Vos cours passés apparaîtront ici
                   </p>
@@ -445,11 +430,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
               pastBookings.map(booking => {
                 const startTime = new Date(booking.class_schedules.start_datetime)
                 const endTime = new Date(booking.class_schedules.end_datetime)
-                const statusColor = {
-                  confirmed: 'text-green-600',
-                  cancelled: 'text-red-600',
-                  no_show: 'text-orange-600'
-                }[booking.status]
+                const statusColor = 'text-foreground'
 
                 const statusLabel = {
                   confirmed: 'Suivi',
@@ -458,7 +439,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                 }[booking.status]
 
                 return (
-                  <Card key={booking.id} className="opacity-75">
+                  <Card key={booking.id} className="glass-effect shadow-soft opacity-75">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="space-y-3 flex-1">
@@ -467,7 +448,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                               <h3 className="font-semibold text-lg">
                                 {booking.class_schedules.classes.title}
                               </h3>
-                              <Badge className={getDifficultyColor(booking.class_schedules.classes.difficulty_level)}>
+                              <Badge variant="secondary">
                                 {getDifficultyLabel(booking.class_schedules.classes.difficulty_level)}
                               </Badge>
                             </div>
@@ -499,7 +480,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                         </div>
 
                         <div className="flex flex-col items-end gap-2">
-                          <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'} className={statusColor}>
+                          <Badge variant="secondary" className={statusColor}>
                             {booking.status === 'confirmed' ? <IconCircleCheck className="h-3 w-3 mr-1" /> : <IconCircleX className="h-3 w-3 mr-1" />}
                             {statusLabel}
                           </Badge>

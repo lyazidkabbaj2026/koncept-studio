@@ -13,17 +13,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuBadge,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarSeparator,
 } from '@/components/ui/sidebar'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -34,7 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { IconCalendar, IconUsers, IconSettings, IconHome, IconLogout, IconBarbell, IconCalendarEvent, IconCreditCard, IconUserCheck, IconChevronRight, IconUserCog, IconMessageCircle } from '@tabler/icons-react'
+import { IconCalendar, IconUsers, IconSettings, IconHome, IconLogout, IconBarbell, IconCalendarEvent, IconCreditCard, IconCalendarStats, IconX, IconClock } from '@tabler/icons-react'
 import { SidebarThemeToggle } from '@/components/theme-toggle'
 
 const navigation = [
@@ -60,25 +51,23 @@ const navigation = [
   },
   {
     title: 'Utilisateurs',
+    href: '/admin/users',
     icon: IconUsers,
-    isCollapsible: true,
-    subItems: [
-      {
-        title: 'All active user info',
-        href: '/admin/users',
-        icon: IconUsers,
-      },
-      {
-        title: 'Pending users to contact',
-        href: '/admin/users/pending',
-        icon: IconUserCheck,
-      },
-      {
-        title: 'Contacted users to assign',
-        href: '/admin/users/contacted',
-        icon: IconMessageCircle,
-      },
-    ],
+  },
+  {
+    title: 'Réservations',
+    href: '/admin/bookings',
+    icon: IconCalendarStats,
+  },
+  {
+    title: 'Annulations',
+    href: '/admin/cancellations',
+    icon: IconX,
+  },
+  {
+    title: 'Liste d\'attente',
+    href: '/admin/waitlist',
+    icon: IconClock,
   },
   {
     title: 'Paramètres',
@@ -87,18 +76,10 @@ const navigation = [
   },
 ]
 
-interface NavigationSubItem {
+interface NavigationItem {
   title: string
   href: string
   icon: React.ElementType
-}
-
-interface NavigationItem {
-  title: string
-  href?: string
-  icon: React.ElementType
-  isCollapsible?: boolean
-  subItems?: NavigationSubItem[]
 }
 
 interface UserProfile {
@@ -109,7 +90,6 @@ interface UserProfile {
 export function AdminSidebar() {
   const pathname = usePathname()
   const [user, setUser] = useState<UserProfile | null>(null)
-  const [unresolvedIconUsersCount, setUnresolvedIconUsersCount] = useState(0)
   const supabase = createClient()
 
   useEffect(() => {
@@ -121,43 +101,15 @@ export function AdminSidebar() {
           .select('full_name, email')
           .eq('id', authUser.id)
           .single()
-        
+
         setUser({
           full_name: profile?.full_name || null,
           email: profile?.email || authUser.email || ''
         })
       }
     }
-    
-    const getUnresolvedIconUsersCount = async () => {
-      const { count, error } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .neq('role', 'admin')
-        .in('subscription_status', ['pending', 'contacted'])
 
-      if (!error && count !== null) {
-        setUnresolvedIconUsersCount(count)
-      }
-    }
-    
     getUser()
-    getUnresolvedIconUsersCount()
-    
-    // Set up real-time subscription to update the count
-    const channel = supabase
-      .channel('profiles-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'profiles' },
-        () => {
-          getUnresolvedIconUsersCount()
-        }
-      )
-      .subscribe()
-    
-    return () => {
-      supabase.removeChannel(channel)
-    }
   }, [supabase])
 
   return (
@@ -176,81 +128,29 @@ export function AdminSidebar() {
       
       <SidebarContent className="px-3 py-4">
         <SidebarMenu>
-          {navigation.slice(0, -1).map((item) => {
-            if (item.isCollapsible && item.subItems) {
-              const isOpen = item.subItems.some(subItem => pathname === subItem.href) || pathname.startsWith('/admin/users')
-
-              return (
-                <Collapsible
-                  key={item.title}
-                  asChild
-                  defaultOpen={isOpen}
-                  className="group/collapsible"
-                >
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton className="flex items-center gap-3 px-3 py-2">
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                        <IconChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    {item.title === 'IconUsers' && unresolvedIconUsersCount > 0 && (
-                      <SidebarMenuBadge>
-                        {unresolvedIconUsersCount}
-                      </SidebarMenuBadge>
-                    )}
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {item.subItems.map((subItem) => (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild isActive={pathname === subItem.href}>
-                              <Link href={subItem.href} className="flex items-center gap-3 px-3 py-2">
-                                <subItem.icon className="h-4 w-4" />
-                                <span>{subItem.title}</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              )
-            }
-
-            // Only render items with href (non-collapsible items)
-            if (!item.href) return null
-
-            return (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild isActive={pathname === item.href}>
-                  <Link href={item.href} className="flex items-center gap-3 px-3 py-2">
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )
-          })}
+          {navigation.slice(0, -1).map((item) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton asChild isActive={pathname === item.href}>
+                <Link href={item.href} className="flex items-center gap-3 px-3 py-2">
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.title}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
 
           <SidebarSeparator className="-mx-3 w-auto my-2" />
 
-          {navigation.slice(-1).map((item) => {
-            // Only render items with href
-            if (!item.href) return null
-
-            return (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild isActive={pathname === item.href}>
-                  <Link href={item.href} className="flex items-center gap-3 px-3 py-2">
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )
-          })}
+          {navigation.slice(-1).map((item) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton asChild isActive={pathname === item.href}>
+                <Link href={item.href} className="flex items-center gap-3 px-3 py-2">
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.title}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
 
           <SidebarMenuItem>
             <SidebarThemeToggle />

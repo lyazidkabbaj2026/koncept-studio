@@ -40,7 +40,12 @@ export class SubscriptionService {
       .select('*')
       .order('price_dhs', { ascending: true })
 
-    if (error) throw error
+    if (error) {
+      console.error('Error fetching subscription plans:', error)
+      throw error
+    }
+
+    console.log('Fetched subscription plans:', data)
     return data || []
   }
 

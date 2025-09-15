@@ -130,24 +130,30 @@ export default function Navbar() {
               <>
                 <Link
                   href="/espace/planning"
-                  className={`text-sm font-medium hover:text-primary transition-colors ${
-                    pathname === '/espace/planning' ? 'text-primary' : ''
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                    pathname === '/espace/planning'
+                      ? 'text-primary bg-primary/5'
+                      : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
                   }`}
                 >
                   Planning
                 </Link>
                 <Link
                   href="/espace/reservations"
-                  className={`text-sm font-medium hover:text-primary transition-colors ${
-                    pathname === '/espace/reservations' ? 'text-primary' : ''
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                    pathname === '/espace/reservations'
+                      ? 'text-primary bg-primary/5'
+                      : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
                   }`}
                 >
                   Mes réservations
                 </Link>
                 <Link
                   href="/espace/abonnement"
-                  className={`text-sm font-medium hover:text-primary transition-colors ${
-                    pathname === '/espace/abonnement' ? 'text-primary' : ''
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                    pathname === '/espace/abonnement'
+                      ? 'text-primary bg-primary/5'
+                      : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
                   }`}
                 >
                   Mon abonnement
@@ -239,7 +245,7 @@ export default function Navbar() {
 
         {user && profile.subscription_status === 'active' && isEspacePage && (
           <div className="md:hidden border-t border-border">
-            <div className="flex space-x-4 py-2 px-1">
+            <div className="flex justify-between items-center py-3 px-4">
               <Link
                 href="/espace/planning"
                 className={`text-xs font-medium hover:text-primary transition-colors whitespace-nowrap ${
@@ -254,7 +260,7 @@ export default function Navbar() {
                   pathname === '/espace/reservations' ? 'text-primary' : ''
                 }`}
               >
-                Réservations
+                Mes réservations
               </Link>
               <Link
                 href="/espace/abonnement"
@@ -262,7 +268,7 @@ export default function Navbar() {
                   pathname === '/espace/abonnement' ? 'text-primary' : ''
                 }`}
               >
-                Abonnement
+                Mon abonnement
               </Link>
             </div>
           </div>

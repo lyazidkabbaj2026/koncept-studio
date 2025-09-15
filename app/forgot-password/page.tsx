@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import SignupForm from './signup-form'
+import ForgotPasswordForm from './forgot-password-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
-export default async function SignupPage() {
+export default async function ForgotPasswordPage() {
   const supabase = await createClient()
-  
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -26,20 +26,20 @@ export default async function SignupPage() {
               <div className="w-8 h-8 bg-primary-foreground rounded-lg"></div>
             </div>
             <div>
-              <CardTitle className="text-3xl font-bold text-gradient mb-2">Inscription</CardTitle>
+              <CardTitle className="text-3xl font-bold text-gradient mb-2">Mot de passe oublié</CardTitle>
               <CardDescription className="text-muted-foreground">
-                Créez votre compte Koncept Studio
+                Saisissez votre email pour recevoir un lien de réinitialisation
               </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <SignupForm />
-            <div className="mt-8 text-center">
+            <ForgotPasswordForm />
+            <div className="mt-8 text-center space-y-2">
               <a
                 href="/login"
                 className="inline-flex items-center text-primary hover:text-primary/80 text-sm font-medium transition-colors hover:underline underline-offset-4"
               >
-                Déjà un compte ? Connectez-vous
+                Retour à la connexion
               </a>
             </div>
           </CardContent>

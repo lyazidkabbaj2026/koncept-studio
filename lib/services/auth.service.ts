@@ -80,4 +80,22 @@ export class AuthService {
       callback(session?.user || null)
     })
   }
+
+  async isUserAdmin(userId: string): Promise<boolean> {
+    try {
+      const { data, error } = await this.supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single()
+
+      if (error || !data) {
+        return false
+      }
+
+      return data.role === 'admin'
+    } catch (error) {
+      return false
+    }
+  }
 }

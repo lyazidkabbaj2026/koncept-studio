@@ -207,7 +207,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-background text-foreground">
 
       {/* Hero Section */}
-      <section className="relative min-h-[130vh] flex items-center overflow-hidden pt-20" id="presentation-studio">
+      <section className="relative min-h-screen flex items-center overflow-hidden pt-8" id="presentation-studio">
         {/* Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/70 to-background/95" />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-muted/10 to-primary/5" />

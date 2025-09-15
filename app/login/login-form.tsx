@@ -46,7 +46,14 @@ export default function LoginForm() {
             border: '1px solid var(--border)',
           }
         })
-        router.push('/espace')
+
+        // Check if user is admin and redirect appropriately
+        const isAdmin = await authService.isUserAdmin(user.id)
+        if (isAdmin) {
+          router.push('/admin')
+        } else {
+          router.push('/espace')
+        }
         router.refresh()
       }
     } catch (error) {

@@ -200,6 +200,9 @@ export const userUtils = {
   }
 }
 
+// Named exports for convenience
+export const getStatusBadge = getStatusBadgeConfig
+
 export default {
   getStatusConfig,
   getStatusColor,

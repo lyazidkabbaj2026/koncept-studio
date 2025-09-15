@@ -67,16 +67,12 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
     try {
       if (event.is_recurring && event.recurrence_rule) {
         // Delete all instances of the recurring series
-        // Use a safer approach by matching on class_id, is_recurring, and start time pattern
-        const startDateTime = new Date(event.start_datetime)
-        const timeString = startDateTime.toTimeString().slice(0, 8) // HH:MM:SS format
-        
+        // Use a safer approach by matching on class_id and is_recurring
         const { error } = await supabase
           .from('class_schedules')
           .delete()
           .eq('class_id', event.class_id)
           .eq('is_recurring', true)
-          .like('start_datetime', `%T${timeString}%`) // Match same time of day
 
         if (error) throw error
       } else {
@@ -122,21 +118,10 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
     }
   }
 
-  const getDifficultyColor = (level: string) => {
-    switch (level.toLowerCase()) {
-      case 'beginner':
-        return 'bg-green-100 text-green-800'
-      case 'intermediate':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'advanced':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
   const getDifficultyLabel = (level: string) => {
     switch (level.toLowerCase()) {
+      case 'all_levels':
+        return 'Tous niveaux'
       case 'beginner':
         return 'Débutant'
       case 'intermediate':
@@ -190,7 +175,7 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
             <div className="flex items-center space-x-3">
               <IconCalendar className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">
-                {format(startDate, 'EEEE d MMMM yyyy', { locale: fr }).replace(/(^\w|\s\w)/g, (c) => c.toUpperCase())}
+                {format(startDate, 'dd/MM/yyyy', { locale: fr })}
               </span>
             </div>
 
@@ -223,7 +208,7 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
 
             <div className="flex items-center space-x-3">
               <div className="h-4 w-4" />
-              <Badge className={getDifficultyColor(event.difficulty_level)}>
+              <Badge variant="secondary">
                 {getDifficultyLabel(event.difficulty_level)}
               </Badge>
             </div>
@@ -233,49 +218,11 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
 
           {/* Actions */}
           <div className="space-y-3">
-            <div className="flex space-x-2">
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => onEdit(event)}
-              >
-                <IconEdit className="h-4 w-4 mr-2" />
-                Modifier
-              </Button>
-
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="flex-1">
-                    <IconAlertTriangle className="h-4 w-4 mr-2" />
-                    Annuler
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Annuler ce cours</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Cette action marquera le cours comme annulé. Les participants seront notifiés.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Retour</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={handleCancelEvent}
-                      disabled={loading}
-                      className="bg-yellow-600 hover:bg-yellow-700"
-                    >
-                      Annuler le cours
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-
             {/* Delete Options */}
             <div className="space-y-2">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="w-full" size="sm">
+                  <Button variant="outline" className="w-full border-foreground text-foreground hover:bg-foreground hover:text-background" size="sm">
                     <IconTrash className="h-4 w-4 mr-2" />
                     {event.is_recurring ? 'Supprimer cette occurrence' : 'Supprimer le cours'}
                   </Button>
@@ -292,10 +239,10 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction 
+                    <AlertDialogAction
                       onClick={handleDeleteSingle}
                       disabled={loading}
-                      className="bg-red-600 hover:bg-red-700"
+                      className="bg-foreground text-background hover:bg-foreground/90"
                     >
                       Supprimer
                     </AlertDialogAction>
@@ -306,7 +253,7 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
               {event.is_recurring && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="w-full" size="sm">
+                    <Button variant="outline" className="w-full border-foreground text-foreground hover:bg-foreground hover:text-background" size="sm">
                       <IconTrash className="h-4 w-4 mr-2" />
                       Supprimer toute la série
                     </Button>
@@ -320,10 +267,10 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction 
+                      <AlertDialogAction
                         onClick={handleDeleteSeries}
                         disabled={loading}
-                        className="bg-red-600 hover:bg-red-700"
+                        className="bg-foreground text-background hover:bg-foreground/90"
                       >
                         Supprimer la série
                       </AlertDialogAction>

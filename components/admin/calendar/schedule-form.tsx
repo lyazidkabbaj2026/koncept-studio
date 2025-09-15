@@ -359,7 +359,7 @@ export function ScheduleForm({ event, selectedDate, onClose }: ScheduleFormProps
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto space-y-6 pr-2">
+          <div className="flex-1 overflow-y-auto space-y-6 px-4 pr-2">
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
@@ -427,7 +427,7 @@ export function ScheduleForm({ event, selectedDate, onClose }: ScheduleFormProps
 
           {/* Recurring Options */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 mb-4">
               <Checkbox
                 id="is_recurring"
                 checked={formData.is_recurring}
@@ -458,14 +458,12 @@ export function ScheduleForm({ event, selectedDate, onClose }: ScheduleFormProps
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="daily">Quotidien</SelectItem>
-                          <SelectItem value="weekly">Hebdomadaire</SelectItem>
-                          <SelectItem value="monthly">Mensuel</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Intervalle</Label>
+                      <Label>Répéter</Label>
                       <Select
                         value={String(formData.recurrence_rule?.interval || 1)}
                         onValueChange={(value) => handleRecurrenceChange('interval', parseInt(value))}
@@ -474,13 +472,9 @@ export function ScheduleForm({ event, selectedDate, onClose }: ScheduleFormProps
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {[1, 2, 3, 4].map(i => (
+                          {[1, 2, 3, 4, 5, 6].map(i => (
                             <SelectItem key={i} value={String(i)}>
-                              Tous les {i} {
-                                formData.recurrence_rule?.frequency === 'daily' ? 'jour(s)' :
-                                formData.recurrence_rule?.frequency === 'weekly' ? 'semaine(s)' :
-                                'mois'
-                              }
+                              Tous les {i === 1 ? '' : i + ' '}jours
                             </SelectItem>
                           ))}
                         </SelectContent>

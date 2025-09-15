@@ -15,9 +15,9 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/10 to-background p-4">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-background via-muted/10 to-background p-4 relative">
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-primary/5 to-transparent" />
+      <div className="absolute inset-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-primary/5 to-transparent" />
 
       <div className="relative z-10 max-w-md w-full">
         <Card className="shadow-brutal border-2 border-border bg-card/95 backdrop-blur-sm animate-slide-up">
@@ -34,7 +34,14 @@ export default async function LoginPage() {
           </CardHeader>
           <CardContent className="pt-0">
             <LoginForm />
-            <div className="mt-8 text-center">
+            <div className="mt-8 text-center space-y-4">
+              <a
+                href="/forgot-password"
+                className="inline-block text-primary hover:text-primary/80 text-sm font-medium transition-colors hover:underline underline-offset-4"
+              >
+                Mot de passe oublié ?
+              </a>
+              <div className="border-t border-border"></div>
               <a
                 href="/signup"
                 className="inline-flex items-center text-primary hover:text-primary/80 text-sm font-medium transition-colors hover:underline underline-offset-4"

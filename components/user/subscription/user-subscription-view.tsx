@@ -17,13 +17,11 @@ import {
   IconAlertTriangle,
   IconCircleCheck,
   IconCircleX,
-  IconArrowLeft,
   IconTrendingUp,
   IconChartBar,
   IconTarget,
   IconClock as IconTimer
 } from '@tabler/icons-react'
-import Link from 'next/link'
 
 interface UserProfile {
   id: string
@@ -110,22 +108,8 @@ export function UserSubscriptionView({
 }: UserSubscriptionViewProps) {
   
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'text-green-600 bg-green-100'
-      case 'expired':
-        return 'text-red-600 bg-red-100'
-      case 'cancelled':
-        return 'text-gray-600 bg-gray-100'
-      case 'pending':
-        return 'text-yellow-600 bg-yellow-100'
-      case 'contacted':
-        return 'text-blue-600 bg-blue-100'
-      case 'resolved':
-        return 'text-green-600 bg-green-100'
-      default:
-        return 'text-gray-600 bg-gray-100'
-    }
+    // Use theme-aware colors for all statuses
+    return 'text-foreground bg-muted'
   }
 
   const getStatusLabel = (status: string) => {
@@ -175,31 +159,24 @@ export function UserSubscriptionView({
   })
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-background p-4 sm:p-6">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8 flex items-center gap-4">
-          <Link href="/espace">
-            <Button variant="outline" size="sm">
-              <IconArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Mon abonnement</h1>
-            <p className="text-muted-foreground mt-2">
-              Gérez votre abonnement et consultez votre utilisation
-            </p>
-          </div>
+        <div className="mb-8 text-center sm:text-left">
+          <h1 className="text-3xl lg:text-4xl font-bold text-gradient mb-3">Mon abonnement</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Gérez votre abonnement et consultez votre utilisation
+          </p>
         </div>
 
         {/* Current Subscription or Status */}
         {currentSubscription ? (
           <div className="mb-8">
-            <Card className="border-l-4 border-l-green-500">
-              <CardHeader>
+            <Card className="glass-effect border-l-4 border-l-primary shadow-soft">
+              <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl">Abonnement actuel</CardTitle>
-                  <Badge className={getStatusColor(currentSubscription.status)}>
+                  <CardTitle className="text-xl font-semibold">Abonnement actuel</CardTitle>
+                  <Badge variant="secondary" className="px-3 py-1">
                     <IconCircleCheck className="h-3 w-3 mr-1" />
                     {getStatusLabel(currentSubscription.status)}
                   </Badge>
@@ -221,9 +198,9 @@ export function UserSubscriptionView({
                           <span>{currentSubscription.weekly_credits_used} / {currentSubscription.subscription_plans.weekly_limit} séances</span>
                           <span>{Math.round((currentSubscription.weekly_credits_used / (currentSubscription.subscription_plans.weekly_limit || 1)) * 100)}%</span>
                         </div>
-                        <Progress 
-                          value={(currentSubscription.weekly_credits_used / (currentSubscription.subscription_plans.weekly_limit || 1)) * 100} 
-                          className="h-2"
+                        <Progress
+                          value={(currentSubscription.weekly_credits_used / (currentSubscription.subscription_plans.weekly_limit || 1)) * 100}
+                          className="h-2 bg-muted"
                         />
                       </div>
                     </div>
@@ -235,9 +212,9 @@ export function UserSubscriptionView({
                           <span>{currentSubscription.credits_remaining} / {currentSubscription.subscription_plans.credits} restants</span>
                           <span>{Math.round((currentSubscription.credits_used / currentSubscription.subscription_plans.credits) * 100)}%</span>
                         </div>
-                        <Progress 
-                          value={(currentSubscription.credits_used / currentSubscription.subscription_plans.credits) * 100} 
-                          className="h-2"
+                        <Progress
+                          value={(currentSubscription.credits_used / currentSubscription.subscription_plans.credits) * 100}
+                          className="h-2 bg-muted"
                         />
                       </div>
                     </div>
@@ -265,7 +242,7 @@ export function UserSubscriptionView({
                 </div>
 
                 {currentSubscription.subscription_plans.description && (
-                  <div className="mt-4 p-3 bg-muted rounded-lg">
+                  <div className="mt-6 p-4 bg-muted/50 rounded-xl border border-border">
                     <div className="text-sm text-muted-foreground">{currentSubscription.subscription_plans.description}</div>
                   </div>
                 )}
@@ -275,7 +252,7 @@ export function UserSubscriptionView({
         ) : (
           <div className="mb-8">
             {subscriptionRequests.length > 0 ? (
-              <Alert className="border-l-4 border-l-yellow-500">
+              <Alert className="border-l-4 border-l-primary">
                 <IconAlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <div className="font-medium mb-2">Demande d'abonnement en cours</div>
@@ -291,7 +268,7 @@ export function UserSubscriptionView({
                 </AlertDescription>
               </Alert>
             ) : (
-              <Alert className="border-l-4 border-l-blue-500">
+              <Alert className="border-l-4 border-l-primary">
                 <IconAlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <div className="font-medium mb-2">Aucun abonnement actif</div>
@@ -307,10 +284,10 @@ export function UserSubscriptionView({
         {/* Usage Statistics */}
         {currentSubscription && recentBookings.length > 0 && (
           <div className="mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <IconChartBar className="h-5 w-5" />
+            <Card className="glass-effect shadow-soft">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-xl font-semibold">
+                  <IconChartBar className="h-5 w-5 text-primary" />
                   Statistiques d'utilisation
                 </CardTitle>
               </CardHeader>
@@ -327,8 +304,8 @@ export function UserSubscriptionView({
                   </div>
                   <div className="text-center space-y-2">
                     <div className="flex items-center justify-center">
-                      <div className="bg-green-100 p-3 rounded-full">
-                        <IconTrendingUp className="h-6 w-6 text-green-600" />
+                      <div className="bg-muted p-3 rounded-full">
+                        <IconTrendingUp className="h-6 w-6 text-foreground" />
                       </div>
                     </div>
                     <div className="text-2xl font-bold">{thisMonthBookings.length}</div>
@@ -336,8 +313,8 @@ export function UserSubscriptionView({
                   </div>
                   <div className="text-center space-y-2">
                     <div className="flex items-center justify-center">
-                      <div className="bg-blue-100 p-3 rounded-full">
-                        <IconTarget className="h-6 w-6 text-blue-600" />
+                      <div className="bg-muted p-3 rounded-full">
+                        <IconTarget className="h-6 w-6 text-foreground" />
                       </div>
                     </div>
                     <div className="text-2xl font-bold">{currentSubscription.credits_used}</div>
@@ -351,7 +328,7 @@ export function UserSubscriptionView({
 
         {/* Tabs for History and Requests */}
         <Tabs defaultValue="history" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 bg-muted/50">
             <TabsTrigger value="history">
               Historique des abonnements ({subscriptionHistory.length})
             </TabsTrigger>
@@ -363,10 +340,10 @@ export function UserSubscriptionView({
           {/* Subscription History */}
           <TabsContent value="history" className="space-y-4">
             {subscriptionHistory.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <IconCreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <h3 className="font-medium mb-2">Aucun historique</h3>
+              <Card className="glass-effect shadow-soft">
+                <CardContent className="text-center py-12">
+                  <IconCreditCard className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <h3 className="font-semibold text-lg mb-2">Aucun historique</h3>
                   <p className="text-muted-foreground">
                     Votre historique d'abonnements apparaîtra ici
                   </p>
@@ -374,7 +351,7 @@ export function UserSubscriptionView({
               </Card>
             ) : (
               subscriptionHistory.map(subscription => (
-                <Card key={subscription.id} className={subscription.status === 'active' ? 'border-l-4 border-l-green-500' : ''}>
+                <Card key={subscription.id} className={`glass-effect shadow-soft ${subscription.status === 'active' ? 'border-l-4 border-l-primary' : ''}`}>
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="space-y-3 flex-1">
@@ -382,7 +359,7 @@ export function UserSubscriptionView({
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-semibold">{subscription.subscription_plans.name}</h3>
                             <Badge variant="outline">{getTypeLabel(subscription.subscription_plans.type)}</Badge>
-                            <Badge className={getStatusColor(subscription.status)}>
+                            <Badge variant="secondary">
                               {subscription.status === 'active' ? <IconCircleCheck className="h-3 w-3 mr-1" /> : <IconCircleX className="h-3 w-3 mr-1" />}
                               {getStatusLabel(subscription.status)}
                             </Badge>
@@ -418,10 +395,10 @@ export function UserSubscriptionView({
           {/* Subscription Requests */}
           <TabsContent value="requests" className="space-y-4">
             {subscriptionRequests.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <IconUser className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <h3 className="font-medium mb-2">Aucune demande</h3>
+              <Card className="glass-effect shadow-soft">
+                <CardContent className="text-center py-12">
+                  <IconUser className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <h3 className="font-semibold text-lg mb-2">Aucune demande</h3>
                   <p className="text-muted-foreground">
                     Vos demandes d'abonnement apparaîtront ici
                   </p>
@@ -429,7 +406,7 @@ export function UserSubscriptionView({
               </Card>
             ) : (
               subscriptionRequests.map(request => (
-                <Card key={request.id}>
+                <Card key={request.id} className="glass-effect shadow-soft">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="space-y-3 flex-1">
@@ -437,7 +414,7 @@ export function UserSubscriptionView({
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-semibold">{request.subscription_plans.name}</h3>
                             <Badge variant="outline">{getTypeLabel(request.subscription_plans.type)}</Badge>
-                            <Badge className={getStatusColor(request.status)}>
+                            <Badge variant="secondary">
                               {getStatusLabel(request.status)}
                             </Badge>
                           </div>
@@ -463,8 +440,8 @@ export function UserSubscriptionView({
                         </div>
 
                         {request.notes && (
-                          <div className="p-3 bg-muted rounded-lg">
-                            <div className="text-sm text-muted-foreground">Note de l'administration:</div>
+                          <div className="p-4 bg-muted/50 rounded-xl border border-border">
+                            <div className="text-sm font-medium text-muted-foreground mb-1">Note de l'administration:</div>
                             <div className="text-sm">{request.notes}</div>
                           </div>
                         )}

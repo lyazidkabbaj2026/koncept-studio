@@ -5,39 +5,38 @@ export const uuidSchema = z.string().uuid('Invalid UUID format')
 
 export const emailSchema = z
   .string()
-  .email('Invalid email format')
-  .min(1, 'Email is required')
+  .email('Format email invalide')
+  .min(1, 'Une adresse e-mail est requise.')
 
 export const passwordSchema = z
   .string()
-  .min(8, 'Password must be at least 8 characters')
-  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-  .regex(/[0-9]/, 'Password must contain at least one number')
+  .min(8, 'Le mot de passe doit comporter au moins 8 caractères.')
+  .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une lettre majuscule.')
+  .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre.')
 
 export const phoneSchema = z
   .string()
-  .regex(/^(\+33|0)[1-9](\d{2}){4}$/, 'Invalid French phone number format')
-  .optional()
+  .regex(/^(\+212|0)[1-9](\d{2}){4}$/, 'Format de numéro de téléphone marocain non valide')
 
 export const nameSchema = z
   .string()
-  .min(2, 'Name must be at least 2 characters')
-  .max(100, 'Name cannot exceed 100 characters')
-  .regex(/^[a-zA-ZÀ-ÿ\s-']+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes')
+  .min(2, 'Le nom doit comporter au moins 2 caractères.')
+  .max(100, 'Le nom ne peut pas dépasser 100 caractères.')
+  .regex(/^[a-zA-ZÀ-ÿ\s-']+$/, 'Le nom ne peut contenir que des lettres, des espaces, des tirets et des apostrophes.')
 
 // User registration validation
 export const signupSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   fullName: nameSchema,
-  phone: phoneSchema.optional(),
-  desiredPlan: z.string().optional(),
+  phone: phoneSchema,
+  desiredPlan: z.string().min(1, 'Veuillez choisir un forfait'),
 })
 
 // Login validation
 export const loginSchema = z.object({
   email: emailSchema,
-  password: z.string().min(1, 'Password is required'),
+  password: z.string().min(1, 'Mot de passe requis'),
 })
 
 // Class creation validation
@@ -149,7 +148,7 @@ export function validateInput<T>(
   }
 
   const errors = (result.error?.issues || []).map((err) =>
-    `${err.path?.join?.('.') || 'field'}: ${err.message || 'Invalid value'}`
+    err.message || 'Invalid value'
   )
 
   return { success: false, errors }
