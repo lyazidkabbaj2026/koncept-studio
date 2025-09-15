@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
+    "build:analyze": "ANALYZE=true npm run build",
+    "production": "npm run lint && npm run type-check && npm run build"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",

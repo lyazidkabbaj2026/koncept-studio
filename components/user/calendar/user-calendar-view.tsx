@@ -171,13 +171,10 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
   }
 
   const handleBookClass = async (event: ClassEvent) => {
-    console.log('🎯 BOOKING FUNCTION CALLED - handleBookClass triggered for event:', event.id)
     try {
       setLoading(true)
-      console.log('Attempting to book class:', event.id, 'for user:', user.id)
 
       // Direct booking implementation (bypassing the problematic RPC function)
-      console.log('Implementing direct booking...')
 
       // First, check if the class still has capacity and user can book
       const { data: scheduleData, error: scheduleError } = await supabase
@@ -200,7 +197,6 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
         throw new Error('Erreur lors de la vérification de la classe')
       }
 
-      console.log('Schedule data:', scheduleData)
 
       if (!scheduleData) {
         throw new Error('Classe non trouvée')
@@ -229,7 +225,6 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
       }
 
       // Create the booking
-      console.log('Creating booking with subscription:', subscription?.id)
       const { data: newBooking, error: bookingError } = await supabase
         .from('class_bookings')
         .insert({
@@ -246,21 +241,12 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
         throw new Error('Erreur lors de la création de la réservation')
       }
 
-      console.log('Booking created:', newBooking)
 
       // Update subscription credits
       if (subscription) {
-        console.log('Updating credits for subscription:', {
-          id: subscription.id,
-          type: subscription.subscription_plans?.type,
-          current_weekly_used: subscription.weekly_credits_used,
-          current_remaining: subscription.credits_remaining,
-          weekly_limit: subscription.subscription_plans?.weekly_limit
-        })
 
         if (subscription.subscription_plans?.type === 'abonnement') {
           // Update weekly credits used for subscription plans
-          console.log('Updating weekly credits...')
           const { error: updateError } = await supabase
             .from('user_subscriptions')
             .update({ weekly_credits_used: subscription.weekly_credits_used + 1 })
@@ -270,11 +256,9 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
             console.error('Error updating weekly credits:', updateError)
             throw new Error('Erreur lors de la mise à jour des crédits hebdomadaires')
           } else {
-            console.log('Weekly credits updated successfully')
           }
         } else {
           // Update credits remaining for credit-based plans
-          console.log('Updating remaining credits...')
           const { error: updateError } = await supabase
             .from('user_subscriptions')
             .update({
@@ -287,14 +271,12 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
             console.error('Error updating credits:', updateError)
             throw new Error('Erreur lors de la mise à jour des crédits')
           } else {
-            console.log('Credits updated successfully')
           }
         }
       } else {
         console.warn('No subscription found, cannot update credits')
       }
 
-      console.log('Booking successful, updating local subscription state...')
 
       // Update local subscription state to reflect the credit deduction
       if (subscription) {
@@ -308,13 +290,11 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
         }
 
         setSubscription(updatedSubscription)
-        console.log('Updated local subscription:', updatedSubscription)
       }
 
       // Refresh events to show updated booking status
       await fetchEvents()
 
-      console.log('Events refreshed successfully')
       setError('')  // Clear any previous errors
     } catch (err: any) {
       console.error('Booking error:', err)
@@ -450,55 +430,33 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
   }
 
   const canUserBook = (event: ClassEvent) => {
-    console.log('canUserBook check for event:', event.id, {
-      event: event,
-      subscription: subscription,
-      user_booking: event.user_booking,
-      is_past: isPast(new Date(event.start_datetime)),
-      current_bookings: event.current_bookings,
-      max_capacity: event.max_capacity,
-      start_datetime: event.start_datetime
-    })
 
     // User already booked
     if (event.user_booking) {
-      console.log('User already booked this class')
       return false
     }
 
     // Class has started or passed
     if (isPast(new Date(event.start_datetime))) {
-      console.log('Class has already started or passed')
       return false
     }
 
     // No valid subscription
     if (!subscription) {
-      console.log('No valid subscription found')
       return false
     }
 
     // Class is full (but can join waitlist)
     if (event.current_bookings >= event.max_capacity) {
-      console.log('Class is full')
       return false
     }
 
     // Check subscription limits
     if (subscription.subscription_plans.type === 'abonnement') {
       const canBook = subscription.weekly_credits_used < (subscription.subscription_plans.weekly_limit || 0)
-      console.log('Weekly subscription check:', {
-        weekly_credits_used: subscription.weekly_credits_used,
-        weekly_limit: subscription.subscription_plans.weekly_limit,
-        canBook
-      })
       return canBook
     } else {
       const canBook = subscription.credits_remaining > 0
-      console.log('Credit subscription check:', {
-        credits_remaining: subscription.credits_remaining,
-        canBook
-      })
       return canBook
     }
   }

@@ -69,16 +69,11 @@ export default function SubscriptionPlansPage() {
   const fetchPlans = async () => {
     try {
       setLoading(true)
-      console.log('Fetching plans...') // Debug log
-      
       const { data, error } = await supabase
         .from('subscription_plans')
         .select('*')
         .order('type', { ascending: true })
         .order('price_dhs', { ascending: true })
-
-      console.log('Plans data:', data) // Debug log
-      console.log('Plans error:', error) // Debug log
 
       if (error) {
         console.error('Database error:', error)

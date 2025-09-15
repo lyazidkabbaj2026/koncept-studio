@@ -59,16 +59,11 @@ export default function PendingUsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      console.log('Fetching users...') // Debug log
-      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .in('subscription_status', ['pending', 'contacted'])
         .order('created_at', { ascending: true })
-
-      console.log('Users data:', data) // Debug log
-      console.log('Users error:', error) // Debug log
 
       if (error) {
         console.error('Database error:', error)

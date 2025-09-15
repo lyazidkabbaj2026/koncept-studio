@@ -193,7 +193,7 @@ export default function HomePage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     // Handle form submission logic here
-    console.log('Form submitted:', formData)
+    // TODO: Implement actual form submission
   }
 
   const handleInputChange = (field: string, value: string) => {

@@ -27,11 +27,7 @@ export default async function AdminPage() {
   // Use the admin check function to bypass RLS issues
   const isAdmin = await isUserAdmin(user.id)
   
-  console.log('Admin page - User ID:', user.id)
-  console.log('Admin page - Is Admin:', isAdmin)
-
   if (!isAdmin) {
-    console.log('Admin access denied')
     redirect('/espace')
   }
 

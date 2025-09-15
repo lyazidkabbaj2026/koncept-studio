@@ -140,16 +140,11 @@ export default function ClassesPage() {
       max_capacity: parseInt(formData.max_capacity)
     }
 
-    console.log('Form data:', formData)
-    console.log('Class data to save:', classData)
-
     try {
       const result = await (editingClass ? 
         supabase.from('classes').update(classData).eq('id', editingClass.id) :
         supabase.from('classes').insert([classData])
       )
-
-      console.log('Supabase result:', result)
 
       if (result.error) {
         console.error('Database error:', result.error)

@@ -58,9 +58,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      console.log('Logging out user...')
       await signOut()
-      console.log('User signed out, redirecting to home...')
       router.push('/')
       router.refresh()
     } catch (error) {
@@ -68,8 +66,6 @@ export default function Navbar() {
     }
   }
 
-  // Debug logging
-  console.log('Navbar render - User:', user ? 'authenticated' : 'anonymous', 'Loading:', loading, 'Pathname:', pathname)
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
