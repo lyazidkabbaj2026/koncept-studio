@@ -29,7 +29,14 @@ export interface CalendarEvent {
 }
 
 export class ClassService {
-  private supabase = createClient()
+  private supabaseClient: ReturnType<typeof createClient> | null = null
+
+  private get supabase() {
+    if (!this.supabaseClient) {
+      this.supabaseClient = createClient()
+    }
+    return this.supabaseClient
+  }
 
   async getAllClasses(): Promise<Class[]> {
     const { data, error } = await this.supabase

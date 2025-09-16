@@ -23,7 +23,14 @@ export interface WaitlistResult {
 }
 
 export class BookingService {
-  private supabase = createClient()
+  private supabaseClient: ReturnType<typeof createClient> | null = null
+
+  private get supabase() {
+    if (!this.supabaseClient) {
+      this.supabaseClient = createClient()
+    }
+    return this.supabaseClient
+  }
 
   async bookClass({ scheduleId, subscriptionId }: BookingData): Promise<BookingResult> {
     try {

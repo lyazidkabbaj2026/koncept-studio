@@ -20,7 +20,14 @@ export interface AuthResult {
 }
 
 export class AuthService {
-  private supabase = createClient()
+  private supabaseClient: ReturnType<typeof createClient> | null = null
+
+  private get supabase() {
+    if (!this.supabaseClient) {
+      this.supabaseClient = createClient()
+    }
+    return this.supabaseClient
+  }
 
   async signIn({ email, password }: LoginCredentials): Promise<AuthResult> {
     const { data, error } = await this.supabase.auth.signInWithPassword({
