@@ -28,8 +28,8 @@ interface Subscription {
   end_date: string
   subscription_plans: {
     name: string
-    plan_type: 'carnet' | 'personal_training' | 'abonnement'
-    weekly_credits?: number
+    type: 'carnet' | 'personal_training' | 'abonnement'
+    weekly_limit?: number
   }
 }
 
@@ -183,12 +183,12 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
         return
       }
 
-      const planType = subscription.subscription_plans?.plan_type ||
+      const planType = subscription.subscription_plans?.type ||
                       'carnet'
 
       // Check if user has available credits/limits
       if (planType === 'abonnement') {
-        const weeklyLimit = subscription.subscription_plans.weekly_credits || 0
+        const weeklyLimit = subscription.subscription_plans.weekly_limit || 0
         if (subscription.weekly_credits_used >= weeklyLimit) {
           toast.error('Limite hebdomadaire atteinte', {
             description: 'Vous avez utilisé tous vos cours pour cette semaine. La limite se réinitialise chaque semaine.'
@@ -281,40 +281,29 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
         throw new Error('Aucun abonnement valide trouvé')
       }
 
-      console.log('Updating credits for subscription:', {
-        subscription_id: subscription.id,
-        full_subscription: subscription,
-        plan_type: subscription.subscription_plans?.plan_type,
-        current_credits_remaining: subscription.credits_remaining,
-        current_weekly_credits_used: subscription.weekly_credits_used,
-        current_credits_used: subscription.credits_used ?? 0
-      })
+      // Updating credits for subscription
 
-      console.log('Determined plan type:', planType)
+      // Plan type determined for credit update
 
       let updateData: any = {}
 
       if (planType === 'abonnement') {
         updateData.weekly_credits_used = subscription.weekly_credits_used + 1
-        console.log('Abonnement: incrementing weekly_credits_used')
+        // Abonnement: incrementing weekly_credits_used
       } else {
         updateData.credits_remaining = subscription.credits_remaining - 1
         updateData.credits_used = (subscription.credits_used || 0) + 1
-        console.log('Carnet/PT: decrementing credits_remaining and incrementing credits_used')
+        // Carnet/PT: decrementing credits_remaining and incrementing credits_used
       }
 
-      console.log('Update data:', updateData)
+      // Prepared update data for subscription
 
       // Use RPC function to update credits (bypasses RLS policies)
       const creditsChange = planType === 'abonnement' ? 0 : -1
       const weeklyCreditsChange = planType === 'abonnement' ? 1 : 0
       const creditsUsedChange = planType === 'abonnement' ? 0 : 1
 
-      console.log('Using RPC function with changes:', {
-        creditsChange,
-        weeklyCreditsChange,
-        creditsUsedChange
-      })
+      // Using RPC function for credit update
 
       const { data: updateResult, error: updateError } = await supabase.rpc('update_subscription_credits', {
         subscription_uuid: subscription.id,
@@ -323,7 +312,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
         credits_used_change: creditsUsedChange
       })
 
-      console.log('RPC update result:', updateResult)
+      // RPC update completed
 
       if (updateError) {
         console.error('Credit update RPC error:', updateError)
@@ -334,7 +323,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
         throw new Error(updateResult?.message || 'Échec de la mise à jour des crédits')
       }
 
-      console.log('Credits updated successfully via RPC')
+      // Credits updated successfully
 
       // Update local state with values from RPC response
       if (updateResult.subscription) {
@@ -382,8 +371,27 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
     }
   }
 
+  // Check if cancellation is allowed (must be more than 1 hour before class starts)
+  const canCancelBooking = (event: ClassEvent) => {
+    if (!event.user_booking) return false
+
+    const classStartTime = new Date(event.start_datetime)
+    const now = new Date()
+    const timeDifferenceInHours = (classStartTime.getTime() - now.getTime()) / (1000 * 60 * 60)
+
+    return timeDifferenceInHours > 1
+  }
+
   const handleCancelBooking = async (event: ClassEvent) => {
     if (!event.user_booking) return
+
+    // Check if cancellation is allowed
+    if (!canCancelBooking(event)) {
+      toast.error('Annulation non autorisée', {
+        description: 'Vous ne pouvez pas annuler cette réservation car elle commence dans moins d\'une heure. Nous vous invitons à assister au cours. Quoi qu\'il en soit, celui-ci sera comptabilisé comme consommé.'
+      })
+      return
+    }
 
     try {
       setLoading(true)
@@ -403,7 +411,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
       if (subscription) {
         let updateData: any = {}
 
-        if (subscription.subscription_plans.plan_type === 'abonnement') {
+        if (subscription.subscription_plans.type === 'abonnement') {
           updateData.weekly_credits_used = Math.max(0, subscription.weekly_credits_used - 1)
         } else {
           updateData.credits_remaining = subscription.credits_remaining + 1
@@ -549,8 +557,8 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
   const hasCreditsOrLimit = () => {
     if (!subscription) return false
 
-    if (subscription.subscription_plans.plan_type === 'abonnement') {
-      return subscription.weekly_credits_used < (subscription.subscription_plans.weekly_credits || 0)
+    if (subscription.subscription_plans.type === 'abonnement') {
+      return subscription.weekly_credits_used < (subscription.subscription_plans.weekly_limit || 0)
     } else {
       return subscription.credits_remaining > 0
     }
@@ -770,7 +778,10 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
                                               e.stopPropagation()
                                               handleCancelBooking(event)
                                             }}
-                                            className="w-full text-xs h-6"
+                                            className={cn(
+                                              "w-full text-xs h-6",
+                                              !canCancelBooking(event) && "opacity-50"
+                                            )}
                                           >
                                             Annuler
                                           </Button>
@@ -938,6 +949,9 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
                                           e.stopPropagation()
                                           handleCancelBooking(event)
                                         }}
+                                        className={cn(
+                                          !canCancelBooking(event) && "opacity-50"
+                                        )}
                                       >
                                         Annuler
                                       </Button>
@@ -1031,8 +1045,13 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
                         variant="outline"
                         onClick={() => {
                           handleCancelBooking(selectedEvent)
-                          setShowEventModal(false)
+                          if (canCancelBooking(selectedEvent)) {
+                            setShowEventModal(false)
+                          }
                         }}
+                        className={cn(
+                          !canCancelBooking(selectedEvent) && "opacity-50"
+                        )}
                       >
                         Annuler la réservation
                       </Button>

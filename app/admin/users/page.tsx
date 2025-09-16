@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { IconUserCheck, IconMessage, IconCreditCard, IconUsers, IconUserPlus, IconPhone, IconUserMinus, IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
+import { IconUserCheck, IconMessage, IconCreditCard, IconUsers, IconUserPlus, IconPhone, IconUserMinus, IconChevronLeft, IconChevronRight, IconSearch, IconX } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
@@ -50,10 +50,11 @@ interface SubscriptionPlan {
   id: string
   name: string
   type: string
-  credits: number
+  credits: number | null
   price_dhs: number
-  validity_months: number
-  weekly_limit?: number
+  validity_months: number | null
+  validity_days?: number | null
+  weekly_limit?: number | null
 }
 
 interface SubscriptionFormData {
@@ -78,25 +79,66 @@ export default function UsersPage() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
-  const pageSize = 25
+  const pageSize = 10
+
+  // Search and filtering state
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
+  const [allUsers, setAllUsers] = useState<User[]>([])
+  const [displayUsers, setDisplayUsers] = useState<User[]>([])
+  const [filteredTotalCount, setFilteredTotalCount] = useState(0)
 
   const supabase = createClient()
+
+  const applyFilters = (usersData: User[], page = 0) => {
+    let filtered = [...usersData]
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim()
+      filtered = filtered.filter(user =>
+        user.full_name?.toLowerCase().includes(searchLower) ||
+        user.email?.toLowerCase().includes(searchLower) ||
+        user.phone?.toLowerCase().includes(searchLower) ||
+        user.desired_plan?.toLowerCase().includes(searchLower)
+      )
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(user => user.subscription_status === statusFilter)
+    }
+
+    setFilteredUsers(filtered)
+    setFilteredTotalCount(filtered.length)
+
+    // Apply pagination
+    const startIndex = page * pageSize
+    const endIndex = startIndex + pageSize
+    const paginatedUsers = filtered.slice(startIndex, endIndex)
+
+    setUsers(paginatedUsers)
+    setDisplayUsers(paginatedUsers)
+    setCurrentPage(page)
+  }
 
   const fetchUsers = async (page = 0) => {
     try {
       setLoading(true)
-      // Use optimized admin function instead of separate queries
+      // Fetch all users for client-side filtering
       const { data, error } = await supabase.rpc('get_admin_users_data', {
-        page_offset: page * pageSize,
-        page_limit: pageSize
+        page_offset: 0,
+        page_limit: 1000 // Fetch a large number to get all users
       })
 
       if (error) throw error
 
       if (data) {
-        setUsers(data.users || [])
+        setAllUsers(data.users || [])
         setTotalCount(data.total_count || 0)
-        setCurrentPage(page)
+        // Apply current filters
+        applyFilters(data.users || [], page)
       }
     } catch (err: any) {
       console.error('Error fetching users:', err)
@@ -110,7 +152,7 @@ export default function UsersPage() {
     try {
       const { data, error } = await supabase
         .from('subscription_plans')
-        .select('id, name, type, credits, price_dhs, validity_months, weekly_limit')
+        .select('id, name, type, credits, price_dhs, validity_months, validity_days, weekly_limit')
         .order('price_dhs', { ascending: true })
 
       if (error) throw error
@@ -119,6 +161,14 @@ export default function UsersPage() {
       console.error('Error fetching plans:', err)
     }
   }
+
+  // Effect for applying filters when search or status changes
+  useEffect(() => {
+    if (allUsers.length > 0) {
+      applyFilters(allUsers, 0)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, statusFilter])
 
   useEffect(() => {
     fetchUsers(0)
@@ -135,7 +185,7 @@ export default function UsersPage() {
 
       if (error) throw error
 
-      await fetchUsers(currentPage)
+      await fetchUsers(0)
       toast.success('Utilisateur marqué comme contacté')
     } catch (err: any) {
       console.error('Error updating user:', err)
@@ -157,7 +207,11 @@ export default function UsersPage() {
       // Calculate expiry date
       const startDate = new Date(subscriptionForm.start_date)
       const expiryDate = new Date(startDate)
-      expiryDate.setMonth(expiryDate.getMonth() + selectedPlan.validity_months)
+      if (selectedPlan.validity_days) {
+        expiryDate.setDate(expiryDate.getDate() + selectedPlan.validity_days)
+      } else if (selectedPlan.validity_months) {
+        expiryDate.setMonth(expiryDate.getMonth() + selectedPlan.validity_months)
+      }
 
       const subscriptionData = {
         user_id: selectedUser.id,
@@ -183,7 +237,7 @@ export default function UsersPage() {
 
       if (userError) throw userError
 
-      await fetchUsers(currentPage)
+      await fetchUsers(0)
       setShowSubscriptionDialog(false)
       setSelectedUser(null)
       setSubscriptionForm({
@@ -217,7 +271,7 @@ export default function UsersPage() {
 
       if (subscriptionError) throw subscriptionError
 
-      await fetchUsers(currentPage)
+      await fetchUsers(0)
       toast.success(`Utilisateur ${userName} désactivé`)
     } catch (err: any) {
       console.error('Error deactivating user:', err)
@@ -243,11 +297,13 @@ export default function UsersPage() {
   }
 
   const getStats = () => {
-    const pendingCount = users.filter(u => u.subscription_status === 'pending').length
-    const contactedCount = users.filter(u => u.subscription_status === 'contacted').length
-    const activeCount = users.filter(u => u.subscription_status === 'active').length
-    const expiredCount = users.filter(u => u.subscription_status === 'expired').length
-    const inactiveCount = users.filter(u => u.subscription_status === 'inactive').length
+    // Use filtered users for stats calculation
+    const dataSource = filteredUsers.length > 0 ? filteredUsers : allUsers
+    const pendingCount = dataSource.filter(u => u.subscription_status === 'pending').length
+    const contactedCount = dataSource.filter(u => u.subscription_status === 'contacted').length
+    const activeCount = dataSource.filter(u => u.subscription_status === 'active').length
+    const expiredCount = dataSource.filter(u => u.subscription_status === 'expired').length
+    const inactiveCount = dataSource.filter(u => u.subscription_status === 'inactive').length
 
     return {
       pending: pendingCount,
@@ -255,18 +311,23 @@ export default function UsersPage() {
       active: activeCount,
       expired: expiredCount,
       inactive: inactiveCount,
-      total: users.length,
+      total: dataSource.length,
       needsAttention: pendingCount + contactedCount
     }
   }
 
   const stats = getStats()
-  const totalPages = Math.ceil(totalCount / pageSize)
+  const totalPages = Math.ceil(filteredTotalCount / pageSize)
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 0 && newPage < totalPages) {
-      fetchUsers(newPage)
+      applyFilters(allUsers, newPage)
     }
+  }
+
+  const handleClearFilters = () => {
+    setSearchTerm('')
+    setStatusFilter('all')
   }
 
   if (loading && users.length === 0) {
@@ -341,13 +402,94 @@ export default function UsersPage() {
         </Alert>
       )}
 
+      {/* Search and Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <IconSearch className="h-4 w-4" />
+            Recherche et filtres
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Search Input */}
+            <div className="flex-1">
+              <div className="relative">
+                <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher par nom, email, téléphone ou plan désiré..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Status Filter */}
+            <div className="w-full sm:w-48">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrer par statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
+                  <SelectItem value="contacted">Contacté</SelectItem>
+                  <SelectItem value="active">Actif</SelectItem>
+                  <SelectItem value="expired">Expiré</SelectItem>
+                  <SelectItem value="inactive">Inactif</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Clear Filters */}
+            {(searchTerm || statusFilter !== 'all') && (
+              <Button
+                variant="outline"
+                onClick={handleClearFilters}
+                className="w-full sm:w-auto"
+              >
+                <IconX className="h-4 w-4 mr-2" />
+                Effacer
+              </Button>
+            )}
+          </div>
+
+          {/* Results Summary */}
+          {(searchTerm || statusFilter !== 'all') && (
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                {filteredTotalCount} utilisateur{filteredTotalCount !== 1 ? 's' : ''} trouvé{filteredTotalCount !== 1 ? 's' : ''}
+                {searchTerm && ` pour "${searchTerm}"`}
+                {statusFilter !== 'all' && ` avec le statut "${statusFilter}"`}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {users.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
-            <h3 className="text-lg font-medium mb-2">Aucun utilisateur trouvé</h3>
+            <h3 className="text-lg font-medium mb-2">
+              {(searchTerm || statusFilter !== 'all') ? 'Aucun résultat trouvé' : 'Aucun utilisateur trouvé'}
+            </h3>
             <p className="text-muted-foreground">
-              Les utilisateurs apparaîtront ici une fois qu'ils se seront inscrits.
+              {(searchTerm || statusFilter !== 'all')
+                ? 'Essayez de modifier vos critères de recherche ou de supprimer les filtres.'
+                : 'Les utilisateurs apparaîtront ici une fois qu\'ils se seront inscrits.'
+              }
             </p>
+            {(searchTerm || statusFilter !== 'all') && (
+              <Button
+                variant="outline"
+                onClick={handleClearFilters}
+                className="mt-4"
+              >
+                <IconX className="h-4 w-4 mr-2" />
+                Effacer les filtres
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -473,10 +615,12 @@ export default function UsersPage() {
       )}
 
       {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+      {(totalPages > 1 || (searchTerm || statusFilter !== 'all')) && filteredTotalCount > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="text-sm text-muted-foreground">
-            Page {currentPage + 1} sur {totalPages} • {totalCount} utilisateurs au total
+            Page {currentPage + 1} sur {totalPages} •
+            Affichage de {Math.min(currentPage * pageSize + 1, filteredTotalCount)} à {Math.min((currentPage + 1) * pageSize, filteredTotalCount)} sur {filteredTotalCount} résultat{filteredTotalCount !== 1 ? 's' : ''}
+            {(searchTerm || statusFilter !== 'all') && ` filtrés (${totalCount} au total)`}
           </div>
           <div className="flex items-center space-x-2">
             <Button
