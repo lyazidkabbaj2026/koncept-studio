@@ -114,7 +114,7 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
 
   if (showActions) {
     columns.push({
-      key: 'actions' as const,
+      key: 'actions' as any,
       header: 'Actions',
       cell: (entry: any) => (
         <div className="flex items-center gap-2">

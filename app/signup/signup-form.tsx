@@ -72,7 +72,7 @@ export default function SignupForm() {
       })
 
       if (authError) {
-        let errorMessage = MESSAGES.ERRORS.AUTH.SIGNUP_FAILED
+        let errorMessage: string = MESSAGES.ERRORS.AUTH.SIGNUP_FAILED
         if (authError.message.includes('already registered')) {
           errorMessage = MESSAGES.ERRORS.AUTH.EMAIL_EXISTS
         } else if (authError.message.includes('weak password')) {

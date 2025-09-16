@@ -8,6 +8,16 @@ export interface SubscriptionWithPlan extends UserSubscription {
   subscription_plans: SubscriptionPlan
 }
 
+// Extended version with additional fields for frontend usage
+export interface Subscription extends Omit<UserSubscription, 'credits_used'> {
+  subscription_plans: {
+    name: string
+    plan_type: 'abonnement' | 'carnet' | 'personal_training'
+    weekly_credits?: number
+  }
+  credits_used?: number // Optional field for tracking usage
+}
+
 export interface SubscriptionRequestWithDetails extends SubscriptionRequest {
   subscription_plans: SubscriptionPlan
   profiles: {

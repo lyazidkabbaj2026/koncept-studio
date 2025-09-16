@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/common/data-table'
 import { formatDateTime } from '@/lib/utils/date'
-import { getStatusBadge } from '@/lib/utils/status'
 import { IconUser, IconX } from '@tabler/icons-react'
 
 interface BookingsTableProps {
@@ -46,11 +45,15 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
     {
       key: 'status' as const,
       header: 'Statut',
-      cell: (booking: any) => getStatusBadge(booking.status, {
-        confirmed: { label: 'Confirmé', variant: 'default' as const },
-        cancelled: { label: 'Annulé', variant: 'destructive' as const },
-        no_show: { label: 'Absent', variant: 'secondary' as const }
-      })
+      cell: (booking: any) => {
+        const statusMap = {
+          confirmed: { label: 'Confirmé', variant: 'default' as const },
+          cancelled: { label: 'Annulé', variant: 'destructive' as const },
+          no_show: { label: 'Absent', variant: 'secondary' as const }
+        }
+        const statusConfig = statusMap[booking.status as keyof typeof statusMap] || { label: booking.status, variant: 'secondary' as const }
+        return <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+      }
     },
     {
       key: 'subscription' as const,

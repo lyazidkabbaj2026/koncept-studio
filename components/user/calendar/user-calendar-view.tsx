@@ -24,6 +24,7 @@ interface Subscription {
   id: string
   credits_remaining: number
   weekly_credits_used: number
+  credits_used?: number
   end_date: string
   subscription_plans: {
     name: string
@@ -182,12 +183,11 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
       }
 
       const planType = subscription.subscription_plans?.plan_type ||
-                      subscription.subscription_plans?.type ||
                       'carnet'
 
       // Check if user has available credits/limits
       if (planType === 'abonnement') {
-        const weeklyLimit = subscription.subscription_plans.weekly_credits || subscription.subscription_plans.weekly_limit || 0
+        const weeklyLimit = subscription.subscription_plans.weekly_credits || 0
         if (subscription.weekly_credits_used >= weeklyLimit) {
           toast.error('Limite hebdomadaire atteinte', {
             description: 'Vous avez utilisé tous vos cours pour cette semaine. La limite se réinitialise chaque semaine.'
@@ -283,10 +283,10 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
       console.log('Updating credits for subscription:', {
         subscription_id: subscription.id,
         full_subscription: subscription,
-        plan_type: subscription.subscription_plans?.plan_type || subscription.subscription_plans?.type,
+        plan_type: subscription.subscription_plans?.plan_type,
         current_credits_remaining: subscription.credits_remaining,
         current_weekly_credits_used: subscription.weekly_credits_used,
-        current_credits_used: subscription.credits_used
+        current_credits_used: subscription.credits_used ?? 0
       })
 
       console.log('Determined plan type:', planType)
@@ -769,7 +769,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
                                               e.stopPropagation()
                                               handleCancelBooking(event)
                                             }}
-                                            className="w-full text-xs text-destructive hover:text-destructive h-6"
+                                            className="w-full text-xs h-6"
                                           >
                                             Annuler
                                           </Button>
@@ -937,7 +937,6 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
                                           e.stopPropagation()
                                           handleCancelBooking(event)
                                         }}
-                                        className="text-destructive hover:text-destructive"
                                       >
                                         Annuler
                                       </Button>
@@ -1033,7 +1032,6 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
                           handleCancelBooking(selectedEvent)
                           setShowEventModal(false)
                         }}
-                        className="text-destructive hover:text-destructive"
                       >
                         Annuler la réservation
                       </Button>
