@@ -7,7 +7,22 @@ export async function createClient() {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase environment variables')
+    // During build time, return a dummy client that won't actually be used
+    console.warn('Supabase environment variables not available during build')
+    return createServerClient(
+      'https://placeholder.supabase.co',
+      'placeholder-key',
+      {
+        cookies: {
+          getAll() {
+            return []
+          },
+          setAll(cookiesToSet) {
+            // No-op during build
+          },
+        },
+      }
+    )
   }
 
   return createServerClient(
