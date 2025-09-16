@@ -106,9 +106,9 @@ export class SubscriptionService {
 
     if (!subscription) return 0
 
-    if (subscription.subscription_plans.plan_type === 'abonnement') {
+    if (subscription.subscription_plans.type === 'abonnement') {
       // For weekly subscriptions, calculate remaining credits for the week
-      const weeklyCredits = subscription.subscription_plans.weekly_credits || 0
+      const weeklyCredits = subscription.subscription_plans.weekly_limit || 0
       return Math.max(0, weeklyCredits - subscription.weekly_credits_used)
     } else {
       // For credit-based subscriptions

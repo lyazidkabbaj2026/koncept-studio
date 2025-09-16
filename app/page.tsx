@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { APP_CONFIG } from '@/constants/config'
+import { formatPhoneNumber, createPhoneLink } from '@/lib/utils/phone'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -38,57 +40,99 @@ import {
   IconCreditCard,
   IconTicket,
   IconInfinity,
-  IconUserPlus
+  IconUserPlus,
+  IconRun,
+  IconBike
 } from '@tabler/icons-react'
 
 const workouts = [
   {
-    name: "HIIT Functional",
-    description: "Entraînement haute intensité combinant mouvements fonctionnels pour brûler un maximum de calories et améliorer votre condition physique globale.",
+    name: "Power Glute",
+    description: "Fessiers/hanche : hip thrust, bandes, kettlebells, tempo. Résultats visibles + protection du bas du dos.",
     duration: "45 min",
-    intensity: "Élevée",
-    icon: IconFlame,
+    intensity: "Tous niveaux",
+    icon: IconTrophy,
     color: "bg-red-500/10 text-red-500"
   },
   {
-    name: "Strength Training",
-    description: "Séances de renforcement musculaire avec charges libres et équipements professionnels pour développer force et masse musculaire.",
-    duration: "60 min",
-    intensity: "Modérée à Élevée",
-    icon: IconBarbell,
-    color: "bg-blue-500/10 text-blue-500"
-  },
-  {
-    name: "Body Combat",
-    description: "Arts martiaux sans contact inspirés du karaté, taekwondo, boxe et muay thai. Parfait pour évacuer le stress et se défouler.",
-    duration: "50 min",
-    intensity: "Élevée",
-    icon: IconTarget,
-    color: "bg-orange-500/10 text-orange-500"
-  },
-  {
-    name: "TRX Suspension",
-    description: "Entraînement fonctionnel avec sangles de suspension pour développer force, équilibre et stabilité en utilisant le poids du corps.",
+    name: "TRX Training",
+    description: "Travail en suspension pour le gainage profond, la stabilité et la puissance.",
     duration: "45 min",
-    intensity: "Modérée",
+    intensity: "Tous niveaux",
     icon: IconActivity,
     color: "bg-green-500/10 text-green-500"
   },
   {
-    name: "Personal Training",
-    description: "Coaching individuel personnalisé selon vos objectifs spécifiques avec suivi complet et programme sur mesure.",
-    duration: "60 min",
-    intensity: "Variable",
-    icon: IconUsers,
+    name: "AbdoBurn",
+    description: "Sangle abdominale (grand droit, obliques, transverse), gainage anti-extension/rotation, respect du dos. Idéal en add-on après une séance.",
+    duration: "30 min",
+    intensity: "Tous niveaux",
+    icon: IconTarget,
+    color: "bg-orange-500/10 text-orange-500"
+  },
+  {
+    name: "Mobilité & Stretching",
+    description: "Souplesse, récupération, prévention des blessures.",
+    duration: "30 min",
+    intensity: "Tous niveaux",
+    icon: IconHeart,
+    color: "bg-pink-500/10 text-pink-500"
+  },
+  {
+    name: "PowerBox Koncept",
+    description: "Boxe sur sac + exercices avec haltères. Puissance, cardio et renforcement musculaire dans une séance explosive.",
+    duration: "45 min",
+    intensity: "Tous niveaux",
+    icon: IconBolt,
+    color: "bg-blue-500/10 text-blue-500"
+  },
+  {
+    name: "HIIT & Cross Training",
+    description: "Circuits courts et explosifs, gros boost métabolique.",
+    duration: "40 min",
+    intensity: "Avancé",
+    icon: IconFlame,
+    color: "bg-red-600/10 text-red-600"
+  },
+  {
+    name: "CrossBike",
+    description: "Enchaînement vélo + renforcement. Cardio puissant, jambes brûlantes, haut du corps actif.",
+    duration: "45 min",
+    intensity: "Avancé",
+    icon: IconBike,
     color: "bg-purple-500/10 text-purple-500"
   },
   {
-    name: "Nutrition Coaching",
-    description: "Accompagnement nutritionnel complet avec plans alimentaires personnalisés pour optimiser vos résultats sportifs.",
-    duration: "Consultation",
-    intensity: "N/A",
-    icon: IconHeart,
-    color: "bg-pink-500/10 text-pink-500"
+    name: "Koncept Bootcamp",
+    description: "Mélange de force et de cardio inspiré de l'entraînement militaire, circuits avec haltères et poids du corps. Intensité maximale, résultats visibles.",
+    duration: "45 min",
+    intensity: "Tous niveaux",
+    icon: IconShield,
+    color: "bg-orange-600/10 text-orange-600"
+  },
+  {
+    name: "Renforcement Musculaire",
+    description: "Full body avec poids libres, TRX, élastiques. Objectifs : force, tonus, posture",
+    duration: "45 min",
+    intensity: "Tous niveaux",
+    icon: IconBarbell,
+    color: "bg-blue-600/10 text-blue-600"
+  },
+  {
+    name: "Cardio - Boxe",
+    description: "Mouvements de boxe + cardio pour brûler et se défouler.",
+    duration: "45 min",
+    intensity: "Tous niveaux",
+    icon: IconRun,
+    color: "bg-yellow-500/10 text-yellow-500"
+  },
+  {
+    name: "Coaching personalisé",
+    description: "Bilan, suivi, programme sur mesure, complément parfait aux cours.",
+    duration: "60 min",
+    intensity: "Tous niveaux",
+    icon: IconUserPlus,
+    color: "bg-purple-600/10 text-purple-600"
   }
 ]
 
@@ -304,15 +348,6 @@ export default function HomePage() {
               {/* Floating Stats Cards */}
               <div className="absolute -top-4 -right-4 bg-card p-4 rounded-2xl shadow-brutal border border-border">
                 <div className="flex items-center space-x-2">
-                  <IconUsers className="w-5 h-5 text-primary" />
-                  <div>
-                    <div className="font-semibold">Max 12</div>
-                    <div className="text-xs text-muted-foreground">personnes/cours</div>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute -bottom-4 -left-4 bg-card p-4 rounded-2xl shadow-brutal border border-border">
-                <div className="flex items-center space-x-2">
                   <IconTrophy className="w-5 h-5 text-primary" />
                   <div>
                     <div className="font-semibold">Coach K</div>
@@ -446,15 +481,15 @@ export default function HomePage() {
               {/* Contact Information */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button variant="outline" size="lg" className="flex items-center" asChild>
-                  <a href="tel:0663235797">
+                  <a href={createPhoneLink(APP_CONFIG.CONTACT.PHONE)}>
                     <IconPhone className="w-5 h-5 mr-2" />
-                    06 63 23 57 97
+                    {formatPhoneNumber(APP_CONFIG.CONTACT.PHONE)}
                   </a>
                 </Button>
                 <Button variant="outline" size="lg" className="flex items-center" asChild>
-                  <a href="https://instagram.com/k_oncept_training" target="_blank" rel="noopener noreferrer">
+                  <a href={APP_CONFIG.CONTACT.INSTAGRAM.URL} target="_blank" rel="noopener noreferrer">
                     <IconBrandInstagram className="w-5 h-5 mr-2" />
-                    @k_oncept_training
+                    {APP_CONFIG.CONTACT.INSTAGRAM.HANDLE}
                   </a>
                 </Button>
               </div>
@@ -539,10 +574,6 @@ export default function HomePage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground leading-relaxed">{workout.description}</p>
-                    <Button className="w-full mt-6 group-hover:shadow-soft transition-all" variant="outline">
-                      En savoir plus
-                      <IconArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </Button>
                   </CardContent>
                 </Card>
               )
@@ -732,8 +763,8 @@ export default function HomePage() {
                       </div>
                       <div>
                         <h4 className="font-semibold mb-1">Téléphone</h4>
-                        <a href="tel:0663235797" className="text-muted-foreground hover:text-primary transition-colors">
-                          06 63 23 57 97
+                        <a href={createPhoneLink(APP_CONFIG.CONTACT.PHONE)} className="text-muted-foreground hover:text-primary transition-colors">
+                          {formatPhoneNumber(APP_CONFIG.CONTACT.PHONE)}
                         </a>
                       </div>
                     </div>
@@ -745,7 +776,7 @@ export default function HomePage() {
                       <div>
                         <h4 className="font-semibold mb-1">Instagram</h4>
                         <a
-                          href="https://instagram.com/k_oncept_training"
+                          href={APP_CONFIG.CONTACT.INSTAGRAM.URL}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-muted-foreground hover:text-primary transition-colors"
@@ -787,7 +818,7 @@ export default function HomePage() {
                       </Link>
                     </Button>
                     <Button className="w-full justify-start" variant="ghost" asChild>
-                      <a href="tel:0663235797">
+                      <a href={createPhoneLink(APP_CONFIG.CONTACT.PHONE)}>
                         <IconPhone className="w-5 h-5 mr-3" />
                         Appeler maintenant
                       </a>
@@ -905,7 +936,7 @@ export default function HomePage() {
                     <IconBrandInstagram className="w-5 h-5" />
                   </a>
                   <a
-                    href="tel:0663235797"
+                    href={createPhoneLink(APP_CONFIG.CONTACT.PHONE)}
                     className="w-10 h-10 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground rounded-lg flex items-center justify-center transition-all hover:scale-102"
                   >
                     <IconPhone className="w-5 h-5" />
@@ -970,8 +1001,8 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-center space-x-3">
                     <IconPhone className="w-5 h-5 text-primary flex-shrink-0" />
-                    <a href="tel:0663235797" className="text-muted-foreground hover:text-primary transition-colors">
-                      06 63 23 57 97
+                    <a href={createPhoneLink(APP_CONFIG.CONTACT.PHONE)} className="text-muted-foreground hover:text-primary transition-colors">
+                      {formatPhoneNumber(APP_CONFIG.CONTACT.PHONE)}
                     </a>
                   </div>
                   <div className="flex items-center space-x-3">
@@ -1020,9 +1051,9 @@ export default function HomePage() {
                   className="font-medium px-8 py-4 border-2"
                   asChild
                 >
-                  <a href="tel:0663235797">
+                  <a href={createPhoneLink(APP_CONFIG.CONTACT.PHONE)}>
                     <IconPhone className="w-5 h-5 mr-2" />
-                    06 63 23 57 97
+                    {formatPhoneNumber(APP_CONFIG.CONTACT.PHONE)}
                   </a>
                 </Button>
               </div>

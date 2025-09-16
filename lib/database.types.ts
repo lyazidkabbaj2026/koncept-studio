@@ -11,40 +11,33 @@ export type Database = {
     Tables: {
       booking_audit: {
         Row: {
-          action: string
-          admin_id: string | null
+          operation: string
           booking_id: string | null
           created_at: string
           id: string
-          metadata: Json | null
+          details: Json | null
           user_id: string | null
+          schedule_id: string | null
         }
         Insert: {
-          action: string
-          admin_id?: string | null
+          operation: string
           booking_id?: string | null
           created_at?: string
           id?: string
-          metadata?: Json | null
+          details?: Json | null
           user_id?: string | null
+          schedule_id?: string | null
         }
         Update: {
-          action?: string
-          admin_id?: string | null
+          operation?: string
           booking_id?: string | null
           created_at?: string
           id?: string
-          metadata?: Json | null
+          details?: Json | null
           user_id?: string | null
+          schedule_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "booking_audit_admin_id_fkey"
-            columns: ["admin_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "booking_audit_booking_id_fkey"
             columns: ["booking_id"]
@@ -59,33 +52,49 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "booking_audit_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "class_schedules"
+            referencedColumns: ["id"]
+          },
         ]
       }
       class_bookings: {
         Row: {
+          booked_at: string | null
+          cancelled_at: string | null
+          cancellation_reason: string | null
           created_at: string
           id: string
           schedule_id: string
           status: string
-          subscription_id: string | null
+          subscription_id: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          booked_at?: string | null
+          cancelled_at?: string | null
+          cancellation_reason?: string | null
           created_at?: string
           id?: string
           schedule_id: string
           status?: string
-          subscription_id?: string | null
+          subscription_id: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          booked_at?: string | null
+          cancelled_at?: string | null
+          cancellation_reason?: string | null
           created_at?: string
           id?: string
           schedule_id?: string
           status?: string
-          subscription_id?: string | null
+          subscription_id?: string
           updated_at?: string
           user_id?: string
         }
@@ -118,6 +127,7 @@ export type Database = {
           cancellation_reason: string | null
           class_id: string
           created_at: string
+          created_by: string | null
           current_bookings: number
           end_datetime: string
           exception_reason: string | null
@@ -126,7 +136,8 @@ export type Database = {
           is_exception: boolean
           is_recurring: boolean
           parent_schedule_id: string | null
-          recurrence_rule: string | null
+          recurrence_end_date: string | null
+          recurrence_rule: Json | null
           start_datetime: string
           updated_at: string
         }
@@ -134,6 +145,7 @@ export type Database = {
           cancellation_reason?: string | null
           class_id: string
           created_at?: string
+          created_by?: string | null
           current_bookings?: number
           end_datetime: string
           exception_reason?: string | null
@@ -142,7 +154,8 @@ export type Database = {
           is_exception?: boolean
           is_recurring?: boolean
           parent_schedule_id?: string | null
-          recurrence_rule?: string | null
+          recurrence_end_date?: string | null
+          recurrence_rule?: Json | null
           start_datetime: string
           updated_at?: string
         }
@@ -150,6 +163,7 @@ export type Database = {
           cancellation_reason?: string | null
           class_id?: string
           created_at?: string
+          created_by?: string | null
           current_bookings?: number
           end_datetime?: string
           exception_reason?: string | null
@@ -158,7 +172,8 @@ export type Database = {
           is_exception?: boolean
           is_recurring?: boolean
           parent_schedule_id?: string | null
-          recurrence_rule?: string | null
+          recurrence_end_date?: string | null
+          recurrence_rule?: Json | null
           start_datetime?: string
           updated_at?: string
         }
@@ -183,25 +198,34 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          joined_at: string | null
+          notified_at: string | null
           position: number
           schedule_id: string
-          subscription_id: string | null
+          subscription_id: string
+          updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          joined_at?: string | null
+          notified_at?: string | null
           position: number
           schedule_id: string
-          subscription_id?: string | null
+          subscription_id: string
+          updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          joined_at?: string | null
+          notified_at?: string | null
           position?: number
           schedule_id?: string
-          subscription_id?: string | null
+          subscription_id?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -234,6 +258,7 @@ export type Database = {
           created_at: string
           description: string | null
           difficulty_level: string
+          duration: number
           id: string
           location: string
           max_capacity: number
@@ -245,6 +270,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           difficulty_level: string
+          duration: number
           id?: string
           location: string
           max_capacity: number
@@ -256,6 +282,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           difficulty_level?: string
+          duration?: number
           id?: string
           location?: string
           max_capacity?: number
@@ -267,26 +294,35 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          desired_plan: string | null
           email: string
           full_name: string
           id: string
+          phone: string | null
           role: string
+          subscription_status: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          desired_plan?: string | null
           email: string
           full_name: string
           id: string
+          phone?: string | null
           role?: string
+          subscription_status?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          desired_plan?: string | null
           email?: string
           full_name?: string
           id?: string
+          phone?: string | null
           role?: string
+          subscription_status?: string
           updated_at?: string
         }
         Relationships: [
@@ -302,75 +338,75 @@ export type Database = {
       subscription_plans: {
         Row: {
           created_at: string
-          credits: number | null
-          description: string | null
-          duration_days: number | null
+          credits: number
           id: string
-          is_active: boolean
           name: string
-          plan_type: string
-          price: number
+          price_dhs: number
+          type: string
           updated_at: string
-          weekly_credits: number | null
+          validity_days: number | null
+          validity_months: number
+          weekly_limit: number | null
         }
         Insert: {
           created_at?: string
-          credits?: number | null
-          description?: string | null
-          duration_days?: number | null
+          credits: number
           id?: string
-          is_active?: boolean
           name: string
-          plan_type: string
-          price: number
+          price_dhs: number
+          type: string
           updated_at?: string
-          weekly_credits?: number | null
+          validity_days?: number | null
+          validity_months: number
+          weekly_limit?: number | null
         }
         Update: {
-          credits?: number | null
           created_at?: string
-          description?: string | null
-          duration_days?: number | null
+          credits?: number
           id?: string
-          is_active?: boolean
           name?: string
-          plan_type?: string
-          price?: number
+          price_dhs?: number
+          type?: string
           updated_at?: string
-          weekly_credits?: number | null
+          validity_days?: number | null
+          validity_months?: number
+          weekly_limit?: number | null
         }
         Relationships: []
       }
       subscription_requests: {
         Row: {
-          admin_notes: string | null
+          contacted_at: string | null
           created_at: string
           id: string
+          notes: string | null
           plan_id: string
-          processed_at: string | null
-          processed_by: string | null
+          requested_at: string | null
+          resolved_at: string | null
           status: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          admin_notes?: string | null
+          contacted_at?: string | null
           created_at?: string
           id?: string
+          notes?: string | null
           plan_id: string
-          processed_at?: string | null
-          processed_by?: string | null
+          requested_at?: string | null
+          resolved_at?: string | null
           status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
-          admin_notes?: string | null
+          contacted_at?: string | null
           created_at?: string
           id?: string
+          notes?: string | null
           plan_id?: string
-          processed_at?: string | null
-          processed_by?: string | null
+          requested_at?: string | null
+          resolved_at?: string | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -381,13 +417,6 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "subscription_plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subscription_requests_processed_by_fkey"
-            columns: ["processed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -406,6 +435,7 @@ export type Database = {
           credits_used: number
           end_date: string
           id: string
+          last_weekly_reset: string | null
           plan_id: string
           start_date: string
           status: string
@@ -419,6 +449,7 @@ export type Database = {
           credits_used?: number
           end_date: string
           id?: string
+          last_weekly_reset?: string | null
           plan_id: string
           start_date: string
           status?: string
@@ -432,6 +463,7 @@ export type Database = {
           credits_used?: number
           end_date?: string
           id?: string
+          last_weekly_reset?: string | null
           plan_id?: string
           start_date?: string
           status?: string

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client'
 import type { AuthError, User } from '@supabase/supabase-js'
+import { Result, safeExecute } from '@/lib/utils/error-handler'
 
 export interface LoginCredentials {
   email: string

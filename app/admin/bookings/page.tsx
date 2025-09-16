@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { BookingsTable } from '@/components/admin/bookings-table'
 import { IconCalendarStats, IconClock, IconX } from '@tabler/icons-react'
 import { useAuth } from '@/hooks/use-auth'
@@ -15,8 +16,38 @@ interface BookingStats {
   today: number
 }
 
+interface Booking {
+  id: string
+  status: string
+  booked_at: string
+  cancelled_at: string | null
+  cancellation_reason: string | null
+  profiles: {
+    id: string
+    full_name: string
+    email: string
+    phone: string | null
+  }
+  class_schedules: {
+    id: string
+    start_datetime: string
+    end_datetime: string
+    classes: {
+      title: string
+      coach: string
+      location: string
+    }
+  }
+  user_subscriptions?: {
+    id: string
+    subscription_plans: {
+      name: string
+    }
+  } | null
+}
+
 export default function BookingsPage() {
-  const [bookings, setBookings] = useState([])
+  const [bookings, setBookings] = useState<Booking[]>([])
   const [stats, setStats] = useState<BookingStats>({ total: 0, confirmed: 0, cancelled: 0, today: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -67,25 +98,25 @@ export default function BookingsPage() {
           booked_at,
           cancelled_at,
           cancellation_reason,
-          user:profiles!user_id (
+          profiles!user_id (
             id,
             full_name,
             email,
             phone
           ),
-          schedule:class_schedules!schedule_id (
+          class_schedules!schedule_id (
             id,
             start_datetime,
             end_datetime,
-            class:classes!class_id (
+            classes!class_id (
               title,
               coach,
               location
             )
           ),
-          subscription:user_subscriptions!subscription_id (
+          user_subscriptions!subscription_id (
             id,
-            plan:subscription_plans!plan_id (
+            subscription_plans!plan_id (
               name
             )
           )
@@ -93,7 +124,7 @@ export default function BookingsPage() {
         .order('booked_at', { ascending: false })
 
       if (error) throw error
-      setBookings(data || [])
+      setBookings((data || []) as unknown as Booking[])
     } catch (err) {
       console.error('Error fetching bookings:', err)
       setError('Erreur lors du chargement des réservations')
@@ -130,34 +161,33 @@ export default function BookingsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Gestion des Réservations</h1>
-          <p className="text-muted-foreground">Chargement...</p>
+      <div className="space-y-6 p-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Réservations</h1>
         </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Gestion des Réservations</h1>
-          <p className="text-destructive">{error}</p>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Chargement des réservations...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Gestion des Réservations</h1>
-        <p className="text-muted-foreground">
-          Gérez toutes les réservations de cours des membres
-        </p>
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Réservations</h1>
+          <p className="text-muted-foreground">
+            Gérez toutes les réservations de cours des membres
+          </p>
+        </div>
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -207,7 +237,7 @@ export default function BookingsPage() {
         <CardHeader>
           <CardTitle>Toutes les Réservations</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <BookingsTable bookings={bookings} />
         </CardContent>
       </Card>

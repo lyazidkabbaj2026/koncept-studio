@@ -17,7 +17,7 @@ export async function getAvailableSubscriptionPlans(): Promise<SubscriptionPlan[
       throw error
     }
 
-    console.log('Fetched subscription plans (server action):', data)
+    // Successfully fetched subscription plans
     return data || []
   } catch (error) {
     console.error('Error in getAvailableSubscriptionPlans:', error)

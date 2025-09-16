@@ -16,8 +16,8 @@ export function CancellationsTable({ cancellations }: CancellationsTableProps) {
       header: 'Utilisateur',
       cell: (cancellation: any) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
-            <IconUser className="w-4 h-4 text-red-600" />
+          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+            <IconUser className="w-4 h-4 text-primary" />
           </div>
           <div>
             <div className="font-medium">{cancellation.user?.full_name}</div>
@@ -47,7 +47,7 @@ export function CancellationsTable({ cancellations }: CancellationsTableProps) {
       header: 'Annulé le',
       cell: (cancellation: any) => (
         <div className="flex items-center gap-2">
-          <IconX className="w-4 h-4 text-red-600" />
+          <IconX className="w-4 h-4 text-muted-foreground" />
           <span>{formatDateTime(cancellation.cancelled_at)}</span>
         </div>
       )
@@ -58,7 +58,7 @@ export function CancellationsTable({ cancellations }: CancellationsTableProps) {
       cell: (cancellation: any) => (
         <div>
           {cancellation.cancellation_reason ? (
-            <Badge variant="outline" className="text-red-600 border-red-200">
+            <Badge variant="outline">
               {cancellation.cancellation_reason}
             </Badge>
           ) : (
@@ -114,6 +114,7 @@ export function CancellationsTable({ cancellations }: CancellationsTableProps) {
       searchKey="user.full_name"
       searchPlaceholder="Rechercher par nom d'utilisateur..."
       keyExtractor={(cancellation) => cancellation.id}
+      className="border-0 shadow-none"
     />
   )
 }

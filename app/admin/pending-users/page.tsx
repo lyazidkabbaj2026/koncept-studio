@@ -32,8 +32,8 @@ interface SubscriptionPlan {
   credits: number
   price_dhs: number
   validity_months: number
-  weekly_limit?: number
-  is_active: boolean
+  validity_days?: number | null
+  weekly_limit?: number | null
 }
 
 interface SubscriptionFormData {
@@ -83,7 +83,6 @@ export default function PendingUsersPage() {
       const { data, error } = await supabase
         .from('subscription_plans')
         .select('*')
-        .eq('is_active', true)
         .order('type', { ascending: true })
         .order('price_dhs', { ascending: true })
 
@@ -195,7 +194,7 @@ export default function PendingUsersPage() {
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'carnet': return 'Carnet'
-      case 'personal_training': return 'Personal Training'
+      case 'personal_training': return 'Coaching Personnel'
       case 'abonnement': return 'Abonnement'
       default: return type
     }

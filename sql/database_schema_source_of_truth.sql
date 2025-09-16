@@ -1,1356 +1,2121 @@
--- 1. Tables - All table structures with columns, data types, constraints
-
-| create_table_statement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CREATE TABLEpublic.booking_audit(iduuid NOT NULLDEFAULT gen_random_uuid(), booking_iduuid, user_iduuid, operationtext NOT NULL, schedule_iduuid, detailsjsonb, created_attimestamp with time zoneDEFAULT now());                                                                                                                                                                                                                                                                                                                                                                                               |
-| CREATE TABLEpublic.class_bookings(iduuid NOT NULLDEFAULT gen_random_uuid(), user_iduuid NOT NULL, schedule_iduuid NOT NULL, subscription_iduuid NOT NULL, statustextDEFAULT 'confirmed'::text, booked_attimestamp with time zoneDEFAULT now(), cancelled_attimestamp with time zone, cancellation_reasontext, created_attimestamp with time zoneDEFAULT now(), updated_attimestamp with time zoneDEFAULT now());                                                                                                                                                                                               |
-| CREATE TABLEpublic.class_schedules(iduuid NOT NULLDEFAULT gen_random_uuid(), class_iduuid NOT NULL, start_datetimetimestamp with time zone NOT NULL, end_datetimetimestamp with time zone NOT NULL, is_recurringbooleanDEFAULT false, recurrence_rulejsonb, recurrence_end_datetimestamp with time zone, parent_schedule_iduuid, is_exceptionbooleanDEFAULT false, exception_reasontext, current_bookingsinteger(32,0)DEFAULT 0, is_cancelledbooleanDEFAULT false, cancellation_reasontext, created_attimestamp with time zoneDEFAULT now(), updated_attimestamp with time zoneDEFAULT now(), created_byuuid); |
-| CREATE TABLEpublic.class_waitlist(iduuid NOT NULLDEFAULT gen_random_uuid(), user_iduuid NOT NULL, schedule_iduuid NOT NULL, subscription_iduuid NOT NULL, positioninteger(32,0) NOT NULL, joined_attimestamp with time zoneDEFAULT now(), notified_attimestamp with time zone, created_attimestamp with time zoneDEFAULT now(), updated_attimestamp with time zoneDEFAULT now());                                                                                                                                                                                                                              |
-| CREATE TABLEpublic.classes(iduuid NOT NULLDEFAULT gen_random_uuid(), titlecharacter varying(255) NOT NULL, descriptiontext, durationinteger(32,0) NOT NULL, max_capacityinteger(32,0) NOT NULLDEFAULT 1, coachcharacter varying(255) NOT NULL, locationcharacter varying(255) NOT NULL, difficulty_levelcharacter varying(20) NOT NULL, created_attimestamp with time zoneDEFAULT now(), updated_attimestamp with time zoneDEFAULT now());                                                                                                                                                                     |
-| CREATE TABLEpublic.profiles(iduuid NOT NULL, emailtext NOT NULL, full_nametext NOT NULL, phonetext, desired_plantext, roletextDEFAULT 'user'::text, created_attimestamp with time zoneDEFAULT now(), updated_attimestamp with time zoneDEFAULT now(), subscription_statustextDEFAULT 'pending'::text);                                                                                                                                                                                                                                                                                                         |
-| CREATE TABLEpublic.subscription_plans(iduuid NOT NULLDEFAULT gen_random_uuid(), nametext NOT NULL, typetext NOT NULL, creditsinteger(32,0) NOT NULL, price_dhsinteger(32,0) NOT NULL, validity_monthsinteger(32,0) NOT NULL, validity_daysinteger(32,0), weekly_limitinteger(32,0), created_attimestamp with time zoneDEFAULT now(), updated_attimestamp with time zoneDEFAULT now());                                                                                                                                                                                                                         |
-| CREATE TABLEpublic.subscription_requests(iduuid NOT NULLDEFAULT gen_random_uuid(), user_iduuid NOT NULL, plan_iduuid NOT NULL, statustextDEFAULT 'pending'::text, notestext, requested_attimestamp with time zoneDEFAULT now(), contacted_attimestamp with time zone, resolved_attimestamp with time zone, created_attimestamp with time zoneDEFAULT now(), updated_attimestamp with time zoneDEFAULT now());                                                                                                                                                                                                  |
-| CREATE TABLEpublic.user_subscriptions(iduuid NOT NULLDEFAULT gen_random_uuid(), user_iduuid NOT NULL, plan_iduuid NOT NULL, statustextDEFAULT 'active'::text, credits_remaininginteger(32,0) NOT NULL, credits_usedinteger(32,0)DEFAULT 0, weekly_credits_usedinteger(32,0)DEFAULT 0, start_datetimestamp with time zoneDEFAULT now(), end_datetimestamp with time zone NOT NULL, last_weekly_resettimestamp with time zoneDEFAULT now(), created_attimestamp with time zoneDEFAULT now(), updated_attimestamp with time zoneDEFAULT now());                                                                   |
-
-
--- 2. Primary Keys - All PRIMARY KEY constraints
-
-
-| primary_key_statement                                                                                |
-| ---------------------------------------------------------------------------------------------------- |
-| ALTER TABLE public.booking_audit ADD CONSTRAINT booking_audit_pkey PRIMARY KEY (id);                 |
-| ALTER TABLE public.class_bookings ADD CONSTRAINT class_bookings_pkey PRIMARY KEY (id);               |
-| ALTER TABLE public.class_schedules ADD CONSTRAINT class_schedules_pkey PRIMARY KEY (id);             |
-| ALTER TABLE public.class_waitlist ADD CONSTRAINT class_waitlist_pkey PRIMARY KEY (id);               |
-| ALTER TABLE public.classes ADD CONSTRAINT classes_pkey PRIMARY KEY (id);                             |
-| ALTER TABLE public.profiles ADD CONSTRAINT profiles_pkey PRIMARY KEY (id);                           |
-| ALTER TABLE public.subscription_plans ADD CONSTRAINT subscription_plans_pkey PRIMARY KEY (id);       |
-| ALTER TABLE public.subscription_requests ADD CONSTRAINT subscription_requests_pkey PRIMARY KEY (id); |
-| ALTER TABLE public.user_subscriptions ADD CONSTRAINT user_subscriptions_pkey PRIMARY KEY (id);       |
-
-
--- 3. Foreign Keys - All FOREIGN KEY relationships with ON UPDATE/DELETE rules
-
-
-| foreign_key_statement                                                                                                                                                               |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ALTER TABLE public.booking_audit ADD CONSTRAINT booking_audit_schedule_id_fkey FOREIGN KEY (schedule_id) REFERENCES public.class_schedules(id);                                     |
-| ALTER TABLE public.class_bookings ADD CONSTRAINT class_bookings_schedule_id_fkey FOREIGN KEY (schedule_id) REFERENCES public.class_schedules(id) ON DELETE CASCADE;                 |
-| ALTER TABLE public.class_bookings ADD CONSTRAINT class_bookings_subscription_id_fkey FOREIGN KEY (subscription_id) REFERENCES public.user_subscriptions(id) ON DELETE CASCADE;      |
-| ALTER TABLE public.class_bookings ADD CONSTRAINT class_bookings_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;                                |
-| ALTER TABLE public.class_schedules ADD CONSTRAINT class_schedules_class_id_fkey FOREIGN KEY (class_id) REFERENCES public.classes(id) ON DELETE CASCADE;                             |
-| ALTER TABLE public.class_schedules ADD CONSTRAINT class_schedules_parent_schedule_id_fkey FOREIGN KEY (parent_schedule_id) REFERENCES public.class_schedules(id) ON DELETE CASCADE; |
-| ALTER TABLE public.class_waitlist ADD CONSTRAINT class_waitlist_schedule_id_fkey FOREIGN KEY (schedule_id) REFERENCES public.class_schedules(id) ON DELETE CASCADE;                 |
-| ALTER TABLE public.class_waitlist ADD CONSTRAINT class_waitlist_subscription_id_fkey FOREIGN KEY (subscription_id) REFERENCES public.user_subscriptions(id) ON DELETE CASCADE;      |
-| ALTER TABLE public.class_waitlist ADD CONSTRAINT class_waitlist_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;                                |
-| ALTER TABLE public.subscription_requests ADD CONSTRAINT subscription_requests_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES public.subscription_plans(id) ON DELETE RESTRICT;       |
-| ALTER TABLE public.subscription_requests ADD CONSTRAINT subscription_requests_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;                  |
-| ALTER TABLE public.user_subscriptions ADD CONSTRAINT user_subscriptions_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES public.subscription_plans(id) ON DELETE RESTRICT;             |
-| ALTER TABLE public.user_subscriptions ADD CONSTRAINT user_subscriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;                        |
-
-
--- 4. Indexes - All custom indexes (excluding auto-generated ones)
-
-
-| indexname                                | index_statement                                                                                                                                                          |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| idx_booking_audit_booking_operation      | CREATE INDEX idx_booking_audit_booking_operation ON public.booking_audit USING btree  (booking_id, operation);                                                           |
-| idx_booking_audit_user_created           | CREATE INDEX idx_booking_audit_user_created ON public.booking_audit USING btree  (user_id, created_at);                                                                  |
-| idx_class_bookings_booked_at             | CREATE INDEX idx_class_bookings_booked_at ON public.class_bookings USING btree  (booked_at);                                                                             |
-| idx_class_bookings_schedule_id           | CREATE INDEX idx_class_bookings_schedule_id ON public.class_bookings USING btree  (schedule_id);                                                                         |
-| idx_class_bookings_schedule_status       | CREATE INDEX idx_class_bookings_schedule_status ON public.class_bookings USING btree  (schedule_id, status);                                                             |
-| idx_class_bookings_status                | CREATE INDEX idx_class_bookings_status ON public.class_bookings USING btree  (status);                                                                                   |
-| idx_class_bookings_subscription_id       | CREATE INDEX idx_class_bookings_subscription_id ON public.class_bookings USING btree  (subscription_id);                                                                 |
-| idx_class_bookings_user_id               | CREATE INDEX idx_class_bookings_user_id ON public.class_bookings USING btree  (user_id);                                                                                 |
-| idx_class_bookings_user_status_active    | CREATE INDEX idx_class_bookings_user_status_active ON public.class_bookings USING btree  (user_id, status) WHERE (status = 'confirmed'::text);                           |
-| idx_class_schedules_class_id             | CREATE INDEX idx_class_schedules_class_id ON public.class_schedules USING btree  (class_id);                                                                             |
-| idx_class_schedules_created_by           | CREATE INDEX idx_class_schedules_created_by ON public.class_schedules USING btree  (created_by);                                                                         |
-| idx_class_schedules_datetime_range       | CREATE INDEX idx_class_schedules_datetime_range ON public.class_schedules USING btree  (start_datetime, end_datetime) WHERE ((NOT is_cancelled) AND (NOT is_exception)); |
-| idx_class_schedules_end_datetime         | CREATE INDEX idx_class_schedules_end_datetime ON public.class_schedules USING btree  (end_datetime);                                                                     |
-| idx_class_schedules_exception            | CREATE INDEX idx_class_schedules_exception ON public.class_schedules USING btree  (is_exception);                                                                        |
-| idx_class_schedules_parent_id            | CREATE INDEX idx_class_schedules_parent_id ON public.class_schedules USING btree  (parent_schedule_id);                                                                  |
-| idx_class_schedules_recurring            | CREATE INDEX idx_class_schedules_recurring ON public.class_schedules USING btree  (is_recurring);                                                                        |
-| idx_class_schedules_start_datetime       | CREATE INDEX idx_class_schedules_start_datetime ON public.class_schedules USING btree  (start_datetime);                                                                 |
-| idx_class_schedules_start_future         | CREATE INDEX idx_class_schedules_start_future ON public.class_schedules USING btree  (start_datetime) WHERE ((NOT is_cancelled) AND (NOT is_exception));                 |
-| idx_class_waitlist_joined_at             | CREATE INDEX idx_class_waitlist_joined_at ON public.class_waitlist USING btree  (joined_at);                                                                             |
-| idx_class_waitlist_position              | CREATE INDEX idx_class_waitlist_position ON public.class_waitlist USING btree  ("position");                                                                             |
-| idx_class_waitlist_schedule_id           | CREATE INDEX idx_class_waitlist_schedule_id ON public.class_waitlist USING btree  (schedule_id);                                                                         |
-| idx_class_waitlist_schedule_position     | CREATE INDEX idx_class_waitlist_schedule_position ON public.class_waitlist USING btree  (schedule_id, "position");                                                       |
-| idx_class_waitlist_subscription_id       | CREATE INDEX idx_class_waitlist_subscription_id ON public.class_waitlist USING btree  (subscription_id);                                                                 |
-| idx_class_waitlist_user_id               | CREATE INDEX idx_class_waitlist_user_id ON public.class_waitlist USING btree  (user_id);                                                                                 |
-| idx_classes_coach                        | CREATE INDEX idx_classes_coach ON public.classes USING btree  (coach);                                                                                                   |
-| idx_classes_created_at                   | CREATE INDEX idx_classes_created_at ON public.classes USING btree  (created_at);                                                                                         |
-| idx_classes_difficulty_level             | CREATE INDEX idx_classes_difficulty_level ON public.classes USING btree  (difficulty_level);                                                                             |
-| idx_profiles_role_admin                  | CREATE INDEX idx_profiles_role_admin ON public.profiles USING btree  (role) WHERE (role = 'admin'::text);                                                                |
-| idx_profiles_subscription_status_created | CREATE INDEX idx_profiles_subscription_status_created ON public.profiles USING btree  (subscription_status, created_at);                                                 |
-| idx_subscription_plans_type              | CREATE INDEX idx_subscription_plans_type ON public.subscription_plans USING btree  (type);                                                                               |
-| idx_subscription_requests_plan_id        | CREATE INDEX idx_subscription_requests_plan_id ON public.subscription_requests USING btree  (plan_id);                                                                   |
-| idx_subscription_requests_user_id        | CREATE INDEX idx_subscription_requests_user_id ON public.subscription_requests USING btree  (user_id);                                                                   |
-| idx_user_subscriptions_active_users      | CREATE INDEX idx_user_subscriptions_active_users ON public.user_subscriptions USING btree  (status, end_date) WHERE (status = 'active'::text);                           |
-| idx_user_subscriptions_plan_id           | CREATE INDEX idx_user_subscriptions_plan_id ON public.user_subscriptions USING btree  (plan_id);                                                                         |
-| idx_user_subscriptions_status_end_date   | CREATE INDEX idx_user_subscriptions_status_end_date ON public.user_subscriptions USING btree  (user_id, status, end_date);                                               |
-| idx_user_subscriptions_user_id           | CREATE INDEX idx_user_subscriptions_user_id ON public.user_subscriptions USING btree  (user_id);  
-
-                                                                       |
--- 5. Functions - All custom functions with SECURITY DEFINER flags
-
-
-| function_statement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CREATE OR REPLACE FUNCTION public.adjust_waitlist_positions() RETURNS trigger AS $$
-
-BEGIN
-  -- Adjust positions of everyone behind the deleted entry
-  UPDATE public.class_waitlist
-  SET position = position - 1
-  WHERE schedule_id = OLD.schedule_id
-  AND position > OLD.position;
-  RETURN OLD;
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| CREATE OR REPLACE FUNCTION public.book_class(user_uuid uuid, schedule_uuid uuid) RETURNS jsonb AS $$
-
-DECLARE
-  booking_check JSONB;
-  subscription_record RECORD;
-  class_schedule_record RECORD;
-  class_record RECORD;
-  current_bookings INTEGER;
-  new_booking_id UUID;
-  waitlist_position INTEGER;
-BEGIN
-  -- Start a transaction and lock the schedule row
-  SELECT * INTO class_schedule_record
-  FROM public.class_schedules
-  WHERE id = schedule_uuid
-  FOR UPDATE;
-
-  -- Get class info for max_capacity
-  SELECT * INTO class_record
-  FROM public.classes c
-  WHERE c.id = class_schedule_record.class_id;
-
-  -- Check if schedule exists
-  IF class_schedule_record IS NULL THEN
-    RETURN jsonb_build_object(
-      'success', false,
-      'reason', 'schedule_not_found',
-      'message', 'Créneau non trouvé'
-    );
-  END IF;
-
-  -- Get current confirmed booking count with lock
-  SELECT COUNT(*) INTO current_bookings
-  FROM public.class_bookings
-  WHERE schedule_id = schedule_uuid
-    AND status = 'confirmed'
-  FOR UPDATE;
-
-  -- Check if user can book the class
-  SELECT can_user_book_class(user_uuid, schedule_uuid) INTO booking_check;
-
-  IF (booking_check->>'can_book')::boolean = false THEN
-    RETURN booking_check;
-  END IF;
-
-  -- Get subscription info
-  SELECT * INTO subscription_record
-  FROM get_user_valid_subscription(user_uuid)
-  LIMIT 1;
-
-  -- Check if class is full
-  IF current_bookings >= class_record.max_capacity THEN
-    -- Class is full, add to waitlist
-    SELECT COALESCE(MAX(position), 0) + 1 INTO waitlist_position
-    FROM public.class_waitlist
-    WHERE schedule_id = schedule_uuid;
-
-    INSERT INTO public.class_waitlist (user_id, schedule_id, subscription_id, position)
-    VALUES (user_uuid, schedule_uuid, subscription_record.id, waitlist_position);
-
-    RETURN jsonb_build_object(
-      'success', true,
-      'status', 'waitlisted',
-      'position', waitlist_position,
-      'message', format('Classe complète. Vous êtes en position %s sur la liste d''attente.', waitlist_position)
-    );
-  END IF;
-
-  -- Create the booking (class has space)
-  INSERT INTO public.class_bookings (user_id, schedule_id, subscription_id, status)
-  VALUES (user_uuid, schedule_uuid, subscription_record.id, 'confirmed')
-  RETURNING id INTO new_booking_id;
-
-  -- Deduct credit atomically
-  IF subscription_record.plan_type = 'abonnement' THEN
-    UPDATE public.user_subscriptions
-    SET weekly_credits_used = weekly_credits_used + 1
-    WHERE id = subscription_record.id;
-  ELSE
-    UPDATE public.user_subscriptions
-    SET credits_remaining = credits_remaining - 1,
-        credits_used = credits_used + 1
-    WHERE id = subscription_record.id;
-  END IF;
-
-  RETURN jsonb_build_object(
-    'success', true,
-    'status', 'confirmed',
-    'booking_id', new_booking_id,
-    'message', 'Réservation confirmée'
-  );
-
-EXCEPTION
-  WHEN others THEN
-    -- Log the error and return failure
-    RAISE LOG 'Error in book_class function: %', SQLERRM;
-    RETURN jsonb_build_object(
-      'success', false,
-      'reason', 'system_error',
-      'message', 'Erreur système. Veuillez réessayer.'
-    );
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| CREATE OR REPLACE FUNCTION public.can_user_book_class(user_uuid uuid, schedule_uuid uuid) RETURNS jsonb AS $$
-
-DECLARE
-  subscription_record RECORD;
-  class_info RECORD;
-  existing_booking_count INTEGER;
-BEGIN
-  -- Check if user has valid subscription
-  SELECT * INTO subscription_record
-  FROM get_user_valid_subscription(user_uuid)
-  LIMIT 1;
-
-  IF subscription_record IS NULL THEN
-    RETURN jsonb_build_object(
-      'can_book', false,
-      'reason', 'no_valid_subscription',
-      'message', 'Aucun abonnement valide trouvé'
-    );
-  END IF;
-
-  -- Get class information
-  SELECT c.max_capacity, cs.current_bookings, cs.start_datetime
-  INTO class_info
-  FROM public.class_schedules cs
-  JOIN public.classes c ON cs.class_id = c.id
-  WHERE cs.id = schedule_uuid;
-
-  IF class_info IS NULL THEN
-    RETURN jsonb_build_object(
-      'can_book', false,
-      'reason', 'class_not_found',
-      'message', 'Cours introuvable'
-    );
-  END IF;
-
-  -- Check if class has already started
-  IF class_info.start_datetime <= NOW() THEN
-    RETURN jsonb_build_object(
-      'can_book', false,
-      'reason', 'class_started',
-      'message', 'Le cours a déjà commencé'
-    );
-  END IF;
-
-  -- Check if user already booked this class
-  SELECT COUNT(*) INTO existing_booking_count
-  FROM public.class_bookings
-  WHERE user_id = user_uuid
-    AND schedule_id = schedule_uuid
-    AND status = 'confirmed';
-
-  IF existing_booking_count > 0 THEN
-    RETURN jsonb_build_object(
-      'can_book', false,
-      'reason', 'already_booked',
-      'message', 'Vous avez déjà réservé ce cours'
-    );
-  END IF;
-
-  -- Check if class is full
-  IF class_info.current_bookings >= class_info.max_capacity THEN
-    RETURN jsonb_build_object(
-      'can_book', false,
-      'reason', 'class_full',
-      'message', 'Le cours est complet',
-      'can_waitlist', true
-    );
-  END IF;
-
-  -- Check subscription-specific limits
-  IF subscription_record.plan_type = 'abonnement' THEN
-    IF subscription_record.weekly_credits_used >= subscription_record.weekly_limit THEN
-      RETURN jsonb_build_object(
-        'can_book', false,
-        'reason', 'weekly_limit_reached',
-        'message', 'Limite hebdomadaire de séances atteinte'
-      );
-    END IF;
-  ELSIF subscription_record.credits_remaining <= 0 THEN
-    RETURN jsonb_build_object(
-      'can_book', false,
-      'reason', 'no_credits',
-      'message', 'Plus de crédits disponibles'
-    );
-  END IF;
-
-  -- All checks passed
-  RETURN jsonb_build_object(
-    'can_book', true,
-    'subscription_id', subscription_record.id,
-    'message', 'Réservation possible'
-  );
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| CREATE OR REPLACE FUNCTION public.cancel_booking(booking_uuid uuid, user_uuid uuid) RETURNS jsonb AS $$
-
-DECLARE
-  booking_record RECORD;
-  subscription_record RECORD;
-BEGIN
-  -- Get and lock the booking with schedule info
-  SELECT cb.*, cs.start_datetime INTO booking_record
-  FROM public.class_bookings cb
-  JOIN public.class_schedules cs ON cb.schedule_id = cs.id
-  WHERE cb.id = booking_uuid
-    AND cb.user_id = user_uuid
-    AND cb.status = 'confirmed'
-  FOR UPDATE;
-
-  IF booking_record IS NULL THEN
-    RETURN jsonb_build_object(
-      'success', false,
-      'reason', 'booking_not_found',
-      'message', 'Réservation non trouvée ou déjà annulée'
-    );
-  END IF;
-
-  -- Check cancellation policy (24h before class)
-  IF booking_record.start_datetime <= NOW() + INTERVAL '24 hours' THEN
-    RETURN jsonb_build_object(
-      'success', false,
-      'reason', 'too_late_to_cancel',
-      'message', 'Impossible d''annuler moins de 24h avant le cours'
-    );
-  END IF;
-
-  -- Get subscription info
-  SELECT * INTO subscription_record
-  FROM public.user_subscriptions
-  WHERE id = booking_record.subscription_id;
-
-  -- Cancel the booking
-  UPDATE public.class_bookings
-  SET status = 'cancelled',
-      cancelled_at = NOW()
-  WHERE id = booking_uuid;
-
-  -- Refund credit
-  IF subscription_record.plan_type = 'abonnement' THEN
-    UPDATE public.user_subscriptions
-    SET weekly_credits_used = weekly_credits_used - 1
-    WHERE id = subscription_record.id;
-  ELSE
-    UPDATE public.user_subscriptions
-    SET credits_remaining = credits_remaining + 1,
-        credits_used = credits_used - 1
-    WHERE id = subscription_record.id;
-  END IF;
-
-  RETURN jsonb_build_object(
-    'success', true,
-    'message', 'Réservation annulée avec succès'
-  );
-
-EXCEPTION
-  WHEN others THEN
-    RAISE LOG 'Error in cancel_booking function: %', SQLERRM;
-    RETURN jsonb_build_object(
-      'success', false,
-      'reason', 'system_error',
-      'message', 'Erreur système. Veuillez réessayer.'
-    );
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| CREATE OR REPLACE FUNCTION public.check_expired_subscriptions() RETURNS void AS $$
-
-BEGIN
-  UPDATE public.user_subscriptions
-  SET status = 'expired'
-  WHERE status = 'active' AND end_date < NOW();
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| CREATE OR REPLACE FUNCTION public.check_user_admin(user_id uuid) RETURNS boolean AS $$
-
-DECLARE
-  user_role text;
-BEGIN
-  SELECT role INTO user_role
-  FROM public.profiles
-  WHERE id = user_id;
-
-  RETURN COALESCE(user_role = 'admin', false);
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| CREATE OR REPLACE FUNCTION public.get_admin_users_data(page_offset integer DEFAULT 0, page_limit integer DEFAULT 25) RETURNS jsonb AS $$
-
-DECLARE
-  result JSONB;
-  total_count INTEGER;
-BEGIN
-  -- Get total count
-  SELECT COUNT(*) INTO total_count
-  FROM public.profiles
-  WHERE role != 'admin' OR role IS NULL;
-
-  SELECT jsonb_build_object(
-    'users', (
-      SELECT jsonb_agg(
-        jsonb_build_object(
-          'id', p.id,
-          'email', p.email,
-          'full_name', p.full_name,
-          'phone', p.phone,
-          'desired_plan', p.desired_plan,
-          'subscription_status', p.subscription_status,
-          'role', p.role,
-          'created_at', p.created_at,
-          'active_subscription', us_data.subscription_data
-        ) ORDER BY p.created_at DESC  -- Fixed: ORDER BY moved inside jsonb_agg()
-      )
-      FROM public.profiles p
-      LEFT JOIN LATERAL (
-        SELECT jsonb_build_object(
-          'id', us.id,
-          'status', us.status,
-          'credits_remaining', us.credits_remaining,
-          'end_date', us.end_date,
-          'plan_name', sp.name
-        ) as subscription_data
-        FROM public.user_subscriptions us
-        JOIN public.subscription_plans sp ON us.plan_id = sp.id
-        WHERE us.user_id = p.id AND us.status = 'active'
-        ORDER BY us.end_date DESC
-        LIMIT 1
-      ) us_data ON true
-      WHERE (p.role != 'admin' OR p.role IS NULL)
-      -- Removed the problematic ORDER BY here since it's now inside jsonb_agg()
-      LIMIT page_limit OFFSET page_offset
-    ),
-    'total_count', total_count,
-    'page_offset', page_offset,
-    'page_limit', page_limit
-  ) INTO result;
-
-  RETURN result;
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| CREATE OR REPLACE FUNCTION public.get_database_performance_stats() RETURNS jsonb AS $$
-
-DECLARE
-  result JSONB;
-BEGIN
-  SELECT jsonb_build_object(
-    'table_sizes', (
-      SELECT jsonb_agg(
-        jsonb_build_object(
-          'table_name', tablename,
-          'size', pg_size_pretty(pg_total_relation_size('public.' || tablename)),
-          'size_bytes', pg_total_relation_size('public.' || tablename),
-          'rows_read', pg_stat_get_tuples_returned(c.oid),
-          'rows_fetched', pg_stat_get_tuples_fetched(c.oid),
-          'efficiency_ratio',
-            CASE
-              WHEN pg_stat_get_tuples_returned(c.oid) = 0 THEN 0
-              ELSE round((pg_stat_get_tuples_fetched(c.oid) * 100.0) / pg_stat_get_tuples_returned(c.oid), 2)
-            END
-        ) ORDER BY pg_total_relation_size('public.' || tablename) DESC
-      )
-      FROM pg_tables pt
-      JOIN pg_class c ON c.relname = pt.tablename
-      WHERE pt.schemaname = 'public'
-    ),
-    'index_usage', (
-      SELECT jsonb_agg(
-        jsonb_build_object(
-          'table_name', schemaname || '.' || tablename,
-          'index_name', indexname,
-          'definition', indexdef
-        )
-      )
-      FROM pg_indexes
-      WHERE schemaname = 'public'
-      ORDER BY tablename, indexname
-    )
-  ) INTO result;
-
-  RETURN result;
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| CREATE OR REPLACE FUNCTION public.get_user_dashboard_data(user_uuid uuid) RETURNS jsonb AS $$
-
-DECLARE
-  result JSONB;
-BEGIN
-  SELECT jsonb_build_object(
-    'profile', (
-      SELECT jsonb_build_object(
-        'id', id,
-        'email', email,
-        'full_name', full_name,
-        'phone', phone,
-        'subscription_status', subscription_status,
-        'role', role
-      )
-      FROM public.profiles WHERE id = user_uuid
-    ),
-    'active_subscription', (
-      SELECT jsonb_build_object(
-        'id', us.id,
-        'status', us.status,
-        'credits_remaining', us.credits_remaining,
-        'weekly_credits_used', us.weekly_credits_used,
-        'end_date', us.end_date,
-        'start_date', us.start_date,
-        'plan', jsonb_build_object(
-          'id', sp.id,
-          'name', sp.name,
-          'type', sp.type,
-          'weekly_limit', sp.weekly_limit,
-          'credits', sp.credits,
-          'price_dhs', sp.price_dhs
-        )
-      )
-      FROM public.user_subscriptions us
-      JOIN public.subscription_plans sp ON us.plan_id = sp.id
-      WHERE us.user_id = user_uuid
-        AND us.status = 'active'
-        AND us.end_date > NOW()
-      ORDER BY us.end_date DESC
-      LIMIT 1
-    ),
-    'recent_bookings', (
-      SELECT jsonb_agg(
-        jsonb_build_object(
-          'id', cb.id,
-          'status', cb.status,
-          'booked_at', cb.booked_at,
-          'cancelled_at', cb.cancelled_at,
-          'class_title', c.title,
-          'start_datetime', cs.start_datetime,
-          'end_datetime', cs.end_datetime,
-          'coach', c.coach,
-          'location', c.location
-        )
-      )
-      FROM public.class_bookings cb
-      JOIN public.class_schedules cs ON cb.schedule_id = cs.id
-      JOIN public.classes c ON cs.class_id = c.id
-      WHERE cb.user_id = user_uuid
-      ORDER BY cb.booked_at DESC
-      LIMIT 10
-    ),
-    'upcoming_classes', (
-      SELECT jsonb_agg(
-        jsonb_build_object(
-          'id', cs.id,
-          'title', c.title,
-          'description', c.description,
-          'start_datetime', cs.start_datetime,
-          'end_datetime', cs.end_datetime,
-          'coach', c.coach,
-          'location', c.location,
-          'difficulty_level', c.difficulty_level,
-          'current_bookings', cs.current_bookings,
-          'max_capacity', c.max_capacity,
-          'user_booked', (cb.id IS NOT NULL),
-          'user_booking_id', cb.id,
-          'user_waitlist_position', cw.position
-        ) ORDER BY cs.start_datetime
-      )
-      FROM public.class_schedules cs
-      JOIN public.classes c ON cs.class_id = c.id
-      LEFT JOIN public.class_bookings cb ON cs.id = cb.schedule_id AND cb.user_id = user_uuid AND cb.status = 'confirmed'
-      LEFT JOIN public.class_waitlist cw ON cs.id = cw.schedule_id AND cw.user_id = user_uuid
-      WHERE cs.start_datetime >= NOW()
-        AND NOT cs.is_cancelled
-        AND NOT cs.is_exception
-      ORDER BY cs.start_datetime
-      LIMIT 20
-    )
-  ) INTO result;
-
-  RETURN result;
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| CREATE OR REPLACE FUNCTION public.get_user_valid_subscription(user_uuid uuid) RETURNS TABLE(id uuid, plan_id uuid, plan_type text, credits_remaining integer, weekly_credits_used integer, weekly_limit integer, status text, end_date timestamp with time zone) AS $$
-
-BEGIN
-  RETURN QUERY
-  SELECT
-    us.id,
-    us.plan_id,
-    sp.type as plan_type,
-    us.credits_remaining,
-    us.weekly_credits_used,
-    sp.weekly_limit,
-    us.status,
-    us.end_date
-  FROM public.user_subscriptions us
-  JOIN public.subscription_plans sp ON us.plan_id = sp.id
-  WHERE us.user_id = user_uuid
-    AND us.status = 'active'
-    AND us.end_date > NOW()
-    AND (
-      us.credits_remaining > 0
-      OR (sp.type = 'abonnement' AND us.weekly_credits_used < sp.weekly_limit)
-    )
-  ORDER BY us.end_date DESC
-  LIMIT 1;
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS trigger AS $$
-
-BEGIN
-  INSERT INTO public.profiles (id, email, full_name, phone, desired_plan)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
-    COALESCE(NEW.raw_user_meta_data->>'phone', ''),
-    COALESCE(NEW.raw_user_meta_data->>'desired_plan', '')
-  );
-  RETURN NEW;
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| CREATE OR REPLACE FUNCTION public.is_admin() RETURNS boolean AS $$
-
-DECLARE
-  user_role TEXT;
-BEGIN
-  SELECT role INTO user_role
-  FROM public.profiles
-  WHERE id = auth.uid()
-  LIMIT 1;
+1. All Tables Structure
+
+[
+  {
+    "table_name": "booking_audit",
+    "column_name": "id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "constraint_type": "PRIMARY KEY",
+    "foreign_table_name": "booking_audit",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "booking_audit",
+    "column_name": "booking_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "booking_audit",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "booking_audit",
+    "column_name": "operation",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "booking_audit",
+    "column_name": "schedule_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": "class_schedules",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "booking_audit",
+    "column_name": "details",
+    "data_type": "jsonb",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "booking_audit",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_bookings",
+    "column_name": "id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "constraint_type": "PRIMARY KEY",
+    "foreign_table_name": "class_bookings",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "class_bookings",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "UNIQUE",
+    "foreign_table_name": "class_bookings",
+    "foreign_column_name": "user_id"
+  },
+  {
+    "table_name": "class_bookings",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": "profiles",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "class_bookings",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "UNIQUE",
+    "foreign_table_name": "class_bookings",
+    "foreign_column_name": "schedule_id"
+  },
+  {
+    "table_name": "class_bookings",
+    "column_name": "schedule_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": "class_schedules",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "class_bookings",
+    "column_name": "schedule_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "UNIQUE",
+    "foreign_table_name": "class_bookings",
+    "foreign_column_name": "schedule_id"
+  },
+  {
+    "table_name": "class_bookings",
+    "column_name": "schedule_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "UNIQUE",
+    "foreign_table_name": "class_bookings",
+    "foreign_column_name": "user_id"
+  },
+  {
+    "table_name": "class_bookings",
+    "column_name": "subscription_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": "user_subscriptions",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "class_bookings",
+    "column_name": "status",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "'confirmed'::text",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_bookings",
+    "column_name": "booked_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_bookings",
+    "column_name": "cancelled_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_bookings",
+    "column_name": "cancellation_reason",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_bookings",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_bookings",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "constraint_type": "PRIMARY KEY",
+    "foreign_table_name": "class_schedules",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "class_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": "classes",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "start_datetime",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "end_datetime",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "is_recurring",
+    "data_type": "boolean",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "false",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "recurrence_rule",
+    "data_type": "jsonb",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "recurrence_end_date",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "parent_schedule_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": "class_schedules",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "is_exception",
+    "data_type": "boolean",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "false",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "exception_reason",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "current_bookings",
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "0",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "is_cancelled",
+    "data_type": "boolean",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "false",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "cancellation_reason",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_schedules",
+    "column_name": "created_by",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_waitlist",
+    "column_name": "id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "constraint_type": "PRIMARY KEY",
+    "foreign_table_name": "class_waitlist",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "class_waitlist",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": "profiles",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "class_waitlist",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "UNIQUE",
+    "foreign_table_name": "class_waitlist",
+    "foreign_column_name": "schedule_id"
+  },
+  {
+    "table_name": "class_waitlist",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "UNIQUE",
+    "foreign_table_name": "class_waitlist",
+    "foreign_column_name": "user_id"
+  },
+  {
+    "table_name": "class_waitlist",
+    "column_name": "schedule_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "UNIQUE",
+    "foreign_table_name": "class_waitlist",
+    "foreign_column_name": "schedule_id"
+  },
+  {
+    "table_name": "class_waitlist",
+    "column_name": "schedule_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "UNIQUE",
+    "foreign_table_name": "class_waitlist",
+    "foreign_column_name": "user_id"
+  },
+  {
+    "table_name": "class_waitlist",
+    "column_name": "schedule_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": "class_schedules",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "class_waitlist",
+    "column_name": "subscription_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": "user_subscriptions",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "class_waitlist",
+    "column_name": "position",
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_waitlist",
+    "column_name": "joined_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_waitlist",
+    "column_name": "notified_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_waitlist",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "class_waitlist",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "classes",
+    "column_name": "id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "constraint_type": "PRIMARY KEY",
+    "foreign_table_name": "classes",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "classes",
+    "column_name": "title",
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "classes",
+    "column_name": "description",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "classes",
+    "column_name": "duration",
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "classes",
+    "column_name": "max_capacity",
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": "1",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "classes",
+    "column_name": "coach",
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "classes",
+    "column_name": "location",
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "classes",
+    "column_name": "difficulty_level",
+    "data_type": "character varying",
+    "character_maximum_length": 20,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "classes",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "classes",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "PRIMARY KEY",
+    "foreign_table_name": "profiles",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "email",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "UNIQUE",
+    "foreign_table_name": "profiles",
+    "foreign_column_name": "email"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "full_name",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "phone",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "desired_plan",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "role",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "'user'::text",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "subscription_status",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "'pending'::text",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_plans",
+    "column_name": "id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "constraint_type": "PRIMARY KEY",
+    "foreign_table_name": "subscription_plans",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "subscription_plans",
+    "column_name": "name",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_plans",
+    "column_name": "type",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_plans",
+    "column_name": "credits",
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_plans",
+    "column_name": "price_dhs",
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_plans",
+    "column_name": "validity_months",
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_plans",
+    "column_name": "validity_days",
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_plans",
+    "column_name": "weekly_limit",
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_plans",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_plans",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_requests",
+    "column_name": "id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "constraint_type": "PRIMARY KEY",
+    "foreign_table_name": "subscription_requests",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "subscription_requests",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": "profiles",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "subscription_requests",
+    "column_name": "plan_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": "subscription_plans",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "subscription_requests",
+    "column_name": "status",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "'pending'::text",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_requests",
+    "column_name": "notes",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_requests",
+    "column_name": "requested_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_requests",
+    "column_name": "contacted_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_requests",
+    "column_name": "resolved_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_requests",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "subscription_requests",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "user_subscriptions",
+    "column_name": "id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "constraint_type": "PRIMARY KEY",
+    "foreign_table_name": "user_subscriptions",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "user_subscriptions",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": "profiles",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "user_subscriptions",
+    "column_name": "plan_id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": "FOREIGN KEY",
+    "foreign_table_name": "subscription_plans",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_name": "user_subscriptions",
+    "column_name": "status",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "'active'::text",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "user_subscriptions",
+    "column_name": "credits_remaining",
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "user_subscriptions",
+    "column_name": "credits_used",
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "0",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "user_subscriptions",
+    "column_name": "weekly_credits_used",
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "0",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "user_subscriptions",
+    "column_name": "start_date",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "user_subscriptions",
+    "column_name": "end_date",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "NO",
+    "column_default": null,
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  },
+  {
+    "table_name": "user_subscriptions",
+    "column_name": "last_weekly_reset",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "constraint_type": null,
+    "foreign_table_name": null,
+    "foreign_column_name": null
+  }
+]
+ 
+2. All Functions (RPC endpoints)
+
+[
+  {
+    "function_name": "adjust_waitlist_positions",
+    "function_body": "\r\nBEGIN\r\n  -- Adjust positions of everyone behind the deleted entry\r\n  UPDATE public.class_waitlist\r\n  SET position = position - 1\r\n  WHERE schedule_id = OLD.schedule_id\r\n  AND position > OLD.position;\r\n  RETURN OLD;\r\nEND;\r\n",
+    "return_type": "trigger",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "book_class",
+    "function_body": "\r\n\r\nDECLARE\r\n  booking_check JSONB;\r\n  subscription_record RECORD;\r\n  class_schedule_record RECORD;\r\n  class_record RECORD;\r\n  current_bookings INTEGER;\r\n  new_booking_id UUID;\r\n  waitlist_position INTEGER;\r\nBEGIN\r\n  -- Start a transaction and lock the schedule row\r\n  SELECT * INTO class_schedule_record\r\n  FROM public.class_schedules\r\n  WHERE id = schedule_uuid\r\n  FOR UPDATE;\r\n\r\n  -- Check if schedule exists FIRST (before accessing fields)\r\n  IF class_schedule_record IS NULL THEN\r\n    RETURN jsonb_build_object(\r\n      'success', false,\r\n      'reason', 'schedule_not_found',\r\n      'message', 'Créneau non trouvé'\r\n    );\r\n  END IF;\r\n\r\n  -- Now safely get class info for max_capacity\r\n  SELECT * INTO class_record\r\n  FROM public.classes c\r\n  WHERE c.id = class_schedule_record.class_id;\r\n\r\n  -- Check if class exists\r\n  IF class_record IS NULL THEN\r\n    RETURN jsonb_build_object(\r\n      'success', false,\r\n      'reason', 'class_not_found',\r\n      'message', 'Cours non trouvé'\r\n    );\r\n  END IF;\r\n\r\n  -- Get current confirmed booking count (REMOVED FOR UPDATE - this was causing the error)\r\n  SELECT COUNT(*) INTO current_bookings\r\n  FROM public.class_bookings\r\n  WHERE schedule_id = schedule_uuid\r\n    AND status = 'confirmed';\r\n\r\n  -- Check if user can book the class\r\n  SELECT can_user_book_class(user_uuid, schedule_uuid) INTO booking_check;\r\n\r\n  IF (booking_check->>'can_book')::boolean = false THEN\r\n    RETURN booking_check;\r\n  END IF;\r\n\r\n  -- Get subscription info\r\n  SELECT * INTO subscription_record\r\n  FROM get_user_valid_subscription(user_uuid)\r\n  LIMIT 1;\r\n\r\n  -- Additional safety check for subscription\r\n  IF subscription_record IS NULL THEN\r\n    RETURN jsonb_build_object(\r\n      'success', false,\r\n      'reason', 'no_valid_subscription',\r\n      'message', 'Aucun abonnement valide trouvé'\r\n    );\r\n  END IF;\r\n\r\n  -- Check if class is full\r\n  IF current_bookings >= class_record.max_capacity THEN\r\n    -- Class is full, add to waitlist\r\n    SELECT COALESCE(MAX(position), 0) + 1 INTO waitlist_position\r\n    FROM public.class_waitlist\r\n    WHERE schedule_id = schedule_uuid;\r\n\r\n    INSERT INTO public.class_waitlist (user_id, schedule_id, subscription_id, position)\r\n    VALUES (user_uuid, schedule_uuid, subscription_record.id, waitlist_position);\r\n\r\n    RETURN jsonb_build_object(\r\n      'success', true,\r\n      'status', 'waitlisted',\r\n      'position', waitlist_position,\r\n      'message', format('Classe complète. Vous êtes en position %s sur la liste d''attente.', waitlist_position)\r\n    );\r\n  END IF;\r\n\r\n  -- Create the booking (class has space)\r\n  INSERT INTO public.class_bookings (user_id, schedule_id, subscription_id, status)\r\n  VALUES (user_uuid, schedule_uuid, subscription_record.id, 'confirmed')\r\n  RETURNING id INTO new_booking_id;\r\n\r\n  -- Deduct credit atomically\r\n  IF subscription_record.plan_type = 'abonnement' THEN\r\n    UPDATE public.user_subscriptions\r\n    SET weekly_credits_used = weekly_credits_used + 1\r\n    WHERE id = subscription_record.id;\r\n  ELSE\r\n    UPDATE public.user_subscriptions\r\n    SET credits_remaining = credits_remaining - 1,\r\n        credits_used = credits_used + 1\r\n    WHERE id = subscription_record.id;\r\n  END IF;\r\n\r\n  -- Return success with updated subscription data\r\n  RETURN jsonb_build_object(\r\n    'success', true,\r\n    'status', 'confirmed',\r\n    'booking_id', new_booking_id,\r\n    'message', 'Réservation confirmée',\r\n    'updated_subscription', jsonb_build_object(\r\n      'credits_remaining', CASE WHEN subscription_record.plan_type = 'abonnement' THEN subscription_record.credits_remaining ELSE subscription_record.credits_remaining - 1 END,\r\n      'weekly_credits_used', CASE WHEN subscription_record.plan_type = 'abonnement' THEN subscription_record.weekly_credits_used + 1 ELSE subscription_record.weekly_credits_used END,\r\n      'credits_used', CASE WHEN subscription_record.plan_type = 'abonnement' THEN subscription_record.credits_used ELSE subscription_record.credits_used + 1 END\r\n    )\r\n  );\r\n\r\nEXCEPTION\r\n  WHEN others THEN\r\n    -- Log the error and return failure\r\n    RAISE LOG 'Error in book_class function: %', SQLERRM;\r\n    RETURN jsonb_build_object(\r\n      'success', false,\r\n      'reason', 'system_error',\r\n      'message', 'Erreur système. Veuillez réessayer.'\r\n    );\r\nEND;\r\n\r\n",
+    "return_type": "jsonb",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "can_user_book_class",
+    "function_body": "\r\nDECLARE\r\n  subscription_record RECORD;\r\n  class_info RECORD;\r\n  existing_booking_count INTEGER;\r\nBEGIN\r\n  -- Check if user has valid subscription\r\n  SELECT * INTO subscription_record\r\n  FROM get_user_valid_subscription(user_uuid)\r\n  LIMIT 1;\r\n\r\n  IF subscription_record IS NULL THEN\r\n    RETURN jsonb_build_object(\r\n      'can_book', false,\r\n      'reason', 'no_valid_subscription',\r\n      'message', 'Aucun abonnement valide trouvé'\r\n    );\r\n  END IF;\r\n\r\n  -- Get class information\r\n  SELECT c.max_capacity, cs.current_bookings, cs.start_datetime\r\n  INTO class_info\r\n  FROM public.class_schedules cs\r\n  JOIN public.classes c ON cs.class_id = c.id\r\n  WHERE cs.id = schedule_uuid;\r\n\r\n  IF class_info IS NULL THEN\r\n    RETURN jsonb_build_object(\r\n      'can_book', false,\r\n      'reason', 'class_not_found',\r\n      'message', 'Cours introuvable'\r\n    );\r\n  END IF;\r\n\r\n  -- Check if class has already started\r\n  IF class_info.start_datetime <= NOW() THEN\r\n    RETURN jsonb_build_object(\r\n      'can_book', false,\r\n      'reason', 'class_started',\r\n      'message', 'Le cours a déjà commencé'\r\n    );\r\n  END IF;\r\n\r\n  -- Check if user already booked this class\r\n  SELECT COUNT(*) INTO existing_booking_count\r\n  FROM public.class_bookings\r\n  WHERE user_id = user_uuid\r\n    AND schedule_id = schedule_uuid\r\n    AND status = 'confirmed';\r\n\r\n  IF existing_booking_count > 0 THEN\r\n    RETURN jsonb_build_object(\r\n      'can_book', false,\r\n      'reason', 'already_booked',\r\n      'message', 'Vous avez déjà réservé ce cours'\r\n    );\r\n  END IF;\r\n\r\n  -- Check if class is full\r\n  IF class_info.current_bookings >= class_info.max_capacity THEN\r\n    RETURN jsonb_build_object(\r\n      'can_book', false,\r\n      'reason', 'class_full',\r\n      'message', 'Le cours est complet',\r\n      'can_waitlist', true\r\n    );\r\n  END IF;\r\n\r\n  -- Check subscription-specific limits\r\n  IF subscription_record.plan_type = 'abonnement' THEN\r\n    IF subscription_record.weekly_credits_used >= subscription_record.weekly_limit THEN\r\n      RETURN jsonb_build_object(\r\n        'can_book', false,\r\n        'reason', 'weekly_limit_reached',\r\n        'message', 'Limite hebdomadaire de séances atteinte'\r\n      );\r\n    END IF;\r\n  ELSIF subscription_record.credits_remaining <= 0 THEN\r\n    RETURN jsonb_build_object(\r\n      'can_book', false,\r\n      'reason', 'no_credits',\r\n      'message', 'Plus de crédits disponibles'\r\n    );\r\n  END IF;\r\n\r\n  -- All checks passed\r\n  RETURN jsonb_build_object(\r\n    'can_book', true,\r\n    'subscription_id', subscription_record.id,\r\n    'message', 'Réservation possible'\r\n  );\r\nEND;\r\n",
+    "return_type": "jsonb",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "cancel_booking",
+    "function_body": "\r\nDECLARE\r\n  booking_record RECORD;\r\n  subscription_record RECORD;\r\nBEGIN\r\n  -- Get and lock the booking with schedule info\r\n  SELECT cb.*, cs.start_datetime INTO booking_record\r\n  FROM public.class_bookings cb\r\n  JOIN public.class_schedules cs ON cb.schedule_id = cs.id\r\n  WHERE cb.id = booking_uuid\r\n    AND cb.user_id = user_uuid\r\n    AND cb.status = 'confirmed'\r\n  FOR UPDATE;\r\n\r\n  IF booking_record IS NULL THEN\r\n    RETURN jsonb_build_object(\r\n      'success', false,\r\n      'reason', 'booking_not_found',\r\n      'message', 'Réservation non trouvée ou déjà annulée'\r\n    );\r\n  END IF;\r\n\r\n  -- Check cancellation policy (24h before class)\r\n  IF booking_record.start_datetime <= NOW() + INTERVAL '24 hours' THEN\r\n    RETURN jsonb_build_object(\r\n      'success', false,\r\n      'reason', 'too_late_to_cancel',\r\n      'message', 'Impossible d''annuler moins de 24h avant le cours'\r\n    );\r\n  END IF;\r\n\r\n  -- Get subscription info\r\n  SELECT * INTO subscription_record\r\n  FROM public.user_subscriptions\r\n  WHERE id = booking_record.subscription_id;\r\n\r\n  -- Cancel the booking\r\n  UPDATE public.class_bookings\r\n  SET status = 'cancelled',\r\n      cancelled_at = NOW()\r\n  WHERE id = booking_uuid;\r\n\r\n  -- Refund credit\r\n  IF subscription_record.plan_type = 'abonnement' THEN\r\n    UPDATE public.user_subscriptions\r\n    SET weekly_credits_used = weekly_credits_used - 1\r\n    WHERE id = subscription_record.id;\r\n  ELSE\r\n    UPDATE public.user_subscriptions\r\n    SET credits_remaining = credits_remaining + 1,\r\n        credits_used = credits_used - 1\r\n    WHERE id = subscription_record.id;\r\n  END IF;\r\n\r\n  RETURN jsonb_build_object(\r\n    'success', true,\r\n    'message', 'Réservation annulée avec succès'\r\n  );\r\n\r\nEXCEPTION\r\n  WHEN others THEN\r\n    RAISE LOG 'Error in cancel_booking function: %', SQLERRM;\r\n    RETURN jsonb_build_object(\r\n      'success', false,\r\n      'reason', 'system_error',\r\n      'message', 'Erreur système. Veuillez réessayer.'\r\n    );\r\nEND;\r\n",
+    "return_type": "jsonb",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "check_expired_subscriptions",
+    "function_body": "\r\nBEGIN\r\n  UPDATE public.user_subscriptions\r\n  SET status = 'expired'\r\n  WHERE status = 'active' AND end_date < NOW();\r\nEND;\r\n",
+    "return_type": "void",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "check_user_admin",
+    "function_body": "\r\nDECLARE\r\n  user_role text;\r\nBEGIN\r\n  SELECT role INTO user_role\r\n  FROM public.profiles\r\n  WHERE id = user_id;\r\n\r\n  RETURN COALESCE(user_role = 'admin', false);\r\nEND;\r\n",
+    "return_type": "boolean",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "get_admin_users_data",
+    "function_body": "\r\nDECLARE\r\n  result JSONB;\r\n  total_count INTEGER;\r\nBEGIN\r\n  -- Get total count\r\n  SELECT COUNT(*) INTO total_count\r\n  FROM public.profiles\r\n  WHERE role != 'admin' OR role IS NULL;\r\n\r\n  SELECT jsonb_build_object(\r\n    'users', (\r\n      SELECT jsonb_agg(\r\n        jsonb_build_object(\r\n          'id', p.id,\r\n          'email', p.email,\r\n          'full_name', p.full_name,\r\n          'phone', p.phone,\r\n          'desired_plan', p.desired_plan,\r\n          'subscription_status', p.subscription_status,\r\n          'role', p.role,\r\n          'created_at', p.created_at,\r\n          'active_subscription', us_data.subscription_data\r\n        ) ORDER BY p.created_at DESC  -- Fixed: ORDER BY moved inside jsonb_agg()\r\n      )\r\n      FROM public.profiles p\r\n      LEFT JOIN LATERAL (\r\n        SELECT jsonb_build_object(\r\n          'id', us.id,\r\n          'status', us.status,\r\n          'credits_remaining', us.credits_remaining,\r\n          'end_date', us.end_date,\r\n          'plan_name', sp.name\r\n        ) as subscription_data\r\n        FROM public.user_subscriptions us\r\n        JOIN public.subscription_plans sp ON us.plan_id = sp.id\r\n        WHERE us.user_id = p.id AND us.status = 'active'\r\n        ORDER BY us.end_date DESC\r\n        LIMIT 1\r\n      ) us_data ON true\r\n      WHERE (p.role != 'admin' OR p.role IS NULL)\r\n      -- Removed the problematic ORDER BY here since it's now inside jsonb_agg()\r\n      LIMIT page_limit OFFSET page_offset\r\n    ),\r\n    'total_count', total_count,\r\n    'page_offset', page_offset,\r\n    'page_limit', page_limit\r\n  ) INTO result;\r\n\r\n  RETURN result;\r\nEND;\r\n",
+    "return_type": "jsonb",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "get_database_performance_stats",
+    "function_body": "\r\nDECLARE\r\n  result JSONB;\r\nBEGIN\r\n  SELECT jsonb_build_object(\r\n    'table_sizes', (\r\n      SELECT jsonb_agg(\r\n        jsonb_build_object(\r\n          'table_name', tablename,\r\n          'size', pg_size_pretty(pg_total_relation_size('public.' || tablename)),\r\n          'size_bytes', pg_total_relation_size('public.' || tablename),\r\n          'rows_read', pg_stat_get_tuples_returned(c.oid),\r\n          'rows_fetched', pg_stat_get_tuples_fetched(c.oid),\r\n          'efficiency_ratio',\r\n            CASE\r\n              WHEN pg_stat_get_tuples_returned(c.oid) = 0 THEN 0\r\n              ELSE round((pg_stat_get_tuples_fetched(c.oid) * 100.0) / pg_stat_get_tuples_returned(c.oid), 2)\r\n            END\r\n        ) ORDER BY pg_total_relation_size('public.' || tablename) DESC\r\n      )\r\n      FROM pg_tables pt\r\n      JOIN pg_class c ON c.relname = pt.tablename\r\n      WHERE pt.schemaname = 'public'\r\n    ),\r\n    'index_usage', (\r\n      SELECT jsonb_agg(\r\n        jsonb_build_object(\r\n          'table_name', schemaname || '.' || tablename,\r\n          'index_name', indexname,\r\n          'definition', indexdef\r\n        )\r\n      )\r\n      FROM pg_indexes\r\n      WHERE schemaname = 'public'\r\n      ORDER BY tablename, indexname\r\n    )\r\n  ) INTO result;\r\n\r\n  RETURN result;\r\nEND;\r\n",
+    "return_type": "jsonb",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "get_user_dashboard_data",
+    "function_body": "\r\n\r\nDECLARE\r\n  result JSONB;\r\nBEGIN\r\n  SELECT jsonb_build_object(\r\n    'profile', (\r\n      SELECT jsonb_build_object(\r\n        'id', id,\r\n        'email', email,\r\n        'full_name', full_name,\r\n        'phone', phone,\r\n        'subscription_status', subscription_status,\r\n        'role', role\r\n      )\r\n      FROM public.profiles WHERE id = user_uuid\r\n    ),\r\n    'active_subscription', (\r\n      SELECT jsonb_build_object(\r\n        'id', us.id,\r\n        'status', us.status,\r\n        'credits_remaining', us.credits_remaining,\r\n        'weekly_credits_used', us.weekly_credits_used,\r\n        'end_date', us.end_date,\r\n        'start_date', us.start_date,\r\n        'plan', jsonb_build_object(\r\n          'id', sp.id,\r\n          'name', sp.name,\r\n          'type', sp.type,\r\n          'weekly_limit', sp.weekly_limit,\r\n          'credits', sp.credits,\r\n          'price_dhs', sp.price_dhs\r\n        )\r\n      )\r\n      FROM public.user_subscriptions us\r\n      JOIN public.subscription_plans sp ON us.plan_id = sp.id\r\n      WHERE us.user_id = user_uuid\r\n        AND us.status = 'active'\r\n        AND us.end_date > NOW()\r\n      ORDER BY us.end_date DESC\r\n      LIMIT 1\r\n    ),\r\n    'recent_bookings', (\r\n      SELECT jsonb_agg(\r\n        jsonb_build_object(\r\n          'id', cb.id,\r\n          'status', cb.status,\r\n          'booked_at', cb.booked_at,\r\n          'cancelled_at', cb.cancelled_at,\r\n          'class_title', c.title,\r\n          'start_datetime', cs.start_datetime,\r\n          'end_datetime', cs.end_datetime,\r\n          'coach', c.coach,\r\n          'location', c.location\r\n        ) ORDER BY cb.booked_at DESC\r\n      )\r\n      FROM public.class_bookings cb\r\n      JOIN public.class_schedules cs ON cb.schedule_id = cs.id\r\n      JOIN public.classes c ON cs.class_id = c.id\r\n      WHERE cb.user_id = user_uuid\r\n      ORDER BY cb.booked_at DESC\r\n      LIMIT 10\r\n    ),\r\n    'upcoming_classes', (\r\n      SELECT jsonb_agg(\r\n        upcoming_class ORDER BY (upcoming_class->>'start_datetime')::timestamp\r\n      )\r\n      FROM (\r\n        SELECT jsonb_build_object(\r\n          'id', cs.id,\r\n          'title', c.title,\r\n          'description', c.description,\r\n          'start_datetime', cs.start_datetime,\r\n          'end_datetime', cs.end_datetime,\r\n          'coach', c.coach,\r\n          'location', c.location,\r\n          'difficulty_level', c.difficulty_level,\r\n          'current_bookings', cs.current_bookings,\r\n          'max_capacity', c.max_capacity,\r\n          'user_booked', (cb.id IS NOT NULL),\r\n          'user_booking_id', cb.id,\r\n          'user_waitlist_position', cw.position\r\n        ) as upcoming_class\r\n        FROM public.class_schedules cs\r\n        JOIN public.classes c ON cs.class_id = c.id\r\n        LEFT JOIN public.class_bookings cb ON cs.id = cb.schedule_id AND cb.user_id = user_uuid AND cb.status = 'confirmed'\r\n        LEFT JOIN public.class_waitlist cw ON cs.id = cw.schedule_id AND cw.user_id = user_uuid\r\n        WHERE cs.start_datetime >= NOW()\r\n          AND NOT cs.is_cancelled\r\n          AND NOT cs.is_exception\r\n        ORDER BY cs.start_datetime\r\n        LIMIT 20\r\n      ) subquery\r\n    )\r\n  ) INTO result;\r\n\r\n  RETURN result;\r\nEND;\r\n\r\n",
+    "return_type": "jsonb",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "get_user_valid_subscription",
+    "function_body": "\r\nBEGIN\r\n  RETURN QUERY\r\n  SELECT\r\n    us.id,\r\n    us.plan_id,\r\n    sp.type as plan_type,\r\n    us.credits_remaining,\r\n    us.weekly_credits_used,\r\n    sp.weekly_limit,\r\n    us.status,\r\n    us.end_date\r\n  FROM public.user_subscriptions us\r\n  JOIN public.subscription_plans sp ON us.plan_id = sp.id\r\n  WHERE us.user_id = user_uuid\r\n    AND us.status = 'active'\r\n    AND us.end_date > NOW()\r\n    AND (\r\n      us.credits_remaining > 0\r\n      OR (sp.type = 'abonnement' AND us.weekly_credits_used < sp.weekly_limit)\r\n    )\r\n  ORDER BY us.end_date DESC\r\n  LIMIT 1;\r\nEND;\r\n",
+    "return_type": "record",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "handle_new_user",
+    "function_body": "\r\nBEGIN\r\n  INSERT INTO public.profiles (id, email, full_name, phone, desired_plan)\r\n  VALUES (\r\n    NEW.id,\r\n    NEW.email,\r\n    COALESCE(NEW.raw_user_meta_data->>'full_name', ''),\r\n    COALESCE(NEW.raw_user_meta_data->>'phone', ''),\r\n    COALESCE(NEW.raw_user_meta_data->>'desired_plan', '')\r\n  );\r\n  RETURN NEW;\r\nEND;\r\n",
+    "return_type": "trigger",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "is_admin",
+    "function_body": "\r\nDECLARE\r\n  user_role TEXT;\r\nBEGIN\r\n  SELECT role INTO user_role\r\n  FROM public.profiles\r\n  WHERE id = auth.uid()\r\n  LIMIT 1;\r\n  \r\n  RETURN COALESCE(user_role = 'admin', false);\r\nEND;\r\n",
+    "return_type": "boolean",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "is_admin",
+    "function_body": "\r\nDECLARE\r\n  user_role TEXT;\r\nBEGIN\r\n  SELECT role INTO user_role\r\n  FROM profiles\r\n  WHERE id = user_uuid\r\n  LIMIT 1;\r\n\r\n  RETURN COALESCE(user_role = 'admin', false);\r\nEND;\r\n",
+    "return_type": "boolean",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "join_waitlist",
+    "function_body": "\r\nDECLARE\r\n  subscription_record RECORD;\r\n  class_info RECORD;\r\n  existing_waitlist_count INTEGER;\r\n  new_waitlist_id UUID;\r\nBEGIN\r\n  -- Check if user has valid subscription\r\n  SELECT * INTO subscription_record\r\n  FROM get_user_valid_subscription(user_uuid)\r\n  LIMIT 1;\r\n\r\n  IF subscription_record IS NULL THEN\r\n    RETURN jsonb_build_object(\r\n      'success', false,\r\n      'reason', 'no_valid_subscription',\r\n      'message', 'Aucun abonnement valide trouvé'\r\n    );\r\n  END IF;\r\n\r\n  -- Check if user is already on waitlist\r\n  SELECT COUNT(*) INTO existing_waitlist_count\r\n  FROM public.class_waitlist\r\n  WHERE user_id = user_uuid AND schedule_id = schedule_uuid;\r\n\r\n  IF existing_waitlist_count > 0 THEN\r\n    RETURN jsonb_build_object(\r\n      'success', false,\r\n      'reason', 'already_on_waitlist',\r\n      'message', 'Vous êtes déjà sur la liste d''attente'\r\n    );\r\n  END IF;\r\n\r\n  -- Get class information\r\n  SELECT c.max_capacity, cs.current_bookings, cs.start_datetime\r\n  INTO class_info\r\n  FROM public.class_schedules cs\r\n  JOIN public.classes c ON cs.class_id = c.id\r\n  WHERE cs.id = schedule_uuid;\r\n\r\n  -- Verify class is actually full\r\n  IF class_info.current_bookings < class_info.max_capacity THEN\r\n    RETURN jsonb_build_object(\r\n      'success', false,\r\n      'reason', 'class_not_full',\r\n      'message', 'Le cours n''est pas complet, vous pouvez le réserver directement'\r\n    );\r\n  END IF;\r\n\r\n  -- Add to waitlist\r\n  INSERT INTO public.class_waitlist (user_id, schedule_id, subscription_id)\r\n  VALUES (user_uuid, schedule_uuid, subscription_record.id)\r\n  RETURNING id INTO new_waitlist_id;\r\n\r\n  RETURN jsonb_build_object(\r\n    'success', true,\r\n    'waitlist_id', new_waitlist_id,\r\n    'message', 'Ajouté à la liste d''attente'\r\n  );\r\nEND;\r\n",
+    "return_type": "jsonb",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "promote_from_waitlist",
+    "function_body": "\r\nDECLARE\r\n  waitlist_entry RECORD;\r\n  subscription_record RECORD;\r\n  class_schedule_record RECORD;\r\n  class_record RECORD;\r\n  current_bookings INTEGER;\r\nBEGIN\r\n  -- Only process when a booking is cancelled/removed\r\n  IF TG_OP = 'UPDATE' AND OLD.status = 'confirmed' AND NEW.status != 'confirmed' THEN\r\n    -- Lock the schedule to prevent race conditions\r\n    SELECT * INTO class_schedule_record\r\n    FROM class_schedules\r\n    WHERE id = NEW.schedule_id\r\n    FOR UPDATE;\r\n\r\n    -- Get class info for max_capacity\r\n    SELECT * INTO class_record\r\n    FROM classes\r\n    WHERE id = class_schedule_record.class_id;\r\n\r\n    -- Get current booking count\r\n    SELECT COUNT(*) INTO current_bookings\r\n    FROM class_bookings\r\n    WHERE schedule_id = NEW.schedule_id\r\n      AND status = 'confirmed'\r\n    FOR UPDATE;\r\n\r\n    -- Only promote if there's space\r\n    IF current_bookings < class_record.max_capacity THEN\r\n      -- Find the first person on the waitlist with locking\r\n      SELECT * INTO waitlist_entry\r\n      FROM class_waitlist\r\n      WHERE schedule_id = NEW.schedule_id\r\n      ORDER BY position ASC\r\n      LIMIT 1\r\n      FOR UPDATE SKIP LOCKED;\r\n\r\n      IF waitlist_entry IS NOT NULL THEN\r\n        -- Get their subscription info\r\n        SELECT * INTO subscription_record\r\n        FROM get_user_valid_subscription(waitlist_entry.user_id)\r\n        WHERE id = waitlist_entry.subscription_id\r\n        LIMIT 1;\r\n\r\n        IF subscription_record IS NOT NULL THEN\r\n          -- Create booking for waitlisted user\r\n          INSERT INTO class_bookings (user_id, schedule_id, subscription_id, status)\r\n          VALUES (waitlist_entry.user_id, waitlist_entry.schedule_id, waitlist_entry.subscription_id, 'confirmed');\r\n\r\n          -- Deduct credit\r\n          IF subscription_record.plan_type = 'abonnement' THEN\r\n            UPDATE user_subscriptions\r\n            SET weekly_credits_used = weekly_credits_used + 1\r\n            WHERE id = subscription_record.id;\r\n          ELSE\r\n            UPDATE user_subscriptions\r\n            SET credits_remaining = credits_remaining - 1,\r\n                credits_used = credits_used + 1\r\n            WHERE id = subscription_record.id;\r\n          END IF;\r\n\r\n          -- Remove from waitlist\r\n          DELETE FROM class_waitlist WHERE id = waitlist_entry.id;\r\n\r\n          -- Update positions for remaining waitlist entries\r\n          UPDATE class_waitlist\r\n          SET position = position - 1\r\n          WHERE schedule_id = NEW.schedule_id\r\n            AND position > waitlist_entry.position;\r\n        END IF;\r\n      END IF;\r\n    END IF;\r\n\r\n  ELSIF TG_OP = 'DELETE' AND OLD.status = 'confirmed' THEN\r\n    -- Similar logic for deleted bookings\r\n    SELECT * INTO class_schedule_record\r\n    FROM class_schedules\r\n    WHERE id = OLD.schedule_id\r\n    FOR UPDATE;\r\n\r\n    -- Get class info for max_capacity\r\n    SELECT * INTO class_record\r\n    FROM classes\r\n    WHERE id = class_schedule_record.class_id;\r\n\r\n    SELECT COUNT(*) INTO current_bookings\r\n    FROM class_bookings\r\n    WHERE schedule_id = OLD.schedule_id\r\n      AND status = 'confirmed'\r\n    FOR UPDATE;\r\n\r\n    IF current_bookings < class_record.max_capacity THEN\r\n      SELECT * INTO waitlist_entry\r\n      FROM class_waitlist\r\n      WHERE schedule_id = OLD.schedule_id\r\n      ORDER BY position ASC\r\n      LIMIT 1\r\n      FOR UPDATE SKIP LOCKED;\r\n\r\n      IF waitlist_entry IS NOT NULL THEN\r\n        SELECT * INTO subscription_record\r\n        FROM get_user_valid_subscription(waitlist_entry.user_id)\r\n        WHERE id = waitlist_entry.subscription_id\r\n        LIMIT 1;\r\n\r\n        IF subscription_record IS NOT NULL THEN\r\n          INSERT INTO class_bookings (user_id, schedule_id, subscription_id, status)\r\n          VALUES (waitlist_entry.user_id, waitlist_entry.schedule_id, waitlist_entry.subscription_id, 'confirmed');\r\n\r\n          IF subscription_record.plan_type = 'abonnement' THEN\r\n            UPDATE user_subscriptions\r\n            SET weekly_credits_used = weekly_credits_used + 1\r\n            WHERE id = subscription_record.id;\r\n          ELSE\r\n            UPDATE user_subscriptions\r\n            SET credits_remaining = credits_remaining - 1,\r\n                credits_used = credits_used + 1\r\n            WHERE id = subscription_record.id;\r\n          END IF;\r\n\r\n          DELETE FROM class_waitlist WHERE id = waitlist_entry.id;\r\n\r\n          -- Update positions\r\n          UPDATE class_waitlist\r\n          SET position = position - 1\r\n          WHERE schedule_id = OLD.schedule_id\r\n            AND position > waitlist_entry.position;\r\n        END IF;\r\n      END IF;\r\n    END IF;\r\n  END IF;\r\n\r\n  RETURN COALESCE(NEW, OLD);\r\n\r\nEXCEPTION\r\n  WHEN others THEN\r\n    -- Log errors but don't fail the transaction\r\n    RAISE LOG 'Error in promote_from_waitlist trigger: %', SQLERRM;\r\n    RETURN COALESCE(NEW, OLD);\r\nEND;\r\n",
+    "return_type": "trigger",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "reset_weekly_credits",
+    "function_body": "\r\nDECLARE\r\n    affected_rows INTEGER := 0;\r\n    log_message TEXT;\r\nBEGIN\r\n    -- Update all active abonnement subscriptions to reset weekly credits\r\n    UPDATE public.user_subscriptions\r\n    SET\r\n        weekly_credits_used = 0,\r\n        last_weekly_reset = NOW(),\r\n        updated_at = NOW()\r\n    FROM public.subscription_plans sp\r\n    WHERE user_subscriptions.plan_id = sp.id\r\n        AND user_subscriptions.status = 'active'\r\n        AND sp.type = 'abonnement'\r\n        AND user_subscriptions.end_date > NOW();\r\n\r\n    GET DIAGNOSTICS affected_rows = ROW_COUNT;\r\n\r\n    log_message := format('Weekly credits reset completed. %s abonnement subscriptions updated at %s',\r\n                         affected_rows, NOW());\r\n\r\n    -- Log the operation\r\n    RAISE LOG '%', log_message;\r\n\r\n    -- Return success with details\r\n    RETURN jsonb_build_object(\r\n        'success', true,\r\n        'affected_rows', affected_rows,\r\n        'reset_time', NOW(),\r\n        'message', log_message\r\n    );\r\n\r\nEXCEPTION\r\n    WHEN others THEN\r\n        RAISE LOG 'Error in reset_weekly_credits: %', SQLERRM;\r\n        RETURN jsonb_build_object(\r\n            'success', false,\r\n            'error', SQLERRM,\r\n            'reset_time', NOW()\r\n        );\r\nEND;\r\n",
+    "return_type": "jsonb",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "set_waitlist_position",
+    "function_body": "\r\nBEGIN\r\n  -- Set position as the last in line\r\n  NEW.position = COALESCE(\r\n    (SELECT MAX(position) FROM public.class_waitlist\r\n     WHERE schedule_id = NEW.schedule_id) + 1,\r\n    1\r\n  );\r\n  RETURN NEW;\r\nEND;\r\n",
+    "return_type": "trigger",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "update_booking_count",
+    "function_body": "\r\nBEGIN\r\n  IF TG_OP = 'INSERT' THEN\r\n    -- Increase booking count\r\n    UPDATE public.class_schedules\r\n    SET current_bookings = current_bookings + 1\r\n    WHERE id = NEW.schedule_id;\r\n    RETURN NEW;\r\n  ELSIF TG_OP = 'UPDATE' THEN\r\n    -- Handle status changes\r\n    IF OLD.status = 'confirmed' AND NEW.status != 'confirmed' THEN\r\n      -- Booking was cancelled/no-show, decrease count\r\n      UPDATE public.class_schedules\r\n      SET current_bookings = current_bookings - 1\r\n      WHERE id = NEW.schedule_id;\r\n    ELSIF OLD.status != 'confirmed' AND NEW.status = 'confirmed' THEN\r\n      -- Booking was restored, increase count\r\n      UPDATE public.class_schedules\r\n      SET current_bookings = current_bookings + 1\r\n      WHERE id = NEW.schedule_id;\r\n    END IF;\r\n    RETURN NEW;\r\n  ELSIF TG_OP = 'DELETE' THEN\r\n    -- Decrease booking count only if booking was confirmed\r\n    IF OLD.status = 'confirmed' THEN\r\n      UPDATE public.class_schedules\r\n      SET current_bookings = current_bookings - 1\r\n      WHERE id = OLD.schedule_id;\r\n    END IF;\r\n    RETURN OLD;\r\n  END IF;\r\n  RETURN NULL;\r\nEND;\r\n",
+    "return_type": "trigger",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "update_subscription_credits",
+    "function_body": "\r\n\r\nDECLARE\r\n  result_data jsonb;\r\nBEGIN\r\n  -- Update the subscription credits atomically\r\n  UPDATE public.user_subscriptions\r\n  SET\r\n    credits_remaining = GREATEST(0, credits_remaining + credits_change),\r\n    weekly_credits_used = GREATEST(0, weekly_credits_used + weekly_credits_change),\r\n    credits_used = GREATEST(0, COALESCE(credits_used, 0) + credits_used_change),\r\n    updated_at = NOW()\r\n  WHERE id = subscription_uuid\r\n  RETURNING jsonb_build_object(\r\n    'id', id,\r\n    'credits_remaining', credits_remaining,\r\n    'weekly_credits_used', weekly_credits_used,\r\n    'credits_used', credits_used,\r\n    'updated_at', updated_at\r\n  ) INTO result_data;\r\n\r\n  -- Check if any row was updated\r\n  IF result_data IS NULL THEN\r\n    RETURN jsonb_build_object(\r\n      'success', false,\r\n      'message', 'Abonnement introuvable'\r\n    );\r\n  END IF;\r\n\r\n  -- Return success with updated data\r\n  RETURN jsonb_build_object(\r\n    'success', true,\r\n    'subscription', result_data,\r\n    'message', 'Crédits mis à jour avec succès'\r\n  );\r\n\r\nEXCEPTION\r\n  WHEN others THEN\r\n    RETURN jsonb_build_object(\r\n      'success', false,\r\n      'message', 'Erreur lors de la mise à jour des crédits: ' || SQLERRM\r\n    );\r\nEND;\r\n\r\n",
+    "return_type": "jsonb",
+    "routine_type": "FUNCTION"
+  },
+  {
+    "function_name": "update_updated_at_column",
+    "function_body": "\r\nBEGIN\r\n    NEW.updated_at = NOW();\r\n    RETURN NEW;\r\nEND;\r\n",
+    "return_type": "trigger",
+    "routine_type": "FUNCTION"
+  }
+]
   
-  RETURN COALESCE(user_role = 'admin', false);
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| CREATE OR REPLACE FUNCTION public.is_admin(user_uuid uuid DEFAULT auth.uid()) RETURNS boolean AS $$
-
-DECLARE
-  user_role TEXT;
-BEGIN
-  SELECT role INTO user_role
-  FROM profiles
-  WHERE id = user_uuid
-  LIMIT 1;
-
-  RETURN COALESCE(user_role = 'admin', false);
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| CREATE OR REPLACE FUNCTION public.join_waitlist(user_uuid uuid, schedule_uuid uuid) RETURNS jsonb AS $$
-
-DECLARE
-  subscription_record RECORD;
-  class_info RECORD;
-  existing_waitlist_count INTEGER;
-  new_waitlist_id UUID;
-BEGIN
-  -- Check if user has valid subscription
-  SELECT * INTO subscription_record
-  FROM get_user_valid_subscription(user_uuid)
-  LIMIT 1;
-
-  IF subscription_record IS NULL THEN
-    RETURN jsonb_build_object(
-      'success', false,
-      'reason', 'no_valid_subscription',
-      'message', 'Aucun abonnement valide trouvé'
-    );
-  END IF;
-
-  -- Check if user is already on waitlist
-  SELECT COUNT(*) INTO existing_waitlist_count
-  FROM public.class_waitlist
-  WHERE user_id = user_uuid AND schedule_id = schedule_uuid;
-
-  IF existing_waitlist_count > 0 THEN
-    RETURN jsonb_build_object(
-      'success', false,
-      'reason', 'already_on_waitlist',
-      'message', 'Vous êtes déjà sur la liste d''attente'
-    );
-  END IF;
-
-  -- Get class information
-  SELECT c.max_capacity, cs.current_bookings, cs.start_datetime
-  INTO class_info
-  FROM public.class_schedules cs
-  JOIN public.classes c ON cs.class_id = c.id
-  WHERE cs.id = schedule_uuid;
-
-  -- Verify class is actually full
-  IF class_info.current_bookings < class_info.max_capacity THEN
-    RETURN jsonb_build_object(
-      'success', false,
-      'reason', 'class_not_full',
-      'message', 'Le cours n''est pas complet, vous pouvez le réserver directement'
-    );
-  END IF;
-
-  -- Add to waitlist
-  INSERT INTO public.class_waitlist (user_id, schedule_id, subscription_id)
-  VALUES (user_uuid, schedule_uuid, subscription_record.id)
-  RETURNING id INTO new_waitlist_id;
-
-  RETURN jsonb_build_object(
-    'success', true,
-    'waitlist_id', new_waitlist_id,
-    'message', 'Ajouté à la liste d''attente'
-  );
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| CREATE OR REPLACE FUNCTION public.promote_from_waitlist() RETURNS trigger AS $$
-
-DECLARE
-  waitlist_entry RECORD;
-  subscription_record RECORD;
-  class_schedule_record RECORD;
-  class_record RECORD;
-  current_bookings INTEGER;
-BEGIN
-  -- Only process when a booking is cancelled/removed
-  IF TG_OP = 'UPDATE' AND OLD.status = 'confirmed' AND NEW.status != 'confirmed' THEN
-    -- Lock the schedule to prevent race conditions
-    SELECT * INTO class_schedule_record
-    FROM class_schedules
-    WHERE id = NEW.schedule_id
-    FOR UPDATE;
-
-    -- Get class info for max_capacity
-    SELECT * INTO class_record
-    FROM classes
-    WHERE id = class_schedule_record.class_id;
-
-    -- Get current booking count
-    SELECT COUNT(*) INTO current_bookings
-    FROM class_bookings
-    WHERE schedule_id = NEW.schedule_id
-      AND status = 'confirmed'
-    FOR UPDATE;
-
-    -- Only promote if there's space
-    IF current_bookings < class_record.max_capacity THEN
-      -- Find the first person on the waitlist with locking
-      SELECT * INTO waitlist_entry
-      FROM class_waitlist
-      WHERE schedule_id = NEW.schedule_id
-      ORDER BY position ASC
-      LIMIT 1
-      FOR UPDATE SKIP LOCKED;
-
-      IF waitlist_entry IS NOT NULL THEN
-        -- Get their subscription info
-        SELECT * INTO subscription_record
-        FROM get_user_valid_subscription(waitlist_entry.user_id)
-        WHERE id = waitlist_entry.subscription_id
-        LIMIT 1;
-
-        IF subscription_record IS NOT NULL THEN
-          -- Create booking for waitlisted user
-          INSERT INTO class_bookings (user_id, schedule_id, subscription_id, status)
-          VALUES (waitlist_entry.user_id, waitlist_entry.schedule_id, waitlist_entry.subscription_id, 'confirmed');
-
-          -- Deduct credit
-          IF subscription_record.plan_type = 'abonnement' THEN
-            UPDATE user_subscriptions
-            SET weekly_credits_used = weekly_credits_used + 1
-            WHERE id = subscription_record.id;
-          ELSE
-            UPDATE user_subscriptions
-            SET credits_remaining = credits_remaining - 1,
-                credits_used = credits_used + 1
-            WHERE id = subscription_record.id;
-          END IF;
-
-          -- Remove from waitlist
-          DELETE FROM class_waitlist WHERE id = waitlist_entry.id;
-
-          -- Update positions for remaining waitlist entries
-          UPDATE class_waitlist
-          SET position = position - 1
-          WHERE schedule_id = NEW.schedule_id
-            AND position > waitlist_entry.position;
-        END IF;
-      END IF;
-    END IF;
-
-  ELSIF TG_OP = 'DELETE' AND OLD.status = 'confirmed' THEN
-    -- Similar logic for deleted bookings
-    SELECT * INTO class_schedule_record
-    FROM class_schedules
-    WHERE id = OLD.schedule_id
-    FOR UPDATE;
-
-    -- Get class info for max_capacity
-    SELECT * INTO class_record
-    FROM classes
-    WHERE id = class_schedule_record.class_id;
-
-    SELECT COUNT(*) INTO current_bookings
-    FROM class_bookings
-    WHERE schedule_id = OLD.schedule_id
-      AND status = 'confirmed'
-    FOR UPDATE;
-
-    IF current_bookings < class_record.max_capacity THEN
-      SELECT * INTO waitlist_entry
-      FROM class_waitlist
-      WHERE schedule_id = OLD.schedule_id
-      ORDER BY position ASC
-      LIMIT 1
-      FOR UPDATE SKIP LOCKED;
-
-      IF waitlist_entry IS NOT NULL THEN
-        SELECT * INTO subscription_record
-        FROM get_user_valid_subscription(waitlist_entry.user_id)
-        WHERE id = waitlist_entry.subscription_id
-        LIMIT 1;
-
-        IF subscription_record IS NOT NULL THEN
-          INSERT INTO class_bookings (user_id, schedule_id, subscription_id, status)
-          VALUES (waitlist_entry.user_id, waitlist_entry.schedule_id, waitlist_entry.subscription_id, 'confirmed');
-
-          IF subscription_record.plan_type = 'abonnement' THEN
-            UPDATE user_subscriptions
-            SET weekly_credits_used = weekly_credits_used + 1
-            WHERE id = subscription_record.id;
-          ELSE
-            UPDATE user_subscriptions
-            SET credits_remaining = credits_remaining - 1,
-                credits_used = credits_used + 1
-            WHERE id = subscription_record.id;
-          END IF;
-
-          DELETE FROM class_waitlist WHERE id = waitlist_entry.id;
-
-          -- Update positions
-          UPDATE class_waitlist
-          SET position = position - 1
-          WHERE schedule_id = OLD.schedule_id
-            AND position > waitlist_entry.position;
-        END IF;
-      END IF;
-    END IF;
-  END IF;
-
-  RETURN COALESCE(NEW, OLD);
-
-EXCEPTION
-  WHEN others THEN
-    -- Log errors but don't fail the transaction
-    RAISE LOG 'Error in promote_from_waitlist trigger: %', SQLERRM;
-    RETURN COALESCE(NEW, OLD);
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER; |
-| CREATE OR REPLACE FUNCTION public.reset_weekly_credits() RETURNS void AS $$
-
-BEGIN
-  UPDATE public.user_subscriptions
-  SET
-    weekly_credits_used = 0,
-    last_weekly_reset = NOW()
-  WHERE
-    status = 'active'
-    AND last_weekly_reset < (NOW() - INTERVAL '7 days')
-    AND plan_id IN (
-      SELECT id FROM public.subscription_plans
-      WHERE type = 'abonnement'
-    );
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| CREATE OR REPLACE FUNCTION public.set_waitlist_position() RETURNS trigger AS $$
-
-BEGIN
-  -- Set position as the last in line
-  NEW.position = COALESCE(
-    (SELECT MAX(position) FROM public.class_waitlist
-     WHERE schedule_id = NEW.schedule_id) + 1,
-    1
-  );
-  RETURN NEW;
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| CREATE OR REPLACE FUNCTION public.update_booking_count() RETURNS trigger AS $$
-
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    -- Increase booking count
-    UPDATE public.class_schedules
-    SET current_bookings = current_bookings + 1
-    WHERE id = NEW.schedule_id;
-    RETURN NEW;
-  ELSIF TG_OP = 'UPDATE' THEN
-    -- Handle status changes
-    IF OLD.status = 'confirmed' AND NEW.status != 'confirmed' THEN
-      -- Booking was cancelled/no-show, decrease count
-      UPDATE public.class_schedules
-      SET current_bookings = current_bookings - 1
-      WHERE id = NEW.schedule_id;
-    ELSIF OLD.status != 'confirmed' AND NEW.status = 'confirmed' THEN
-      -- Booking was restored, increase count
-      UPDATE public.class_schedules
-      SET current_bookings = current_bookings + 1
-      WHERE id = NEW.schedule_id;
-    END IF;
-    RETURN NEW;
-  ELSIF TG_OP = 'DELETE' THEN
-    -- Decrease booking count only if booking was confirmed
-    IF OLD.status = 'confirmed' THEN
-      UPDATE public.class_schedules
-      SET current_bookings = current_bookings - 1
-      WHERE id = OLD.schedule_id;
-    END IF;
-    RETURN OLD;
-  END IF;
-  RETURN NULL;
-END;
-
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| CREATE OR REPLACE FUNCTION public.update_updated_at_column() RETURNS trigger AS $$
-
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-
-$$ LANGUAGE plpgsql VOLATILE;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-
-
--- 6. Triggers - All triggers and their associated functions
-
-
-| trigger_statement                                                                                                                                                     |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CREATE TRIGGER promote_from_waitlist_trigger INSTEAD OF DELETE ON public.class_bookings FOR EACH ROW EXECUTE FUNCTION public.promote_from_waitlist();                 |
-| CREATE TRIGGER update_booking_count_trigger AFTER INSERT ON public.class_bookings FOR EACH ROW EXECUTE FUNCTION public.update_booking_count();                        |
-| CREATE TRIGGER update_class_bookings_updated_at BEFORE UPDATE ON public.class_bookings FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();               |
-| CREATE TRIGGER update_class_schedules_updated_at BEFORE UPDATE ON public.class_schedules FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();             |
-| CREATE TRIGGER adjust_waitlist_positions_trigger INSTEAD OF DELETE ON public.class_waitlist FOR EACH ROW EXECUTE FUNCTION public.adjust_waitlist_positions();         |
-| CREATE TRIGGER set_waitlist_position_trigger BEFORE INSERT ON public.class_waitlist FOR EACH ROW EXECUTE FUNCTION public.set_waitlist_position();                     |
-| CREATE TRIGGER update_class_waitlist_updated_at BEFORE UPDATE ON public.class_waitlist FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();               |
-| CREATE TRIGGER update_classes_updated_at BEFORE UPDATE ON public.classes FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();                             |
-| CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();                           |
-| CREATE TRIGGER update_subscription_plans_updated_at BEFORE UPDATE ON public.subscription_plans FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();       |
-| CREATE TRIGGER update_subscription_requests_updated_at BEFORE UPDATE ON public.subscription_requests FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column(); |
-| CREATE TRIGGER update_user_subscriptions_updated_at BEFORE UPDATE ON public.user_subscriptions FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();       |
-
-
--- 7. RLS Policies - All Row Level Security policies with conditions
-
-
-| policy_statement                                                                                                                                                                                                                      |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CREATE POLICY Admins can manage audit entries ON public.booking_audit FOR ALL USING ((EXISTS ( SELECT 1
-   FROM profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text)))));                                 |
-| CREATE POLICY System can insert audit entries ON public.booking_audit FOR INSERT WITH CHECK (true);                                                                                                                                   |
-| CREATE POLICY Users can view own audit entries ON public.booking_audit FOR SELECT USING (((user_id = auth.uid()) OR (EXISTS ( SELECT 1
-   FROM profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text)))))); |
-| CREATE POLICY Admins can manage all bookings ON public.class_bookings FOR ALL USING ((EXISTS ( SELECT 1
-   FROM profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text)))));                                 |
-| CREATE POLICY Users can create own bookings ON public.class_bookings FOR INSERT WITH CHECK ((auth.uid() = user_id));                                                                                                                  |
-| CREATE POLICY Users can update own bookings ON public.class_bookings FOR UPDATE USING ((auth.uid() = user_id));                                                                                                                       |
-| CREATE POLICY Users can view own bookings ON public.class_bookings FOR SELECT USING ((auth.uid() = user_id));                                                                                                                         |
-| CREATE POLICY Admins can manage class schedules ON public.class_schedules FOR ALL USING (check_user_admin(auth.uid()));                                                                                                               |
-| CREATE POLICY Users can view class schedules ON public.class_schedules FOR SELECT USING (((NOT is_cancelled) AND (NOT is_exception)));                                                                                                |
-| CREATE POLICY Admins can manage all waitlist entries ON public.class_waitlist FOR ALL USING ((EXISTS ( SELECT 1
-   FROM profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text)))));                         |
-| CREATE POLICY Users can create own waitlist entries ON public.class_waitlist FOR INSERT WITH CHECK ((auth.uid() = user_id));                                                                                                          |
-| CREATE POLICY Users can delete own waitlist entries ON public.class_waitlist FOR DELETE USING ((auth.uid() = user_id));                                                                                                               |
-| CREATE POLICY Users can view own waitlist entries ON public.class_waitlist FOR SELECT USING ((auth.uid() = user_id));                                                                                                                 |
-| CREATE POLICY Admins can manage classes ON public.classes FOR ALL USING (check_user_admin(auth.uid()));                                                                                                                               |
-| CREATE POLICY Users can view classes ON public.classes FOR SELECT USING (true);                                                                                                                                                       |
-| CREATE POLICY Admins can update all profiles ON public.profiles FOR UPDATE USING (is_admin(auth.uid()));                                                                                                                              |
-| CREATE POLICY Admins can view all profiles ON public.profiles FOR SELECT USING (is_admin(auth.uid()));                                                                                                                                |
-| CREATE POLICY Enable insert for authenticated users ON public.profiles FOR INSERT WITH CHECK ((auth.uid() = id));                                                                                                                     |
-| CREATE POLICY Users can update own profile ON public.profiles FOR UPDATE USING ((auth.uid() = id));                                                                                                                                   |
-| CREATE POLICY Users can view own profile ON public.profiles FOR SELECT USING ((auth.uid() = id));                                                                                                                                     |
-| CREATE POLICY Admins can manage subscription plans ON public.subscription_plans FOR ALL USING ((EXISTS ( SELECT 1
-   FROM profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text)))));                       |
-| CREATE POLICY Anyone can view subscription plans ON public.subscription_plans FOR SELECT USING (true);                                                                                                                                |
-| CREATE POLICY Admins can manage subscription requests ON public.subscription_requests FOR ALL USING ((( SELECT profiles.role
-   FROM profiles
-  WHERE (profiles.id = auth.uid())
- LIMIT 1) = 'admin'::text));                         |
-| CREATE POLICY Users can create subscription requests ON public.subscription_requests FOR INSERT WITH CHECK ((auth.uid() = user_id));                                                                                                  |
-| CREATE POLICY Users can view own subscription requests ON public.subscription_requests FOR SELECT USING ((auth.uid() = user_id));                                                                                                     |
-| CREATE POLICY Admins can manage subscriptions ON public.user_subscriptions FOR ALL USING ((( SELECT profiles.role
-   FROM profiles
-  WHERE (profiles.id = auth.uid())
- LIMIT 1) = 'admin'::text));                                    |
-| CREATE POLICY Admins can view all subscriptions ON public.user_subscriptions FOR SELECT USING ((( SELECT profiles.role
-   FROM profiles
-  WHERE (profiles.id = auth.uid())
- LIMIT 1) = 'admin'::text));                               |
-| CREATE POLICY Users can view own subscriptions ON public.user_subscriptions FOR SELECT USING ((auth.uid() = user_id));                                                                                                                |
-
-
--- 8. RLS Status - Whether RLS is enabled/disabled per table
-
-
-| rls_statement                                                       |
-| ------------------------------------------------------------------- |
-| ALTER TABLE public.booking_audit ENABLE ROW LEVEL SECURITY;         |
-| ALTER TABLE public.class_bookings ENABLE ROW LEVEL SECURITY;        |
-| ALTER TABLE public.class_schedules ENABLE ROW LEVEL SECURITY;       |
-| ALTER TABLE public.class_waitlist ENABLE ROW LEVEL SECURITY;        |
-| ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;               |
-| ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;              |
-| ALTER TABLE public.subscription_plans ENABLE ROW LEVEL SECURITY;    |
-| ALTER TABLE public.subscription_requests ENABLE ROW LEVEL SECURITY; |
-| ALTER TABLE public.user_subscriptions ENABLE ROW LEVEL SECURITY;    |
-
-
--- 9. Views - All custom views and their definitions  
-
-
-| view_statement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| CREATE VIEW public.calendar_events AS 
- SELECT cs.id,
-    cs.class_id,
-    c.title,
-    c.description,
-    c.coach,
-    c.location,
-    c.difficulty_level,
-    c.max_capacity,
-    cs.start_datetime,
-    cs.end_datetime,
-    cs.is_recurring,
-    cs.recurrence_rule,
-    cs.parent_schedule_id,
-    cs.is_exception,
-    cs.exception_reason,
-    cs.current_bookings,
-    cs.is_cancelled,
-    cs.cancellation_reason,
-    cs.created_at,
-    cs.updated_at
-   FROM (class_schedules cs
-     JOIN classes c ON ((cs.class_id = c.id)))
-  WHERE ((NOT cs.is_exception) AND (NOT cs.is_cancelled)); |
-| CREATE VIEW public.calendar_events_optimized AS 
- SELECT cs.id,
-    cs.class_id,
-    c.title,
-    c.description,
-    c.coach,
-    c.location,
-    c.difficulty_level,
-    c.max_capacity,
-    cs.start_datetime,
-    cs.end_datetime,
-    cs.current_bookings,
-    cs.is_cancelled,
-    cs.is_exception
-   FROM (class_schedules cs
-     JOIN classes c ON ((cs.class_id = c.id)))
-  WHERE ((NOT cs.is_exception) AND (NOT cs.is_cancelled) AND (cs.start_datetime >= now()))
-  ORDER BY cs.start_datetime;                                                                                            |
-
-
--- 10. Sequences - All sequences with their settings   
-
-
-Success. No rows returned
-
-
--- 11. Table Grants - Permission grants on tables
-
-
-| grant_statement                                                        |
-| ---------------------------------------------------------------------- |
-| GRANT DELETE ON public.booking_audit TO anon;                          |
-| GRANT INSERT ON public.booking_audit TO anon;                          |
-| GRANT REFERENCES ON public.booking_audit TO anon;                      |
-| GRANT SELECT ON public.booking_audit TO anon;                          |
-| GRANT TRIGGER ON public.booking_audit TO anon;                         |
-| GRANT TRUNCATE ON public.booking_audit TO anon;                        |
-| GRANT UPDATE ON public.booking_audit TO anon;                          |
-| GRANT DELETE ON public.booking_audit TO authenticated;                 |
-| GRANT INSERT ON public.booking_audit TO authenticated;                 |
-| GRANT REFERENCES ON public.booking_audit TO authenticated;             |
-| GRANT SELECT ON public.booking_audit TO authenticated;                 |
-| GRANT TRIGGER ON public.booking_audit TO authenticated;                |
-| GRANT TRUNCATE ON public.booking_audit TO authenticated;               |
-| GRANT UPDATE ON public.booking_audit TO authenticated;                 |
-| GRANT DELETE ON public.booking_audit TO service_role;                  |
-| GRANT INSERT ON public.booking_audit TO service_role;                  |
-| GRANT REFERENCES ON public.booking_audit TO service_role;              |
-| GRANT SELECT ON public.booking_audit TO service_role;                  |
-| GRANT TRIGGER ON public.booking_audit TO service_role;                 |
-| GRANT TRUNCATE ON public.booking_audit TO service_role;                |
-| GRANT UPDATE ON public.booking_audit TO service_role;                  |
-| GRANT DELETE ON public.calendar_events TO anon;                        |
-| GRANT INSERT ON public.calendar_events TO anon;                        |
-| GRANT REFERENCES ON public.calendar_events TO anon;                    |
-| GRANT SELECT ON public.calendar_events TO anon;                        |
-| GRANT TRIGGER ON public.calendar_events TO anon;                       |
-| GRANT TRUNCATE ON public.calendar_events TO anon;                      |
-| GRANT UPDATE ON public.calendar_events TO anon;                        |
-| GRANT DELETE ON public.calendar_events TO authenticated;               |
-| GRANT INSERT ON public.calendar_events TO authenticated;               |
-| GRANT REFERENCES ON public.calendar_events TO authenticated;           |
-| GRANT SELECT ON public.calendar_events TO authenticated;               |
-| GRANT TRIGGER ON public.calendar_events TO authenticated;              |
-| GRANT TRUNCATE ON public.calendar_events TO authenticated;             |
-| GRANT UPDATE ON public.calendar_events TO authenticated;               |
-| GRANT DELETE ON public.calendar_events TO service_role;                |
-| GRANT INSERT ON public.calendar_events TO service_role;                |
-| GRANT REFERENCES ON public.calendar_events TO service_role;            |
-| GRANT SELECT ON public.calendar_events TO service_role;                |
-| GRANT TRIGGER ON public.calendar_events TO service_role;               |
-| GRANT TRUNCATE ON public.calendar_events TO service_role;              |
-| GRANT UPDATE ON public.calendar_events TO service_role;                |
-| GRANT DELETE ON public.calendar_events_optimized TO anon;              |
-| GRANT INSERT ON public.calendar_events_optimized TO anon;              |
-| GRANT REFERENCES ON public.calendar_events_optimized TO anon;          |
-| GRANT SELECT ON public.calendar_events_optimized TO anon;              |
-| GRANT TRIGGER ON public.calendar_events_optimized TO anon;             |
-| GRANT TRUNCATE ON public.calendar_events_optimized TO anon;            |
-| GRANT UPDATE ON public.calendar_events_optimized TO anon;              |
-| GRANT DELETE ON public.calendar_events_optimized TO authenticated;     |
-| GRANT INSERT ON public.calendar_events_optimized TO authenticated;     |
-| GRANT REFERENCES ON public.calendar_events_optimized TO authenticated; |
-| GRANT SELECT ON public.calendar_events_optimized TO authenticated;     |
-| GRANT TRIGGER ON public.calendar_events_optimized TO authenticated;    |
-| GRANT TRUNCATE ON public.calendar_events_optimized TO authenticated;   |
-| GRANT UPDATE ON public.calendar_events_optimized TO authenticated;     |
-| GRANT DELETE ON public.calendar_events_optimized TO service_role;      |
-| GRANT INSERT ON public.calendar_events_optimized TO service_role;      |
-| GRANT REFERENCES ON public.calendar_events_optimized TO service_role;  |
-| GRANT SELECT ON public.calendar_events_optimized TO service_role;      |
-| GRANT TRIGGER ON public.calendar_events_optimized TO service_role;     |
-| GRANT TRUNCATE ON public.calendar_events_optimized TO service_role;    |
-| GRANT UPDATE ON public.calendar_events_optimized TO service_role;      |
-| GRANT DELETE ON public.class_bookings TO anon;                         |
-| GRANT INSERT ON public.class_bookings TO anon;                         |
-| GRANT REFERENCES ON public.class_bookings TO anon;                     |
-| GRANT SELECT ON public.class_bookings TO anon;                         |
-| GRANT TRIGGER ON public.class_bookings TO anon;                        |
-| GRANT TRUNCATE ON public.class_bookings TO anon;                       |
-| GRANT UPDATE ON public.class_bookings TO anon;                         |
-| GRANT DELETE ON public.class_bookings TO authenticated;                |
-| GRANT INSERT ON public.class_bookings TO authenticated;                |
-| GRANT REFERENCES ON public.class_bookings TO authenticated;            |
-| GRANT SELECT ON public.class_bookings TO authenticated;                |
-| GRANT TRIGGER ON public.class_bookings TO authenticated;               |
-| GRANT TRUNCATE ON public.class_bookings TO authenticated;              |
-| GRANT UPDATE ON public.class_bookings TO authenticated;                |
-| GRANT DELETE ON public.class_bookings TO service_role;                 |
-| GRANT INSERT ON public.class_bookings TO service_role;                 |
-| GRANT REFERENCES ON public.class_bookings TO service_role;             |
-| GRANT SELECT ON public.class_bookings TO service_role;                 |
-| GRANT TRIGGER ON public.class_bookings TO service_role;                |
-| GRANT TRUNCATE ON public.class_bookings TO service_role;               |
-| GRANT UPDATE ON public.class_bookings TO service_role;                 |
-| GRANT DELETE ON public.class_schedules TO anon;                        |
-| GRANT INSERT ON public.class_schedules TO anon;                        |
-| GRANT REFERENCES ON public.class_schedules TO anon;                    |
-| GRANT SELECT ON public.class_schedules TO anon;                        |
-| GRANT TRIGGER ON public.class_schedules TO anon;                       |
-| GRANT TRUNCATE ON public.class_schedules TO anon;                      |
-| GRANT UPDATE ON public.class_schedules TO anon;                        |
-| GRANT DELETE ON public.class_schedules TO authenticated;               |
-| GRANT INSERT ON public.class_schedules TO authenticated;               |
-| GRANT REFERENCES ON public.class_schedules TO authenticated;           |
-| GRANT SELECT ON public.class_schedules TO authenticated;               |
-| GRANT TRIGGER ON public.class_schedules TO authenticated;              |
-| GRANT TRUNCATE ON public.class_schedules TO authenticated;             |
-| GRANT UPDATE ON public.class_schedules TO authenticated;               |
-| GRANT DELETE ON public.class_schedules TO service_role;                |
-| GRANT INSERT ON public.class_schedules TO service_role;                |
-| GRANT REFERENCES ON public.class_schedules TO service_role;            |
-| GRANT SELECT ON public.class_schedules TO service_role;                |
-| GRANT TRIGGER ON public.class_schedules TO service_role;               |
-| GRANT TRUNCATE ON public.class_schedules TO service_role;              |
-| GRANT UPDATE ON public.class_schedules TO service_role;                |
-| GRANT DELETE ON public.class_waitlist TO anon;                         |
-| GRANT INSERT ON public.class_waitlist TO anon;                         |
-| GRANT REFERENCES ON public.class_waitlist TO anon;                     |
-| GRANT SELECT ON public.class_waitlist TO anon;                         |
-| GRANT TRIGGER ON public.class_waitlist TO anon;                        |
-| GRANT TRUNCATE ON public.class_waitlist TO anon;                       |
-| GRANT UPDATE ON public.class_waitlist TO anon;                         |
-| GRANT DELETE ON public.class_waitlist TO authenticated;                |
-| GRANT INSERT ON public.class_waitlist TO authenticated;                |
-| GRANT REFERENCES ON public.class_waitlist TO authenticated;            |
-| GRANT SELECT ON public.class_waitlist TO authenticated;                |
-| GRANT TRIGGER ON public.class_waitlist TO authenticated;               |
-| GRANT TRUNCATE ON public.class_waitlist TO authenticated;              |
-| GRANT UPDATE ON public.class_waitlist TO authenticated;                |
-| GRANT DELETE ON public.class_waitlist TO service_role;                 |
-| GRANT INSERT ON public.class_waitlist TO service_role;                 |
-| GRANT REFERENCES ON public.class_waitlist TO service_role;             |
-| GRANT SELECT ON public.class_waitlist TO service_role;                 |
-| GRANT TRIGGER ON public.class_waitlist TO service_role;                |
-| GRANT TRUNCATE ON public.class_waitlist TO service_role;               |
-| GRANT UPDATE ON public.class_waitlist TO service_role;                 |
-| GRANT DELETE ON public.classes TO anon;                                |
-| GRANT INSERT ON public.classes TO anon;                                |
-| GRANT REFERENCES ON public.classes TO anon;                            |
-| GRANT SELECT ON public.classes TO anon;                                |
-| GRANT TRIGGER ON public.classes TO anon;                               |
-| GRANT TRUNCATE ON public.classes TO anon;                              |
-| GRANT UPDATE ON public.classes TO anon;                                |
-| GRANT DELETE ON public.classes TO authenticated;                       |
-| GRANT INSERT ON public.classes TO authenticated;                       |
-| GRANT REFERENCES ON public.classes TO authenticated;                   |
-| GRANT SELECT ON public.classes TO authenticated;                       |
-| GRANT TRIGGER ON public.classes TO authenticated;                      |
-| GRANT TRUNCATE ON public.classes TO authenticated;                     |
-| GRANT UPDATE ON public.classes TO authenticated;                       |
-| GRANT DELETE ON public.classes TO service_role;                        |
-| GRANT INSERT ON public.classes TO service_role;                        |
-| GRANT REFERENCES ON public.classes TO service_role;                    |
-| GRANT SELECT ON public.classes TO service_role;                        |
-| GRANT TRIGGER ON public.classes TO service_role;                       |
-| GRANT TRUNCATE ON public.classes TO service_role;                      |
-| GRANT UPDATE ON public.classes TO service_role;                        |
-| GRANT DELETE ON public.profiles TO anon;                               |
-| GRANT INSERT ON public.profiles TO anon;                               |
-| GRANT REFERENCES ON public.profiles TO anon;                           |
-| GRANT SELECT ON public.profiles TO anon;                               |
-| GRANT TRIGGER ON public.profiles TO anon;                              |
-| GRANT TRUNCATE ON public.profiles TO anon;                             |
-| GRANT UPDATE ON public.profiles TO anon;                               |
-| GRANT DELETE ON public.profiles TO authenticated;                      |
-| GRANT INSERT ON public.profiles TO authenticated;                      |
-| GRANT REFERENCES ON public.profiles TO authenticated;                  |
-| GRANT SELECT ON public.profiles TO authenticated;                      |
-| GRANT TRIGGER ON public.profiles TO authenticated;                     |
-| GRANT TRUNCATE ON public.profiles TO authenticated;                    |
-| GRANT UPDATE ON public.profiles TO authenticated;                      |
-| GRANT DELETE ON public.profiles TO service_role;                       |
-| GRANT INSERT ON public.profiles TO service_role;                       |
-| GRANT REFERENCES ON public.profiles TO service_role;                   |
-| GRANT SELECT ON public.profiles TO service_role;                       |
-| GRANT TRIGGER ON public.profiles TO service_role;                      |
-| GRANT TRUNCATE ON public.profiles TO service_role;                     |
-| GRANT UPDATE ON public.profiles TO service_role;                       |
-| GRANT DELETE ON public.subscription_plans TO anon;                     |
-| GRANT INSERT ON public.subscription_plans TO anon;                     |
-| GRANT REFERENCES ON public.subscription_plans TO anon;                 |
-| GRANT SELECT ON public.subscription_plans TO anon;                     |
-| GRANT TRIGGER ON public.subscription_plans TO anon;                    |
-| GRANT TRUNCATE ON public.subscription_plans TO anon;                   |
-| GRANT UPDATE ON public.subscription_plans TO anon;                     |
-| GRANT DELETE ON public.subscription_plans TO authenticated;            |
-| GRANT INSERT ON public.subscription_plans TO authenticated;            |
-| GRANT REFERENCES ON public.subscription_plans TO authenticated;        |
-| GRANT SELECT ON public.subscription_plans TO authenticated;            |
-| GRANT TRIGGER ON public.subscription_plans TO authenticated;           |
-| GRANT TRUNCATE ON public.subscription_plans TO authenticated;          |
-| GRANT UPDATE ON public.subscription_plans TO authenticated;            |
-| GRANT DELETE ON public.subscription_plans TO service_role;             |
-| GRANT INSERT ON public.subscription_plans TO service_role;             |
-| GRANT REFERENCES ON public.subscription_plans TO service_role;         |
-| GRANT SELECT ON public.subscription_plans TO service_role;             |
-| GRANT TRIGGER ON public.subscription_plans TO service_role;            |
-| GRANT TRUNCATE ON public.subscription_plans TO service_role;           |
-| GRANT UPDATE ON public.subscription_plans TO service_role;             |
-| GRANT DELETE ON public.subscription_requests TO anon;                  |
-| GRANT INSERT ON public.subscription_requests TO anon;                  |
-| GRANT REFERENCES ON public.subscription_requests TO anon;              |
-| GRANT SELECT ON public.subscription_requests TO anon;                  |
-| GRANT TRIGGER ON public.subscription_requests TO anon;                 |
-| GRANT TRUNCATE ON public.subscription_requests TO anon;                |
-| GRANT UPDATE ON public.subscription_requests TO anon;                  |
-| GRANT DELETE ON public.subscription_requests TO authenticated;         |
-| GRANT INSERT ON public.subscription_requests TO authenticated;         |
-| GRANT REFERENCES ON public.subscription_requests TO authenticated;     |
-| GRANT SELECT ON public.subscription_requests TO authenticated;         |
-| GRANT TRIGGER ON public.subscription_requests TO authenticated;        |
-| GRANT TRUNCATE ON public.subscription_requests TO authenticated;       |
-| GRANT UPDATE ON public.subscription_requests TO authenticated;         |
-| GRANT DELETE ON public.subscription_requests TO service_role;          |
-| GRANT INSERT ON public.subscription_requests TO service_role;          |
-| GRANT REFERENCES ON public.subscription_requests TO service_role;      |
-| GRANT SELECT ON public.subscription_requests TO service_role;          |
-| GRANT TRIGGER ON public.subscription_requests TO service_role;         |
-| GRANT TRUNCATE ON public.subscription_requests TO service_role;        |
-| GRANT UPDATE ON public.subscription_requests TO service_role;          |
-| GRANT DELETE ON public.user_subscriptions TO anon;                     |
-| GRANT INSERT ON public.user_subscriptions TO anon;                     |
-| GRANT REFERENCES ON public.user_subscriptions TO anon;                 |
-| GRANT SELECT ON public.user_subscriptions TO anon;                     |
-| GRANT TRIGGER ON public.user_subscriptions TO anon;                    |
-| GRANT TRUNCATE ON public.user_subscriptions TO anon;                   |
-| GRANT UPDATE ON public.user_subscriptions TO anon;                     |
-| GRANT DELETE ON public.user_subscriptions TO authenticated;            |
-| GRANT INSERT ON public.user_subscriptions TO authenticated;            |
-| GRANT REFERENCES ON public.user_subscriptions TO authenticated;        |
-| GRANT SELECT ON public.user_subscriptions TO authenticated;            |
-| GRANT TRIGGER ON public.user_subscriptions TO authenticated;           |
-| GRANT TRUNCATE ON public.user_subscriptions TO authenticated;          |
-| GRANT UPDATE ON public.user_subscriptions TO authenticated;            |
-| GRANT DELETE ON public.user_subscriptions TO service_role;             |
-| GRANT INSERT ON public.user_subscriptions TO service_role;             |
-| GRANT REFERENCES ON public.user_subscriptions TO service_role;         |
-| GRANT SELECT ON public.user_subscriptions TO service_role;             |
-| GRANT TRIGGER ON public.user_subscriptions TO service_role;            |
-| GRANT TRUNCATE ON public.user_subscriptions TO service_role;           |
-| GRANT UPDATE ON public.user_subscriptions TO service_role;             |
-
-
--- 12. Function Grants - Permission grants on functions
-
-
-| function_grant_statement                                                                                                              |
-| ------------------------------------------------------------------------------------------------------------------------------------- |
-| GRANT EXECUTE ON FUNCTION public.adjust_waitlist_positions() TO authenticated;                                                        |
-| GRANT EXECUTE ON FUNCTION public.book_class(user_uuid uuid, schedule_uuid uuid) TO authenticated;                                     |
-| GRANT EXECUTE ON FUNCTION public.can_user_book_class(user_uuid uuid, schedule_uuid uuid) TO authenticated;                            |
-| GRANT EXECUTE ON FUNCTION public.cancel_booking(booking_uuid uuid, user_uuid uuid) TO authenticated;                                  |
-| GRANT EXECUTE ON FUNCTION public.check_expired_subscriptions() TO authenticated;                                                      |
-| GRANT EXECUTE ON FUNCTION public.check_user_admin(user_id uuid) TO authenticated;                                                     |
-| GRANT EXECUTE ON FUNCTION public.get_admin_users_data(page_offset integer DEFAULT 0, page_limit integer DEFAULT 25) TO authenticated; |
-| GRANT EXECUTE ON FUNCTION public.get_database_performance_stats() TO authenticated;                                                   |
-| GRANT EXECUTE ON FUNCTION public.get_user_dashboard_data(user_uuid uuid) TO authenticated;                                            |
-| GRANT EXECUTE ON FUNCTION public.get_user_valid_subscription(user_uuid uuid) TO authenticated;                                        |
-| GRANT EXECUTE ON FUNCTION public.handle_new_user() TO authenticated;                                                                  |
-| GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;                                                                         |
-| GRANT EXECUTE ON FUNCTION public.is_admin(user_uuid uuid DEFAULT auth.uid()) TO authenticated;                                        |
-| GRANT EXECUTE ON FUNCTION public.join_waitlist(user_uuid uuid, schedule_uuid uuid) TO authenticated;                                  |
-| GRANT EXECUTE ON FUNCTION public.promote_from_waitlist() TO authenticated;                                                            |
-| GRANT EXECUTE ON FUNCTION public.reset_weekly_credits() TO authenticated;                                                             |
-| GRANT EXECUTE ON FUNCTION public.set_waitlist_position() TO authenticated;                                                            |
-| GRANT EXECUTE ON FUNCTION public.update_booking_count() TO authenticated;                                                             |
-| GRANT EXECUTE ON FUNCTION public.update_updated_at_column() TO authenticated;                                                         |
+3. All Indexes
+
+[
+  {
+    "schemaname": "public",
+    "tablename": "booking_audit",
+    "indexname": "booking_audit_pkey",
+    "indexdef": "CREATE UNIQUE INDEX booking_audit_pkey ON public.booking_audit USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "booking_audit",
+    "indexname": "idx_booking_audit_booking_operation",
+    "indexdef": "CREATE INDEX idx_booking_audit_booking_operation ON public.booking_audit USING btree (booking_id, operation)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "booking_audit",
+    "indexname": "idx_booking_audit_user_created",
+    "indexdef": "CREATE INDEX idx_booking_audit_user_created ON public.booking_audit USING btree (user_id, created_at)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_bookings",
+    "indexname": "class_bookings_pkey",
+    "indexdef": "CREATE UNIQUE INDEX class_bookings_pkey ON public.class_bookings USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_bookings",
+    "indexname": "class_bookings_user_id_schedule_id_key",
+    "indexdef": "CREATE UNIQUE INDEX class_bookings_user_id_schedule_id_key ON public.class_bookings USING btree (user_id, schedule_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_bookings",
+    "indexname": "idx_class_bookings_booked_at",
+    "indexdef": "CREATE INDEX idx_class_bookings_booked_at ON public.class_bookings USING btree (booked_at)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_bookings",
+    "indexname": "idx_class_bookings_schedule_id",
+    "indexdef": "CREATE INDEX idx_class_bookings_schedule_id ON public.class_bookings USING btree (schedule_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_bookings",
+    "indexname": "idx_class_bookings_schedule_status",
+    "indexdef": "CREATE INDEX idx_class_bookings_schedule_status ON public.class_bookings USING btree (schedule_id, status)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_bookings",
+    "indexname": "idx_class_bookings_status",
+    "indexdef": "CREATE INDEX idx_class_bookings_status ON public.class_bookings USING btree (status)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_bookings",
+    "indexname": "idx_class_bookings_subscription_id",
+    "indexdef": "CREATE INDEX idx_class_bookings_subscription_id ON public.class_bookings USING btree (subscription_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_bookings",
+    "indexname": "idx_class_bookings_user_id",
+    "indexdef": "CREATE INDEX idx_class_bookings_user_id ON public.class_bookings USING btree (user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_bookings",
+    "indexname": "idx_class_bookings_user_status_active",
+    "indexdef": "CREATE INDEX idx_class_bookings_user_status_active ON public.class_bookings USING btree (user_id, status) WHERE (status = 'confirmed'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_schedules",
+    "indexname": "class_schedules_pkey",
+    "indexdef": "CREATE UNIQUE INDEX class_schedules_pkey ON public.class_schedules USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_schedules",
+    "indexname": "idx_class_schedules_class_id",
+    "indexdef": "CREATE INDEX idx_class_schedules_class_id ON public.class_schedules USING btree (class_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_schedules",
+    "indexname": "idx_class_schedules_created_by",
+    "indexdef": "CREATE INDEX idx_class_schedules_created_by ON public.class_schedules USING btree (created_by)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_schedules",
+    "indexname": "idx_class_schedules_datetime_range",
+    "indexdef": "CREATE INDEX idx_class_schedules_datetime_range ON public.class_schedules USING btree (start_datetime, end_datetime) WHERE ((NOT is_cancelled) AND (NOT is_exception))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_schedules",
+    "indexname": "idx_class_schedules_end_datetime",
+    "indexdef": "CREATE INDEX idx_class_schedules_end_datetime ON public.class_schedules USING btree (end_datetime)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_schedules",
+    "indexname": "idx_class_schedules_exception",
+    "indexdef": "CREATE INDEX idx_class_schedules_exception ON public.class_schedules USING btree (is_exception)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_schedules",
+    "indexname": "idx_class_schedules_parent_id",
+    "indexdef": "CREATE INDEX idx_class_schedules_parent_id ON public.class_schedules USING btree (parent_schedule_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_schedules",
+    "indexname": "idx_class_schedules_recurring",
+    "indexdef": "CREATE INDEX idx_class_schedules_recurring ON public.class_schedules USING btree (is_recurring)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_schedules",
+    "indexname": "idx_class_schedules_start_datetime",
+    "indexdef": "CREATE INDEX idx_class_schedules_start_datetime ON public.class_schedules USING btree (start_datetime)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_schedules",
+    "indexname": "idx_class_schedules_start_future",
+    "indexdef": "CREATE INDEX idx_class_schedules_start_future ON public.class_schedules USING btree (start_datetime) WHERE ((NOT is_cancelled) AND (NOT is_exception))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_waitlist",
+    "indexname": "class_waitlist_pkey",
+    "indexdef": "CREATE UNIQUE INDEX class_waitlist_pkey ON public.class_waitlist USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_waitlist",
+    "indexname": "class_waitlist_user_id_schedule_id_key",
+    "indexdef": "CREATE UNIQUE INDEX class_waitlist_user_id_schedule_id_key ON public.class_waitlist USING btree (user_id, schedule_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_waitlist",
+    "indexname": "idx_class_waitlist_joined_at",
+    "indexdef": "CREATE INDEX idx_class_waitlist_joined_at ON public.class_waitlist USING btree (joined_at)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_waitlist",
+    "indexname": "idx_class_waitlist_position",
+    "indexdef": "CREATE INDEX idx_class_waitlist_position ON public.class_waitlist USING btree (\"position\")"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_waitlist",
+    "indexname": "idx_class_waitlist_schedule_id",
+    "indexdef": "CREATE INDEX idx_class_waitlist_schedule_id ON public.class_waitlist USING btree (schedule_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_waitlist",
+    "indexname": "idx_class_waitlist_schedule_position",
+    "indexdef": "CREATE INDEX idx_class_waitlist_schedule_position ON public.class_waitlist USING btree (schedule_id, \"position\")"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_waitlist",
+    "indexname": "idx_class_waitlist_subscription_id",
+    "indexdef": "CREATE INDEX idx_class_waitlist_subscription_id ON public.class_waitlist USING btree (subscription_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_waitlist",
+    "indexname": "idx_class_waitlist_user_id",
+    "indexdef": "CREATE INDEX idx_class_waitlist_user_id ON public.class_waitlist USING btree (user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "classes",
+    "indexname": "classes_pkey",
+    "indexdef": "CREATE UNIQUE INDEX classes_pkey ON public.classes USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "classes",
+    "indexname": "idx_classes_coach",
+    "indexdef": "CREATE INDEX idx_classes_coach ON public.classes USING btree (coach)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "classes",
+    "indexname": "idx_classes_created_at",
+    "indexdef": "CREATE INDEX idx_classes_created_at ON public.classes USING btree (created_at)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "classes",
+    "indexname": "idx_classes_difficulty_level",
+    "indexdef": "CREATE INDEX idx_classes_difficulty_level ON public.classes USING btree (difficulty_level)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "indexname": "idx_profiles_role_admin",
+    "indexdef": "CREATE INDEX idx_profiles_role_admin ON public.profiles USING btree (role) WHERE (role = 'admin'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "indexname": "idx_profiles_subscription_status_created",
+    "indexdef": "CREATE INDEX idx_profiles_subscription_status_created ON public.profiles USING btree (subscription_status, created_at)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "indexname": "profiles_email_key",
+    "indexdef": "CREATE UNIQUE INDEX profiles_email_key ON public.profiles USING btree (email)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "indexname": "profiles_pkey",
+    "indexdef": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "subscription_plans",
+    "indexname": "idx_subscription_plans_type",
+    "indexdef": "CREATE INDEX idx_subscription_plans_type ON public.subscription_plans USING btree (type)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "subscription_plans",
+    "indexname": "subscription_plans_pkey",
+    "indexdef": "CREATE UNIQUE INDEX subscription_plans_pkey ON public.subscription_plans USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "subscription_requests",
+    "indexname": "idx_subscription_requests_plan_id",
+    "indexdef": "CREATE INDEX idx_subscription_requests_plan_id ON public.subscription_requests USING btree (plan_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "subscription_requests",
+    "indexname": "idx_subscription_requests_user_id",
+    "indexdef": "CREATE INDEX idx_subscription_requests_user_id ON public.subscription_requests USING btree (user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "subscription_requests",
+    "indexname": "subscription_requests_pkey",
+    "indexdef": "CREATE UNIQUE INDEX subscription_requests_pkey ON public.subscription_requests USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_subscriptions",
+    "indexname": "idx_user_subscriptions_active_users",
+    "indexdef": "CREATE INDEX idx_user_subscriptions_active_users ON public.user_subscriptions USING btree (status, end_date) WHERE (status = 'active'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_subscriptions",
+    "indexname": "idx_user_subscriptions_plan_id",
+    "indexdef": "CREATE INDEX idx_user_subscriptions_plan_id ON public.user_subscriptions USING btree (plan_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_subscriptions",
+    "indexname": "idx_user_subscriptions_status_end_date",
+    "indexdef": "CREATE INDEX idx_user_subscriptions_status_end_date ON public.user_subscriptions USING btree (user_id, status, end_date)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_subscriptions",
+    "indexname": "idx_user_subscriptions_user_id",
+    "indexdef": "CREATE INDEX idx_user_subscriptions_user_id ON public.user_subscriptions USING btree (user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_subscriptions",
+    "indexname": "user_subscriptions_pkey",
+    "indexdef": "CREATE UNIQUE INDEX user_subscriptions_pkey ON public.user_subscriptions USING btree (id)"
+  }
+]
+ 
+4. All Triggers
+
+[
+  {
+    "trigger_name": "promote_from_waitlist_trigger",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "class_bookings",
+    "action_statement": "EXECUTE FUNCTION promote_from_waitlist()",
+    "action_timing": "AFTER",
+    "action_condition": null
+  },
+  {
+    "trigger_name": "promote_from_waitlist_trigger",
+    "event_manipulation": "DELETE",
+    "event_object_table": "class_bookings",
+    "action_statement": "EXECUTE FUNCTION promote_from_waitlist()",
+    "action_timing": "AFTER",
+    "action_condition": null
+  },
+  {
+    "trigger_name": "update_booking_count_trigger",
+    "event_manipulation": "DELETE",
+    "event_object_table": "class_bookings",
+    "action_statement": "EXECUTE FUNCTION update_booking_count()",
+    "action_timing": "AFTER",
+    "action_condition": null
+  },
+  {
+    "trigger_name": "update_booking_count_trigger",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "class_bookings",
+    "action_statement": "EXECUTE FUNCTION update_booking_count()",
+    "action_timing": "AFTER",
+    "action_condition": null
+  },
+  {
+    "trigger_name": "update_booking_count_trigger",
+    "event_manipulation": "INSERT",
+    "event_object_table": "class_bookings",
+    "action_statement": "EXECUTE FUNCTION update_booking_count()",
+    "action_timing": "AFTER",
+    "action_condition": null
+  },
+  {
+    "trigger_name": "update_class_bookings_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "class_bookings",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_condition": null
+  },
+  {
+    "trigger_name": "update_class_schedules_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "class_schedules",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_condition": null
+  },
+  {
+    "trigger_name": "adjust_waitlist_positions_trigger",
+    "event_manipulation": "DELETE",
+    "event_object_table": "class_waitlist",
+    "action_statement": "EXECUTE FUNCTION adjust_waitlist_positions()",
+    "action_timing": "AFTER",
+    "action_condition": null
+  },
+  {
+    "trigger_name": "set_waitlist_position_trigger",
+    "event_manipulation": "INSERT",
+    "event_object_table": "class_waitlist",
+    "action_statement": "EXECUTE FUNCTION set_waitlist_position()",
+    "action_timing": "BEFORE",
+    "action_condition": null
+  },
+  {
+    "trigger_name": "update_class_waitlist_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "class_waitlist",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_condition": null
+  },
+  {
+    "trigger_name": "update_classes_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "classes",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_condition": null
+  },
+  {
+    "trigger_name": "update_profiles_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "profiles",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_condition": null
+  },
+  {
+    "trigger_name": "update_subscription_plans_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "subscription_plans",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_condition": null
+  },
+  {
+    "trigger_name": "update_subscription_requests_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "subscription_requests",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_condition": null
+  },
+  {
+    "trigger_name": "update_user_subscriptions_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "user_subscriptions",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_condition": null
+  }
+]
+
+5. Row-Level Security (RLS) Policies
+
+[
+  {
+    "schemaname": "public",
+    "tablename": "booking_audit",
+    "policyname": "Admins can manage audit entries",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "ALL",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "booking_audit",
+    "policyname": "System can insert audit entries",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "booking_audit",
+    "policyname": "Users can view own audit entries",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR (EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text)))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_bookings",
+    "policyname": "Admins can manage all bookings",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "ALL",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_bookings",
+    "policyname": "Users can create own bookings",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(auth.uid() = user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_bookings",
+    "policyname": "Users can update own bookings",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(auth.uid() = user_id)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_bookings",
+    "policyname": "Users can view own bookings",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(auth.uid() = user_id)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_schedules",
+    "policyname": "Admins can manage class schedules",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "ALL",
+    "qual": "check_user_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_schedules",
+    "policyname": "Users can view class schedules",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((NOT is_cancelled) AND (NOT is_exception))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_waitlist",
+    "policyname": "Admins can manage all waitlist entries",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "ALL",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_waitlist",
+    "policyname": "Users can create own waitlist entries",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(auth.uid() = user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_waitlist",
+    "policyname": "Users can delete own waitlist entries",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "DELETE",
+    "qual": "(auth.uid() = user_id)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "class_waitlist",
+    "policyname": "Users can view own waitlist entries",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(auth.uid() = user_id)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "classes",
+    "policyname": "Admins can manage classes",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "ALL",
+    "qual": "check_user_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "classes",
+    "policyname": "Users can view classes",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "Admins can update all profiles",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "Admins can view all profiles",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "is_admin(auth.uid())",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "Enable insert for authenticated users",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(auth.uid() = id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "Users can update own profile",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(auth.uid() = id)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "Users can view own profile",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(auth.uid() = id)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "subscription_plans",
+    "policyname": "Admins can manage subscription plans",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "ALL",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "subscription_plans",
+    "policyname": "Anyone can view subscription plans",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "subscription_requests",
+    "policyname": "Admins can manage subscription requests",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "ALL",
+    "qual": "(( SELECT profiles.role\n   FROM profiles\n  WHERE (profiles.id = auth.uid())\n LIMIT 1) = 'admin'::text)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "subscription_requests",
+    "policyname": "Users can create subscription requests",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(auth.uid() = user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "subscription_requests",
+    "policyname": "Users can view own subscription requests",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(auth.uid() = user_id)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_subscriptions",
+    "policyname": "Admins can manage subscriptions",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "ALL",
+    "qual": "(( SELECT profiles.role\n   FROM profiles\n  WHERE (profiles.id = auth.uid())\n LIMIT 1) = 'admin'::text)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_subscriptions",
+    "policyname": "Admins can view all subscriptions",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(( SELECT profiles.role\n   FROM profiles\n  WHERE (profiles.id = auth.uid())\n LIMIT 1) = 'admin'::text)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_subscriptions",
+    "policyname": "Users can view own subscriptions",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(auth.uid() = user_id)",
+    "with_check": null
+  }
+]
+
+6. All Views
+
+[
+  {
+    "view_name": "calendar_events",
+    "view_definition": " SELECT cs.id,\n    cs.class_id,\n    c.title,\n    c.description,\n    c.coach,\n    c.location,\n    c.difficulty_level,\n    c.max_capacity,\n    cs.start_datetime,\n    cs.end_datetime,\n    cs.is_recurring,\n    cs.recurrence_rule,\n    cs.parent_schedule_id,\n    cs.is_exception,\n    cs.exception_reason,\n    cs.current_bookings,\n    cs.is_cancelled,\n    cs.cancellation_reason,\n    cs.created_at,\n    cs.updated_at\n   FROM (class_schedules cs\n     JOIN classes c ON ((cs.class_id = c.id)))\n  WHERE ((NOT cs.is_exception) AND (NOT cs.is_cancelled));"
+  },
+  {
+    "view_name": "calendar_events_optimized",
+    "view_definition": " SELECT cs.id,\n    cs.class_id,\n    c.title,\n    c.description,\n    c.coach,\n    c.location,\n    c.difficulty_level,\n    c.max_capacity,\n    cs.start_datetime,\n    cs.end_datetime,\n    cs.current_bookings,\n    cs.is_cancelled,\n    cs.is_exception\n   FROM (class_schedules cs\n     JOIN classes c ON ((cs.class_id = c.id)))\n  WHERE ((NOT cs.is_exception) AND (NOT cs.is_cancelled) AND (cs.start_datetime >= now()))\n  ORDER BY cs.start_datetime;"
+  }
+]  
+
+7. Foreign Key Relationships
+
+[
+  {
+    "constraint_name": "booking_audit_schedule_id_fkey",
+    "table_name": "booking_audit",
+    "column_name": "schedule_id",
+    "foreign_table_name": "class_schedules",
+    "foreign_column_name": "id",
+    "update_rule": "NO ACTION",
+    "delete_rule": "NO ACTION"
+  },
+  {
+    "constraint_name": "class_bookings_schedule_id_fkey",
+    "table_name": "class_bookings",
+    "column_name": "schedule_id",
+    "foreign_table_name": "class_schedules",
+    "foreign_column_name": "id",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "constraint_name": "class_bookings_subscription_id_fkey",
+    "table_name": "class_bookings",
+    "column_name": "subscription_id",
+    "foreign_table_name": "user_subscriptions",
+    "foreign_column_name": "id",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "constraint_name": "class_bookings_user_id_fkey",
+    "table_name": "class_bookings",
+    "column_name": "user_id",
+    "foreign_table_name": "profiles",
+    "foreign_column_name": "id",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "constraint_name": "class_schedules_class_id_fkey",
+    "table_name": "class_schedules",
+    "column_name": "class_id",
+    "foreign_table_name": "classes",
+    "foreign_column_name": "id",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "constraint_name": "class_schedules_parent_schedule_id_fkey",
+    "table_name": "class_schedules",
+    "column_name": "parent_schedule_id",
+    "foreign_table_name": "class_schedules",
+    "foreign_column_name": "id",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "constraint_name": "class_waitlist_schedule_id_fkey",
+    "table_name": "class_waitlist",
+    "column_name": "schedule_id",
+    "foreign_table_name": "class_schedules",
+    "foreign_column_name": "id",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "constraint_name": "class_waitlist_subscription_id_fkey",
+    "table_name": "class_waitlist",
+    "column_name": "subscription_id",
+    "foreign_table_name": "user_subscriptions",
+    "foreign_column_name": "id",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "constraint_name": "class_waitlist_user_id_fkey",
+    "table_name": "class_waitlist",
+    "column_name": "user_id",
+    "foreign_table_name": "profiles",
+    "foreign_column_name": "id",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "constraint_name": "subscription_requests_plan_id_fkey",
+    "table_name": "subscription_requests",
+    "column_name": "plan_id",
+    "foreign_table_name": "subscription_plans",
+    "foreign_column_name": "id",
+    "update_rule": "NO ACTION",
+    "delete_rule": "RESTRICT"
+  },
+  {
+    "constraint_name": "subscription_requests_user_id_fkey",
+    "table_name": "subscription_requests",
+    "column_name": "user_id",
+    "foreign_table_name": "profiles",
+    "foreign_column_name": "id",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "constraint_name": "user_subscriptions_plan_id_fkey",
+    "table_name": "user_subscriptions",
+    "column_name": "plan_id",
+    "foreign_table_name": "subscription_plans",
+    "foreign_column_name": "id",
+    "update_rule": "NO ACTION",
+    "delete_rule": "RESTRICT"
+  },
+  {
+    "constraint_name": "user_subscriptions_user_id_fkey",
+    "table_name": "user_subscriptions",
+    "column_name": "user_id",
+    "foreign_table_name": "profiles",
+    "foreign_column_name": "id",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  }
+]
+
+8. Table Permissions and RLS Status
+
+[
+  {
+    "table_name": "booking_audit",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "table_name": "class_bookings",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "table_name": "class_schedules",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "table_name": "class_waitlist",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "table_name": "classes",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "table_name": "profiles",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "table_name": "subscription_plans",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "table_name": "subscription_requests",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "table_name": "user_subscriptions",
+    "rls_enabled": true,
+    "rls_forced": false
+  }
+]
+
+9. Enum Types
+
+No rows returned  

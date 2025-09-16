@@ -80,16 +80,6 @@ export function getInitials(fullName: string): string {
     .slice(0, 2)
 }
 
-/**
- * Formats a phone number for display (French format)
- */
-export function formatPhoneNumber(phone: string): string {
-  const cleaned = phone.replace(/\D/g, '')
-  if (cleaned.length === 10) {
-    return cleaned.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5')
-  }
-  return phone
-}
 
 /**
  * Slugifies a string (useful for URLs)

@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { APP_CONFIG } from '@/constants/config'
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -10,8 +11,8 @@ export async function createClient() {
     // During build time, return a dummy client that won't actually be used
     console.warn('Supabase environment variables not available during build')
     return createServerClient(
-      'https://placeholder.supabase.co',
-      'placeholder-key',
+      APP_CONFIG.SUPABASE.PLACEHOLDER_URL,
+      APP_CONFIG.SUPABASE.PLACEHOLDER_KEY,
       {
         cookies: {
           getAll() {

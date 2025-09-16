@@ -21,8 +21,8 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
             <IconUser className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <div className="font-medium">{booking.user?.full_name}</div>
-            <div className="text-sm text-muted-foreground">{booking.user?.email}</div>
+            <div className="font-medium">{booking.profiles?.full_name}</div>
+            <div className="text-sm text-muted-foreground">{booking.profiles?.email}</div>
           </div>
         </div>
       )
@@ -32,12 +32,12 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
       header: 'Cours',
       cell: (booking: any) => (
         <div>
-          <div className="font-medium">{booking.schedule?.class?.title}</div>
+          <div className="font-medium">{booking.class_schedules?.classes?.title}</div>
           <div className="text-sm text-muted-foreground">
-            {formatDateTime(booking.schedule?.start_datetime)}
+            {formatDateTime(booking.class_schedules?.start_datetime)}
           </div>
           <div className="text-sm text-muted-foreground">
-            Coach: {booking.schedule?.class?.coach}
+            Coach: {booking.class_schedules?.classes?.coach}
           </div>
         </div>
       )
@@ -60,7 +60,7 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
       header: 'Abonnement',
       cell: (booking: any) => (
         <Badge variant="outline">
-          {booking.subscription?.plan?.name}
+          {booking.user_subscriptions?.subscription_plans?.name}
         </Badge>
       )
     },
@@ -97,9 +97,10 @@ export function BookingsTable({ bookings }: BookingsTableProps) {
     <DataTable
       data={bookings}
       columns={columns}
-      searchKey="user.full_name"
+      searchKey="profiles.full_name"
       searchPlaceholder="Rechercher par nom d'utilisateur..."
       keyExtractor={(booking) => booking.id}
+      className="border-0 shadow-none"
     />
   )
 }

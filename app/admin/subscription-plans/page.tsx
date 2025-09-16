@@ -40,10 +40,10 @@ interface SubscriptionPlan {
   credits: number
   price_dhs: number
   validity_months: number
-  validity_days?: number
-  weekly_limit?: number
-  description?: string
+  validity_days?: number | null
+  weekly_limit?: number | null
   created_at: string
+  updated_at: string
 }
 
 export default function SubscriptionPlansPage() {
@@ -209,7 +209,7 @@ export default function SubscriptionPlansPage() {
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'carnet': return 'Carnet'
-      case 'personal_training': return 'Personal Training'
+      case 'personal_training': return 'Coaching Personnel'
       case 'abonnement': return 'Abonnement'
       default: return type
     }
@@ -267,7 +267,7 @@ export default function SubscriptionPlansPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="carnet">Carnet</SelectItem>
-                      <SelectItem value="personal_training">Personal Training</SelectItem>
+                      <SelectItem value="personal_training">Coaching Personnel</SelectItem>
                       <SelectItem value="abonnement">Abonnement</SelectItem>
                     </SelectContent>
                   </Select>
@@ -309,32 +309,29 @@ export default function SubscriptionPlansPage() {
                 </div>
               </div>
 
-              {formData.type === 'abonnement' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="weekly_limit">Limite Hebdomadaire</Label>
-                    <Input
-                      id="weekly_limit"
-                      type="number"
-                      value={formData.weekly_limit}
-                      onChange={(e) => handleInputChange('weekly_limit', e.target.value)}
-                      placeholder="Séances par semaine"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="validity_days">Jours de Validité</Label>
-                    <Input
-                      id="validity_days"
-                      type="number"
-                      value={formData.validity_days}
-                      onChange={(e) => handleInputChange('validity_days', e.target.value)}
-                      placeholder="Pour reset hebdomadaire"
-                    />
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="validity_days">Validité (jours)</Label>
+                  <Input
+                    id="validity_days"
+                    type="number"
+                    value={formData.validity_days}
+                    onChange={(e) => handleInputChange('validity_days', e.target.value)}
+                    placeholder="Validité en jours (optionnel)"
+                  />
                 </div>
-              )}
 
+                <div className="space-y-2">
+                  <Label htmlFor="weekly_limit">Limite Hebdomadaire</Label>
+                  <Input
+                    id="weekly_limit"
+                    type="number"
+                    value={formData.weekly_limit}
+                    onChange={(e) => handleInputChange('weekly_limit', e.target.value)}
+                    placeholder="Séances par semaine (optionnel)"
+                  />
+                </div>
+              </div>
 
 
               {error && (
@@ -381,8 +378,8 @@ export default function SubscriptionPlansPage() {
                   <TableHead>Type</TableHead>
                   <TableHead>Prix</TableHead>
                   <TableHead>Crédits</TableHead>
-                  <TableHead>Validité</TableHead>
-                  <TableHead>Limite/Semaine</TableHead>
+                  <TableHead>Durée</TableHead>
+                  <TableHead>Crédits/Semaine</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -409,16 +406,16 @@ export default function SubscriptionPlansPage() {
                     </TableCell>
                     <TableCell>
                       <span className="font-medium">
-                        {plan.validity_months} mois
+                        {plan.validity_days ? `${plan.validity_days} jours` : `${plan.validity_months} mois`}
                       </span>
                     </TableCell>
                     <TableCell>
                       {plan.weekly_limit ? (
                         <span className="font-medium">
-                          {plan.weekly_limit} séances
+                          {plan.weekly_limit} crédits
                         </span>
                       ) : (
-                        <span className="font-medium">Aucune limite</span>
+                        <span className="text-muted-foreground">Aucune limite</span>
                       )}
                     </TableCell>
                     <TableCell>

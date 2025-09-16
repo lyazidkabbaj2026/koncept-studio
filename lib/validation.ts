@@ -41,19 +41,25 @@ export const loginSchema = z.object({
 
 // Class creation validation
 export const classSchema = z.object({
-  name: z.string()
-    .min(2, 'Class name must be at least 2 characters')
-    .max(100, 'Class name cannot exceed 100 characters'),
+  title: z.string()
+    .min(2, 'Class title must be at least 2 characters')
+    .max(100, 'Class title cannot exceed 100 characters'),
   description: z.string()
     .max(500, 'Description cannot exceed 500 characters')
     .optional(),
-  maxParticipants: z.number()
-    .int('Max participants must be a whole number')
-    .min(1, 'Max participants must be at least 1')
-    .max(50, 'Max participants cannot exceed 50'),
-  price: z.number()
-    .min(0, 'Price cannot be negative')
-    .max(200, 'Price cannot exceed 200€'),
+  max_capacity: z.number()
+    .int('Max capacity must be a whole number')
+    .min(1, 'Max capacity must be at least 1')
+    .max(50, 'Max capacity cannot exceed 50'),
+  coach: z.string()
+    .min(2, 'Coach name must be at least 2 characters')
+    .max(100, 'Coach name cannot exceed 100 characters'),
+  location: z.string()
+    .min(2, 'Location must be at least 2 characters')
+    .max(100, 'Location cannot exceed 100 characters'),
+  difficulty_level: z.string()
+    .min(2, 'Difficulty level is required')
+    .max(50, 'Difficulty level cannot exceed 50 characters'),
 })
 
 // Schedule creation validation
@@ -87,24 +93,30 @@ export const subscriptionPlanSchema = z.object({
   name: z.string()
     .min(2, 'Plan name must be at least 2 characters')
     .max(50, 'Plan name cannot exceed 50 characters'),
-  type: z.enum(['package', 'abonnement']),
-  price: z.number()
+  type: z.enum(['carnet', 'personal_training', 'abonnement']),
+  price_dhs: z.number()
     .min(0, 'Price cannot be negative')
-    .max(500, 'Price cannot exceed 500€'),
-  creditsIncluded: z.number()
+    .max(5000, 'Price cannot exceed 5000 DHS'),
+  credits: z.number()
     .int('Credits must be a whole number')
     .min(1, 'Credits must be at least 1')
-    .max(100, 'Credits cannot exceed 100')
-    .optional(),
-  weeklyLimit: z.number()
+    .max(100, 'Credits cannot exceed 100'),
+  weekly_limit: z.number()
     .int('Weekly limit must be a whole number')
     .min(1, 'Weekly limit must be at least 1')
     .max(20, 'Weekly limit cannot exceed 20')
-    .optional(),
-  validityMonths: z.number()
+    .optional()
+    .nullable(),
+  validity_months: z.number()
     .int('Validity must be a whole number')
     .min(1, 'Validity must be at least 1 month')
     .max(24, 'Validity cannot exceed 24 months'),
+  validity_days: z.number()
+    .int('Validity days must be a whole number')
+    .min(1, 'Validity days must be at least 1 day')
+    .max(730, 'Validity days cannot exceed 730 days')
+    .optional()
+    .nullable(),
 })
 
 // Query parameter validation

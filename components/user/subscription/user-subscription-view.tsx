@@ -136,7 +136,7 @@ export function UserSubscriptionView({
       case 'carnet':
         return 'Carnet'
       case 'personal_training':
-        return 'Personal Training'
+        return 'Coaching Personnel'
       case 'abonnement':
         return 'Abonnement'
       default:

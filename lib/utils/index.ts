@@ -1,10 +1,10 @@
-// Export existing utility functions
+// Export utility functions
+export * from './error-handler'
+export * from './phone'
 export * from './string'
-
-// Export new consolidated utilities
 export * from './date'
 export * from './status'
 
-// Re-export date utilities as default for convenience
+// Re-export utilities as defaults for convenience
 export { default as dateUtils } from './date'
 export { default as statusUtils } from './status'

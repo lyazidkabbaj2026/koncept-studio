@@ -39,8 +39,8 @@ export function useSubscription() {
   const getCreditsRemaining = () => {
     if (!subscription) return 0
 
-    if (subscription.subscription_plans.plan_type === 'abonnement') {
-      const weeklyCredits = subscription.subscription_plans.weekly_credits || 0
+    if (subscription.subscription_plans.type === 'abonnement') {
+      const weeklyCredits = subscription.subscription_plans.weekly_limit || 0
       return Math.max(0, weeklyCredits - subscription.weekly_credits_used)
     } else {
       return subscription.credits_remaining
@@ -53,7 +53,7 @@ export function useSubscription() {
     error,
     hasValidSubscription,
     creditsRemaining: getCreditsRemaining(),
-    isUnlimited: subscription?.subscription_plans.plan_type === 'abonnement',
+    isUnlimited: subscription?.subscription_plans.type === 'abonnement',
     refresh: () => {
       if (user) {
         subscriptionService.getActiveUserSubscription(user.id)

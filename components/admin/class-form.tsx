@@ -16,7 +16,6 @@ interface ClassFormData {
   title: string
   description: string
   duration: number
-  tags: string[]
   max_capacity: number
   coach: string
   location: string
@@ -36,14 +35,12 @@ export function ClassForm({ initialData, classId }: ClassFormProps) {
     title: initialData?.title || '',
     description: initialData?.description || '',
     duration: initialData?.duration || 60,
-    tags: initialData?.tags || [],
     max_capacity: initialData?.max_capacity || 10,
     coach: initialData?.coach || '',
     location: initialData?.location || '',
     difficulty_level: initialData?.difficulty_level || '',
   })
 
-  const [tagInput, setTagInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -51,29 +48,6 @@ export function ClassForm({ initialData, classId }: ClassFormProps) {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const addTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, tagInput.trim()]
-      }))
-      setTagInput('')
-    }
-  }
-
-  const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }))
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      addTag()
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -85,7 +59,6 @@ export function ClassForm({ initialData, classId }: ClassFormProps) {
         title: formData.title,
         description: formData.description,
         duration: formData.duration,
-        tags: formData.tags,
         max_capacity: formData.max_capacity,
         coach: formData.coach,
         location: formData.location,
@@ -223,37 +196,6 @@ export function ClassForm({ initialData, classId }: ClassFormProps) {
         />
       </div>
 
-      {/* Tags */}
-      <div className="space-y-2">
-        <Label htmlFor="tags">Tags</Label>
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <Input
-              id="tags"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ajoutez un tag (Ex: yoga, cardio, force)"
-            />
-            <Button type="button" variant="outline" onClick={addTag}>
-              Ajouter
-            </Button>
-          </div>
-          {formData.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {formData.tags.map((tag, index) => (
-                <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                  {tag}
-                  <IconX
-                    className="h-3 w-3 cursor-pointer"
-                    onClick={() => removeTag(tag)}
-                  />
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Submit Button */}
       <div className="flex gap-4 pt-4">

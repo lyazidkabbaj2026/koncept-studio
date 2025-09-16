@@ -34,8 +34,8 @@ interface PlanSelectorModalProps {
   isLoading?: boolean
 }
 
-const getPlanTypeConfig = (planType: string) => {
-  switch (planType) {
+const getPlanTypeConfig = (type: string) => {
+  switch (type) {
     case 'carnet':
       return {
         icon: IconTicket,
@@ -51,7 +51,7 @@ const getPlanTypeConfig = (planType: string) => {
     case 'personal_training':
       return {
         icon: IconUserCheck,
-        title: 'Personal Training',
+        title: 'Coaching Personnel',
         description: 'Sessions individuelles avec coach personnel'
       }
     default:
@@ -67,21 +67,20 @@ const formatPlanDetails = (plan: SubscriptionPlan) => {
   const details = []
 
   // Don't show total credits/classes for abonnements
-  if (plan.plan_type !== 'abonnement' && plan.credits) {
+  if (plan.type !== 'abonnement' && plan.credits) {
     details.push(`${plan.credits} classes`)
   }
 
-  if (plan.duration_days && plan.duration_days > 0) {
-    const months = Math.round(plan.duration_days / 30)
-    details.push(`${months} mois`)
+  if (plan.validity_months && plan.validity_months > 0) {
+    details.push(`${plan.validity_months} mois`)
   }
 
   // For abonnements, show weekly format differently
-  if (plan.weekly_credits) {
-    if (plan.plan_type === 'abonnement') {
-      details.push(`${plan.weekly_credits} classes/semaine`)
+  if (plan.weekly_limit) {
+    if (plan.type === 'abonnement') {
+      details.push(`${plan.weekly_limit} classes/semaine`)
     } else {
-      details.push(`${plan.weekly_credits}/sem max`)
+      details.push(`${plan.weekly_limit}/sem max`)
     }
   }
 
@@ -94,19 +93,19 @@ const groupPlansByType = (plans: SubscriptionPlan[]) => {
   }
 
   const grouped = plans.reduce((acc, plan) => {
-    if (!plan || !plan.plan_type) return acc
+    if (!plan || !plan.type) return acc
 
-    if (!acc[plan.plan_type]) {
-      acc[plan.plan_type] = []
+    if (!acc[plan.type]) {
+      acc[plan.type] = []
     }
-    acc[plan.plan_type].push(plan)
+    acc[plan.type].push(plan)
     return acc
   }, {} as Record<string, SubscriptionPlan[]>)
 
   // Sort each group by price
   Object.keys(grouped).forEach(type => {
     if (grouped[type] && Array.isArray(grouped[type])) {
-      grouped[type].sort((a, b) => (a?.price || 0) - (b?.price || 0))
+      grouped[type].sort((a, b) => (a?.price_dhs || 0) - (b?.price_dhs || 0))
     }
   })
 
@@ -140,7 +139,7 @@ export function PlanSelectorModal({ plans, selectedPlan, onSelectPlan, isLoading
             {selectedPlanData ? (
               <>
                 {(() => {
-                  const config = getPlanTypeConfig(selectedPlanData.plan_type)
+                  const config = getPlanTypeConfig(selectedPlanData.type)
                   const IconComponent = config.icon
                   return <IconComponent className="h-5 w-5 text-foreground" />
                 })()}
@@ -165,7 +164,7 @@ export function PlanSelectorModal({ plans, selectedPlan, onSelectPlan, isLoading
           <div className="flex items-center gap-2">
             {selectedPlanData && (
               <span className="text-sm font-semibold">
-                {selectedPlanData.price} DHS
+                {selectedPlanData.price_dhs} DHS
               </span>
             )}
             <IconChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -229,21 +228,21 @@ export function PlanSelectorModal({ plans, selectedPlan, onSelectPlan, isLoading
 
                         <CardContent className="pt-0">
                           <div className="text-center py-4">
-                            {plan.plan_type === 'abonnement' ? (
+                            {plan.type === 'abonnement' ? (
                               <>
                                 <div className="text-2xl font-bold">
-                                  {Math.round(plan.price / 12)}
+                                  {Math.round(plan.price_dhs / 12)}
                                   <span className="text-base font-medium text-muted-foreground ml-1">
                                     DHS/mois
                                   </span>
                                 </div>
                                 <div className="text-sm text-muted-foreground mt-1">
-                                  {plan.price} DHS/an
+                                  {plan.price_dhs} DHS/an
                                 </div>
                               </>
                             ) : (
                               <div className="text-3xl font-bold">
-                                {plan.price}
+                                {plan.price_dhs}
                                 <span className="text-lg font-medium text-muted-foreground ml-1">
                                   DHS
                                 </span>

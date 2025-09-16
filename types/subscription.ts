@@ -12,8 +12,8 @@ export interface SubscriptionWithPlan extends UserSubscription {
 export interface Subscription extends Omit<UserSubscription, 'credits_used'> {
   subscription_plans: {
     name: string
-    plan_type: 'abonnement' | 'carnet' | 'personal_training'
-    weekly_credits?: number
+    type: 'abonnement' | 'carnet' | 'personal_training'
+    weekly_limit?: number
   }
   credits_used?: number // Optional field for tracking usage
 }
@@ -55,7 +55,7 @@ export type PlanType = 'abonnement' | 'carnet' | 'personal_training'
 export const PLAN_TYPE_LABELS: Record<PlanType, string> = {
   abonnement: 'Abonnement',
   carnet: 'Carnet',
-  personal_training: 'Personal Training',
+  personal_training: 'Coaching Personnel',
 }
 
 export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
