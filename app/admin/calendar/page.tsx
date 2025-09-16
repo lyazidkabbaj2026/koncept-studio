@@ -42,6 +42,7 @@ export default function CalendarPage() {
 
   useEffect(() => {
     fetchEvents()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleCreateEvent = (date?: Date) => {

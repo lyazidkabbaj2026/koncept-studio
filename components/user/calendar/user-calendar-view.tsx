@@ -97,6 +97,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
 
   useEffect(() => {
     fetchEvents()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchEvents = async () => {

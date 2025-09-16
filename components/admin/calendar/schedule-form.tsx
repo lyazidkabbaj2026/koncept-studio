@@ -71,6 +71,7 @@ export function ScheduleForm({ event, selectedDate, onClose }: ScheduleFormProps
     if (event) {
       populateFormFromEvent(event)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event])
 
   // Auto-calculate end time when class or start time changes

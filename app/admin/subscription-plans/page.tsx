@@ -90,6 +90,7 @@ export default function SubscriptionPlansPage() {
 
   useEffect(() => {
     fetchPlans()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleInputChange = (field: string, value: any) => {

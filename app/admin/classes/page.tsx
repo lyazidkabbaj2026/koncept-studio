@@ -85,6 +85,7 @@ export default function ClassesPage() {
 
   useEffect(() => {
     fetchClasses()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleInputChange = (field: string, value: any) => {

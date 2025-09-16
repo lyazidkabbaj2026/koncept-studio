@@ -65,6 +65,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
 
   useEffect(() => {
     fetchReservations()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
   const fetchReservations = async () => {

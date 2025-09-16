@@ -203,7 +203,7 @@ export const userUtils = {
 // Named exports for convenience
 export const getStatusBadge = getStatusBadgeConfig
 
-export default {
+const statusUtils = {
   getStatusConfig,
   getStatusColor,
   getStatusLabel,
@@ -212,3 +212,5 @@ export default {
   classUtils,
   userUtils
 }
+
+export default statusUtils

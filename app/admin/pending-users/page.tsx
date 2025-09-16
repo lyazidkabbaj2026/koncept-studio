@@ -97,6 +97,7 @@ export default function PendingUsersPage() {
   useEffect(() => {
     fetchUsers()
     fetchPlans()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleMarkContacted = async (userId: string) => {

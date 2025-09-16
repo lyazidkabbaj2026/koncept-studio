@@ -123,6 +123,7 @@ export default function UsersPage() {
   useEffect(() => {
     fetchUsers(0)
     fetchPlans()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleMarkAsContacted = async (userId: string) => {

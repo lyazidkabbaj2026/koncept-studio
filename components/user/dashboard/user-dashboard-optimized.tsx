@@ -85,6 +85,7 @@ export function UserDashboardOptimized({ userId }: UserDashboardOptimizedProps) 
 
   useEffect(() => {
     fetchDashboardData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
   const fetchDashboardData = async () => {

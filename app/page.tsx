@@ -924,26 +924,31 @@ export default function HomePage() {
                 <h3 className="text-lg font-semibold">Navigation</h3>
                 <ul className="space-y-3">
                   <li>
+                    {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
                     <a href="/#presentation-studio" className="text-muted-foreground hover:text-primary transition-colors">
                       Le Studio
                     </a>
                   </li>
                   <li>
+                    {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
                     <a href="/#presentation-coach" className="text-muted-foreground hover:text-primary transition-colors">
                       Coach K
                     </a>
                   </li>
                   <li>
+                    {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
                     <a href="/#workouts" className="text-muted-foreground hover:text-primary transition-colors">
                       Nos Cours
                     </a>
                   </li>
                   <li>
+                    {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
                     <a href="/#formules" className="text-muted-foreground hover:text-primary transition-colors">
                       Tarifs
                     </a>
                   </li>
                   <li>
+                    {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
                     <a href="/#faq" className="text-muted-foreground hover:text-primary transition-colors">
                       FAQ
                     </a>
