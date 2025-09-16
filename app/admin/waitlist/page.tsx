@@ -1,117 +1,181 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { WaitlistTable } from '@/components/admin/waitlist-table'
 import { formatDateTime } from '@/lib/utils/date'
-import { IconClock, IconCalendarEvent, IconCheck } from '@tabler/icons-react'
+import { IconClock, IconCalendarEvent, IconCheck, IconUsers } from '@tabler/icons-react'
+import { useAuth } from '@/hooks/use-auth'
 
-async function getWaitlistData() {
-  const supabase = await createClient()
+interface WaitlistEntry {
+  id: string
+  position: number
+  joined_at: string
+  notified_at: string | null
+  user: {
+    id: string
+    full_name: string
+    email: string
+    phone: string | null
+  }
+  schedule: {
+    id: string
+    start_datetime: string
+    end_datetime: string
+    current_bookings: number
+    class: {
+      id: string
+      title: string
+      coach: string
+      location: string
+      max_capacity: number
+    }
+  }
+  subscription?: {
+    id: string
+    plan: {
+      name: string
+    }
+  } | null
+}
 
-  const { data: waitlist, error } = await supabase
-    .from('class_waitlist')
-    .select(`
-      id,
-      position,
-      joined_at,
-      notified_at,
-      user:profiles!user_id (
-        id,
-        full_name,
-        email,
-        phone
-      ),
-      schedule:class_schedules!schedule_id (
-        id,
-        start_datetime,
-        end_datetime,
-        current_bookings,
-        class:classes!class_id (
+interface WaitlistStats {
+  total: number
+  today: number
+  tomorrow: number
+  notified: number
+}
+
+export default function WaitlistPage() {
+  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([])
+  const [stats, setStats] = useState<WaitlistStats>({ total: 0, today: 0, tomorrow: 0, notified: 0 })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const { user, loading: authLoading } = useAuth()
+  const router = useRouter()
+  const supabase = createClient()
+
+  useEffect(() => {
+    if (authLoading) return
+
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    checkAdminAccess()
+  }, [user, authLoading, router])
+
+  const checkAdminAccess = async () => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user!.id)
+        .single()
+
+      if (profile?.role !== 'admin') {
+        router.push('/')
+        return
+      }
+
+      await Promise.all([fetchWaitlist(), fetchStats()])
+    } catch (err) {
+      console.error('Error checking admin access:', err)
+      router.push('/')
+    }
+  }
+
+  const fetchWaitlist = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('class_waitlist')
+        .select(`
           id,
-          title,
-          coach,
-          location,
-          max_capacity
-        )
-      ),
-      subscription:user_subscriptions!subscription_id (
-        id,
-        plan:subscription_plans!plan_id (
-          name
-        )
-      )
-    `)
-    .order('schedule(start_datetime)', { ascending: true })
-    .order('position', { ascending: true })
+          position,
+          joined_at,
+          notified_at,
+          user:profiles!user_id (
+            id,
+            full_name,
+            email,
+            phone
+          ),
+          schedule:class_schedules!schedule_id (
+            id,
+            start_datetime,
+            end_datetime,
+            current_bookings,
+            class:classes!class_id (
+              id,
+              title,
+              coach,
+              location,
+              max_capacity
+            )
+          ),
+          subscription:user_subscriptions!subscription_id (
+            id,
+            plan:subscription_plans!plan_id (
+              name
+            )
+          )
+        `)
+        .order('schedule(start_datetime)', { ascending: true })
+        .order('position', { ascending: true })
 
-  if (error) {
-    console.error('Error fetching waitlist:', error)
-    return []
+      if (error) throw error
+      setWaitlist((data || []) as unknown as WaitlistEntry[])
+    } catch (err) {
+      console.error('Error fetching waitlist:', err)
+      setError('Erreur lors du chargement de la liste d\'attente')
+    }
   }
 
-  return waitlist || []
-}
+  const fetchStats = async () => {
+    try {
+      const today = new Date()
+      const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
 
-async function getWaitlistStats() {
-  const supabase = await createClient()
+      const [
+        { count: totalWaiting },
+        { count: todayWaiting },
+        { count: tomorrowWaiting },
+        { count: notifiedWaiting }
+      ] = await Promise.all([
+        supabase.from('class_waitlist').select('*', { count: 'exact', head: true }),
+        supabase.from('class_waitlist').select(`
+          *,
+          schedule:class_schedules!schedule_id (start_datetime)
+        `, { count: 'exact', head: true })
+          .gte('schedule.start_datetime', today.toISOString().split('T')[0])
+          .lt('schedule.start_datetime', tomorrow.toISOString().split('T')[0]),
+        supabase.from('class_waitlist').select(`
+          *,
+          schedule:class_schedules!schedule_id (start_datetime)
+        `, { count: 'exact', head: true })
+          .gte('schedule.start_datetime', tomorrow.toISOString().split('T')[0])
+          .lt('schedule.start_datetime', new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
+        supabase.from('class_waitlist').select('*', { count: 'exact', head: true })
+          .not('notified_at', 'is', null)
+      ])
 
-  const today = new Date()
-  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
-
-  const [
-    { count: totalWaiting },
-    { count: todayWaiting },
-    { count: tomorrowWaiting },
-    { count: notifiedWaiting }
-  ] = await Promise.all([
-    supabase.from('class_waitlist').select('*', { count: 'exact', head: true }),
-    supabase.from('class_waitlist').select(`
-      *,
-      schedule:class_schedules!schedule_id (start_datetime)
-    `, { count: 'exact', head: true })
-      .gte('schedule.start_datetime', today.toISOString().split('T')[0])
-      .lt('schedule.start_datetime', tomorrow.toISOString().split('T')[0]),
-    supabase.from('class_waitlist').select(`
-      *,
-      schedule:class_schedules!schedule_id (start_datetime)
-    `, { count: 'exact', head: true })
-      .gte('schedule.start_datetime', tomorrow.toISOString().split('T')[0])
-      .lt('schedule.start_datetime', new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
-    supabase.from('class_waitlist').select('*', { count: 'exact', head: true })
-      .not('notified_at', 'is', null)
-  ])
-
-  return {
-    total: totalWaiting || 0,
-    today: todayWaiting || 0,
-    tomorrow: tomorrowWaiting || 0,
-    notified: notifiedWaiting || 0
+      setStats({
+        total: totalWaiting || 0,
+        today: todayWaiting || 0,
+        tomorrow: tomorrowWaiting || 0,
+        notified: notifiedWaiting || 0
+      })
+    } catch (err) {
+      console.error('Error fetching stats:', err)
+    } finally {
+      setLoading(false)
+    }
   }
-}
-
-export default async function WaitlistPage() {
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    redirect('/login')
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'admin') {
-    redirect('/')
-  }
-
-  const [waitlist, stats] = await Promise.all([
-    getWaitlistData(),
-    getWaitlistStats()
-  ])
 
   // Group waitlist by class schedule
   const groupedWaitlist = waitlist.reduce((acc: any, item: any) => {
@@ -128,55 +192,75 @@ export default async function WaitlistPage() {
     return acc
   }, {})
 
+  if (authLoading || loading) {
+    return (
+      <div className="space-y-6 p-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Liste d'Attente</h1>
+        </div>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Chargement de la liste d'attente...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Liste d'Attente</h1>
-        <p className="text-muted-foreground">
-          Gérez les listes d'attente pour les cours complets
-        </p>
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Liste d'Attente</h1>
+          <p className="text-muted-foreground">
+            Gérez les listes d'attente pour les cours complets
+          </p>
+        </div>
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total en Attente</CardTitle>
-            <IconClock className="h-4 w-4 text-orange-600" />
+            <IconUsers className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.total}</div>
+            <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Cours Aujourd'hui</CardTitle>
-            <IconCalendarEvent className="h-4 w-4 text-blue-600" />
+            <IconCalendarEvent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.today}</div>
+            <div className="text-2xl font-bold">{stats.today}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Cours Demain</CardTitle>
-            <IconCalendarEvent className="h-4 w-4 text-purple-600" />
+            <IconCalendarEvent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{stats.tomorrow}</div>
+            <div className="text-2xl font-bold">{stats.tomorrow}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Notifiés</CardTitle>
-            <IconCheck className="h-4 w-4 text-green-600" />
+            <IconCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.notified}</div>
+            <div className="text-2xl font-bold">{stats.notified}</div>
           </CardContent>
         </Card>
       </div>

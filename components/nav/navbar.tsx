@@ -193,16 +193,14 @@ export default function Navbar() {
                       </p>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-
-                  <DropdownMenuItem asChild>
-                    <Link href="/espace/profil">Mon profil</Link>
-                  </DropdownMenuItem>
 
                   {profile.role === 'admin' && (
-                    <DropdownMenuItem asChild>
-                      <Link href="/admin">Administration</Link>
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin">Administration</Link>
+                      </DropdownMenuItem>
+                    </>
                   )}
 
                   <DropdownMenuSeparator />

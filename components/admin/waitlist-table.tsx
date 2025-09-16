@@ -29,8 +29,8 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
       header: 'Utilisateur',
       cell: (entry: any) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
-            <IconUser className="w-4 h-4 text-orange-600" />
+          <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+            <IconUser className="w-4 h-4 text-muted-foreground" />
           </div>
           <div>
             <div className="font-medium">{entry.user?.full_name}</div>
@@ -68,7 +68,7 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
             <Badge variant={isFull ? 'destructive' : 'secondary'}>
               {current}/{max}
             </Badge>
-            {isFull && <span className="text-sm text-red-600">Complet</span>}
+            {isFull && <span className="text-sm text-muted-foreground">Complet</span>}
           </div>
         )
       }
@@ -89,7 +89,7 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
       cell: (entry: any) => (
         <div>
           {entry.notified_at ? (
-            <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+            <Badge variant="secondary">
               <IconCheck className="w-3 h-3 mr-1" />
               Notifié
             </Badge>
@@ -141,7 +141,6 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
           <Button
             size="sm"
             variant="outline"
-            className="text-green-600 hover:text-green-600"
             onClick={() => {
               // TODO: Implement promote functionality
               console.log('Promote:', entry.id)

@@ -30,12 +30,12 @@ import { SidebarThemeToggle } from '@/components/theme-toggle'
 
 const navigation = [
   {
-    title: 'Dashboard',
+    title: 'Tableau de bord',
     href: '/admin',
     icon: IconHome,
   },
   {
-    title: 'Classes',
+    title: 'Cours',
     href: '/admin/classes',
     icon: IconBarbell,
   },
@@ -188,10 +188,6 @@ export function AdminSidebar() {
                 </p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/">Retour au site</Link>
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <form action={logout} className="w-full">
               <DropdownMenuItem asChild>
