@@ -38,8 +38,6 @@ import {
   IconShield,
   IconCalendar,
   IconCreditCard,
-  IconTicket,
-  IconInfinity,
   IconUserPlus,
   IconRun,
   IconBike
@@ -136,68 +134,6 @@ const workouts = [
   }
 ]
 
-const subscriptionPlans = [
-  {
-    name: "Carnet 10 séances",
-    price: "250 DH",
-    description: "Parfait pour débuter ou compléter votre routine",
-    features: [
-      "10 séances de cours collectifs",
-      "Validité 3 mois",
-      "Accès à tous les cours",
-      "Suivi personnalisé"
-    ],
-    icon: IconTicket,
-    popular: false,
-    color: "border-border"
-  },
-  {
-    name: "Abonnement Mensuel",
-    price: "300 DH",
-    description: "Idéal pour une pratique régulière",
-    features: [
-      "Cours collectifs illimités",
-      "Accès à tous les créneaux",
-      "Suivi de progression",
-      "Accès prioritaire aux nouveaux cours",
-      "1 séance d'évaluation offerte"
-    ],
-    icon: IconCalendar,
-    popular: true,
-    color: "border-primary bg-primary/5"
-  },
-  {
-    name: "Abonnement Annuel",
-    price: "2800 DH",
-    description: "Le meilleur rapport qualité-prix",
-    features: [
-      "Cours collectifs illimités",
-      "Personal training (2 séances/mois)",
-      "Suivi nutritionnel inclus",
-      "Accès VIP aux événements",
-      "Plan d'entraînement personnalisé",
-      "Réduction sur les services additionnels"
-    ],
-    icon: IconInfinity,
-    popular: false,
-    color: "border-border"
-  },
-  {
-    name: "Personal Training",
-    price: "200 DH",
-    description: "Coaching individuel de haute qualité",
-    features: [
-      "Séance individuelle 1h",
-      "Programme personnalisé",
-      "Suivi nutrition inclus",
-      "Flexibilité horaire",
-      "Matériel spécialisé"
-    ],
-    icon: IconShield,
-    popular: false,
-    color: "border-border"
-  }
-]
 
 const faqs = [
   {
@@ -222,7 +158,7 @@ const faqs = [
   },
   {
     question: "Comment réserver mes cours ?",
-    answer: "La réservation se fait facilement via notre plateforme en ligne. Vous pouvez voir les créneaux disponibles, réserver et annuler vos séances jusqu'à 2h avant le début du cours."
+    answer: "La réservation se fait facilement via notre plateforme en ligne. Vous pouvez voir les créneaux disponibles, réserver et annuler vos séances jusqu'à 1h avant le début du cours."
   }
 ]
 
@@ -251,15 +187,16 @@ export default function HomePage() {
     <div className="min-h-screen bg-background text-foreground">
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center overflow-hidden pt-8" id="presentation-studio">
+      <section className="relative min-h-[120vh] flex items-center overflow-hidden py-16 lg:py-24" id="presentation-studio">
         {/* Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/70 to-background/95" />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-muted/10 to-primary/5" />
 
         {/* Floating Elements */}
-        <div className="absolute top-20 left-20 w-32 h-32 rounded-full bg-primary/5 animate-float" />
-        <div className="absolute bottom-40 right-40 w-24 h-24 rounded-full bg-primary/10 animate-float" style={{animationDelay: '2s'}} />
-        <div className="absolute top-1/2 right-20 w-16 h-16 rounded-full bg-primary/5 animate-float" style={{animationDelay: '4s'}} />
+        <div className="absolute top-24 left-20 w-32 h-32 rounded-full bg-primary/5 animate-float" />
+        <div className="absolute bottom-32 right-40 w-24 h-24 rounded-full bg-primary/10 animate-float" style={{animationDelay: '2s'}} />
+        <div className="absolute top-1/3 right-20 w-16 h-16 rounded-full bg-primary/5 animate-float" style={{animationDelay: '4s'}} />
+        <div className="absolute bottom-1/4 left-32 w-20 h-20 rounded-full bg-primary/5 animate-float" style={{animationDelay: '6s'}} />
 
         <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -273,7 +210,7 @@ export default function HomePage() {
               {/* Main Heading */}
               <div className="space-y-4">
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-[0.9] tracking-tight">
-                  <span className="text-gradient">K-ONCEPT</span>
+                  <span className="text-gradient">KONCEPT</span>
                   <br />
                   <span className="relative inline-block">
                     <span className="text-primary">STUDIO</span>
@@ -285,12 +222,10 @@ export default function HomePage() {
               {/* Subtitle */}
               <div className="space-y-6">
                 <p className="text-lg lg:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                  K-ONCEPT STUDIO, c'est un lieu unique où chaque séance devient une véritable expérience sportive.
-                  Dans une ambiance conviviale et motivante, tu t'entraînes en petit groupe (maximum 12 personnes)
-                  pour profiter de l'énergie collective tout en bénéficiant d'un accompagnement personnalisé.
+                Un lieu unique où chaque séance devient une véritable expérience sportive. Dans une ambiance conviviale et motivante, vous vous entraînez en petit groupe — jusqu’à 12 personnes — afin de profiter pleinement de l’énergie collective, tout en bénéficiant d’un accompagnement personnalisé adapté à vos objectifs.
                 </p>
                 <p className="text-base lg:text-lg font-medium text-foreground max-w-2xl leading-relaxed">
-                  Rejoins-nous et transforme ta façon de t'entraîner.
+                Rejoignez-nous et transformez votre façon de vous entraîner.
                 </p>
               </div>
 
@@ -319,16 +254,16 @@ export default function HomePage() {
               {/* Stats */}
               <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border">
                 <div className="text-center">
-                  <div className="text-2xl lg:text-3xl font-bold text-primary">500+</div>
+                  <div className="text-2xl lg:text-3xl font-bold text-primary">100+</div>
                   <div className="text-sm text-muted-foreground">Membres actifs</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl lg:text-3xl font-bold text-primary">15+</div>
+                  <div className="text-2xl lg:text-3xl font-bold text-primary">10+</div>
                   <div className="text-sm text-muted-foreground">Cours différents</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl lg:text-3xl font-bold text-primary">5★</div>
-                  <div className="text-sm text-muted-foreground">Note moyenne</div>
+                  <div className="text-sm text-muted-foreground">Satisfaction garantie</div>
                 </div>
               </div>
             </div>
@@ -367,13 +302,12 @@ export default function HomePage() {
             {/* Image */}
             <div className="relative">
               <div className="aspect-[4/3] bg-gradient-to-br from-primary/10 to-background rounded-3xl overflow-hidden shadow-brutal">
-                <div className="w-full h-full bg-gradient-to-br from-muted/30 via-primary/10 to-muted/20 flex items-center justify-center">
-                  <div className="text-center text-primary/60">
-                    <IconTarget className="w-20 h-20 mx-auto mb-3" />
-                    <p className="text-base font-semibold">Notre Studio</p>
-                    <p className="text-xs">Photo à venir</p>
-                  </div>
-                </div>
+                <Image
+                  src="/images/studio/studio-main.jpg"
+                  alt="Koncept Studio - Espace d'entraînement moderne et équipé"
+                  fill
+                  className="object-cover rounded-3xl"
+                />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-background/20 via-transparent to-transparent rounded-3xl" />
             </div>
@@ -390,9 +324,8 @@ export default function HomePage() {
 
               <div className="space-y-6">
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  Nos entraînements sont variés, exigeants et conçus pour t'aider à progresser rapidement.
-                  Et si tu veux aller encore plus loin, tu as aussi la possibilité de suivre des séances de coaching
-                  individuel ou en duo, parfaitement adaptées à tes objectifs.
+                Nos entraînements sont variés, exigeants et conçus pour vous aider à progresser rapidement.
+                Et si vous souhaitez aller encore plus loin, vous avez également la possibilité de suivre des séances de coaching individuel ou en duo, parfaitement adaptées à vos objectifs.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -476,22 +409,6 @@ export default function HomePage() {
                     en coaching individuel ou en accompagnement sportif sur mesure."
                   </p>
                 </div>
-              </div>
-
-              {/* Contact Information */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button variant="outline" size="lg" className="flex items-center" asChild>
-                  <a href={createPhoneLink(APP_CONFIG.CONTACT.PHONE)}>
-                    <IconPhone className="w-5 h-5 mr-2" />
-                    {formatPhoneNumber(APP_CONFIG.CONTACT.PHONE)}
-                  </a>
-                </Button>
-                <Button variant="outline" size="lg" className="flex items-center" asChild>
-                  <a href={APP_CONFIG.CONTACT.INSTAGRAM.URL} target="_blank" rel="noopener noreferrer">
-                    <IconBrandInstagram className="w-5 h-5 mr-2" />
-                    {APP_CONFIG.CONTACT.INSTAGRAM.HANDLE}
-                  </a>
-                </Button>
               </div>
             </div>
 
@@ -582,101 +499,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Formules Section */}
-      <section className="py-16 lg:py-24" id="formules">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge className="text-primary bg-primary/10 mb-4">Nos Formules</Badge>
-            <h2 className="text-3xl lg:text-5xl font-bold mb-6">
-              Choisissez la formule
-              <span className="text-primary"> qui vous correspond</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Des options flexibles adaptées à vos besoins et votre budget.
-              Commencez votre transformation dès aujourd'hui.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-8">
-            {subscriptionPlans.map((plan, index) => {
-              const IconComponent = plan.icon
-              return (
-                <Card
-                  key={index}
-                  className={`relative group hover:shadow-brutal transition-all duration-300 hover:-translate-y-1 ${plan.color} ${plan.popular ? 'ring-2 ring-primary' : ''}`}
-                >
-                  {plan.popular && (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                      <Badge className="bg-primary text-primary-foreground px-4 py-1">
-                        Populaire
-                      </Badge>
-                    </div>
-                  )}
-
-                  <CardHeader className="text-center space-y-4">
-                    <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">
-                      <IconComponent className="w-8 h-8 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl mb-2">{plan.name}</CardTitle>
-                      <div className="text-3xl font-bold text-primary mb-2">
-                        {plan.price}
-                        {plan.name.includes('séance') && <span className="text-sm text-muted-foreground">/séance</span>}
-                        {plan.name.includes('Mensuel') && <span className="text-sm text-muted-foreground">/mois</span>}
-                        {plan.name.includes('Annuel') && <span className="text-sm text-muted-foreground">/an</span>}
-                      </div>
-                      <CardDescription>{plan.description}</CardDescription>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-6">
-                    <ul className="space-y-3">
-                      {plan.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-start space-x-3">
-                          <IconCircleCheck className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                          <span className="text-sm text-muted-foreground">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    <Button
-                      className={`w-full ${plan.popular ? 'bg-primary hover:bg-primary/90' : ''} group-hover:shadow-soft transition-all`}
-                      variant={plan.popular ? "default" : "outline"}
-                      asChild
-                    >
-                      <Link href="/signup">
-                        Choisir cette formule
-                        <IconArrowRight className="w-4 h-4 ml-2" />
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-
-          {/* Additional Info */}
-          <div className="mt-16 text-center space-y-4">
-            <p className="text-muted-foreground">
-              Toutes nos formules incluent l'accès aux vestiaires, WiFi et parking gratuit.
-            </p>
-            <div className="flex justify-center items-center space-x-8 text-sm text-muted-foreground">
-              <div className="flex items-center space-x-2">
-                <IconShield className="w-4 h-4 text-primary" />
-                <span>Aucun engagement</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <IconCreditCard className="w-4 h-4 text-primary" />
-                <span>Paiement sécurisé</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <IconCircleCheck className="w-4 h-4 text-primary" />
-                <span>Satisfait ou remboursé</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* FAQ Section */}
       <section className="py-16 lg:py-24 bg-muted/30" id="faq">
@@ -736,8 +558,7 @@ export default function HomePage() {
                 <span className="text-primary"> votre transformation ?</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                Contactez-nous dès maintenant pour réserver votre première séance découverte gratuite
-                ou pour obtenir plus d'informations sur nos programmes.
+                Contactez-nous dès maintenant pour obtenir plus d'informations sur nos programmes.
               </p>
             </div>
 
@@ -753,7 +574,7 @@ export default function HomePage() {
                       </div>
                       <div>
                         <h4 className="font-semibold mb-1">Adresse</h4>
-                        <p className="text-muted-foreground">Casablanca, Maroc</p>
+                        <p className="text-muted-foreground">Rabat, Maroc</p>
                       </div>
                     </div>
 
@@ -974,12 +795,6 @@ export default function HomePage() {
                   </li>
                   <li>
                     {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                    <a href="/#formules" className="text-muted-foreground hover:text-primary transition-colors">
-                      Tarifs
-                    </a>
-                  </li>
-                  <li>
-                    {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
                     <a href="/#faq" className="text-muted-foreground hover:text-primary transition-colors">
                       FAQ
                     </a>
@@ -995,8 +810,6 @@ export default function HomePage() {
                     <IconMapPin className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                     <div className="text-muted-foreground">
                       <p>Rabat, Maroc</p>
-                      <p className="text-sm">Adresse exacte communiquée</p>
-                      <p className="text-sm">lors de l'inscription</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
@@ -1030,9 +843,6 @@ export default function HomePage() {
                 <h3 className="text-2xl lg:text-3xl font-bold">
                   Prêt à commencer votre transformation ?
                 </h3>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
-                  Votre première séance découverte est offerte. Contactez-nous dès maintenant !
-                </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
@@ -1041,7 +851,7 @@ export default function HomePage() {
                   asChild
                 >
                   <Link href="/signup">
-                    Séance découverte gratuite
+                    S'inscrire gratuitement
                     <IconArrowRight className="w-5 h-5 ml-2" />
                   </Link>
                 </Button>
@@ -1064,7 +874,7 @@ export default function HomePage() {
           <div className="py-6 border-t border-border">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               <p className="text-sm text-muted-foreground">
-                © 2024 Koncept Studio. Tous droits réservés.
+                © 2025 Koncept Studio. Tous droits réservés.
               </p>
               <div className="flex space-x-6 text-sm text-muted-foreground">
                 <a href="#" className="hover:text-primary transition-colors">
