@@ -488,6 +488,53 @@ export type Database = {
           },
         ]
       }
+      whatsapp_logs: {
+        Row: {
+          id: string
+          user_id: string | null
+          event_type: 'signup' | 'activation' | 'waitlist_promotion' | 'class_cancellation'
+          phone_number: string
+          message_content: string
+          status: 'pending' | 'success' | 'failed'
+          error_message: string | null
+          twilio_message_sid: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          event_type: 'signup' | 'activation' | 'waitlist_promotion' | 'class_cancellation'
+          phone_number: string
+          message_content: string
+          status?: 'pending' | 'success' | 'failed'
+          error_message?: string | null
+          twilio_message_sid?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          event_type?: 'signup' | 'activation' | 'waitlist_promotion' | 'class_cancellation'
+          phone_number?: string
+          message_content?: string
+          status?: 'pending' | 'success' | 'failed'
+          error_message?: string | null
+          twilio_message_sid?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       calendar_events_optimized: {

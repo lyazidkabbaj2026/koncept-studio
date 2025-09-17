@@ -1,10 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/common/data-table'
 import { formatDateTime } from '@/lib/utils/date'
 import { IconUser, IconClock, IconCalendarEvent, IconArrowUp, IconArrowDown, IconCheck, IconX } from '@tabler/icons-react'
+import { promoteFromWaitlist } from '@/app/admin/waitlist/actions'
+import { toast } from 'sonner'
 
 interface WaitlistTableProps {
   waitlist: any[]
@@ -12,6 +15,26 @@ interface WaitlistTableProps {
 }
 
 export function WaitlistTable({ waitlist, showActions = true }: WaitlistTableProps) {
+  const [promotingId, setPromotingId] = useState<string | null>(null)
+
+  const handlePromote = async (entryId: string) => {
+    setPromotingId(entryId)
+    try {
+      const result = await promoteFromWaitlist(entryId)
+      if (result.success) {
+        toast.success('Utilisateur promu avec succès !')
+        // Refresh the data - this should be handled by the parent component
+        window.location.reload()
+      } else {
+        toast.error(result.error || 'Erreur lors de la promotion')
+      }
+    } catch (error) {
+      console.error('Error promoting user:', error)
+      toast.error('Une erreur inattendue s\'est produite')
+    } finally {
+      setPromotingId(null)
+    }
+  }
   const columns = [
     {
       key: 'position' as const,
@@ -141,10 +164,8 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
           <Button
             size="sm"
             variant="outline"
-            onClick={() => {
-              // TODO: Implement promote functionality
-              console.log('Promote:', entry.id)
-            }}
+            onClick={() => handlePromote(entry.id)}
+            disabled={promotingId === entry.id}
           >
             <IconCheck className="w-4 h-4" />
           </Button>

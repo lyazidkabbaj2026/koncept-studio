@@ -161,9 +161,14 @@ export default function BookingsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="flex-1 space-y-8 p-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Réservations</h1>
+          <div>
+            <h1 className="text-3xl font-bold">Réservations</h1>
+            <p className="text-muted-foreground mt-2">
+              Gérez toutes les réservations de cours des membres
+            </p>
+          </div>
         </div>
         <div className="text-center py-12">
           <p className="text-muted-foreground">Chargement des réservations...</p>
@@ -173,11 +178,11 @@ export default function BookingsPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="flex-1 space-y-8 p-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Réservations</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mt-2">
             Gérez toutes les réservations de cours des membres
           </p>
         </div>

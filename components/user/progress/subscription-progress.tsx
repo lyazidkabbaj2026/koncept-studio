@@ -1,15 +1,16 @@
 'use client'
 
-import { IconCheck, IconClock, IconMail, IconCreditCard, IconStar, IconUser } from '@tabler/icons-react'
+import { IconCheck, IconClock, IconCash, IconCreditCard, IconStar, IconUser } from '@tabler/icons-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
+import { APP_CONFIG } from '@/constants/config'
 
 interface SubscriptionProgressProps {
-  subscriptionStatus: 'pending' | 'contacted' | 'active' | 'inactive'
+  subscriptionStatus: 'pending' | 'active' | 'inactive'
   userEmail?: string
   userName?: string
 }
@@ -20,26 +21,19 @@ const progressSteps = [
     title: 'Inscription',
     description: 'Création de votre compte',
     icon: IconCheck,
-    statuses: ['pending', 'contacted', 'active', 'inactive']
+    statuses: ['pending', 'active', 'inactive']
   },
   {
     id: 2,
-    title: 'Contact',
-    description: 'Nous vous contactons',
-    icon: IconMail,
-    statuses: ['contacted', 'active', 'inactive']
+    title: 'Paiement',
+    description: 'Activation de votre compte',
+    icon: IconCash,
+    statuses: ['pending', 'active', 'inactive']
   },
   {
     id: 3,
-    title: 'Paiement',
-    description: 'Finalisation de votre abonnement',
-    icon: IconCreditCard,
-    statuses: ['active']
-  },
-  {
-    id: 4,
     title: 'Activation',
-    description: 'Accès aux fonctionnalités',
+    description: 'Accès au planning et aux réservations',
     icon: IconStar,
     statuses: ['active']
   }
@@ -49,8 +43,7 @@ export function SubscriptionProgress({ subscriptionStatus, userEmail, userName }
   const getCurrentStep = () => {
     switch (subscriptionStatus) {
       case 'pending': return 2
-      case 'contacted': return 3
-      case 'active': return 4
+      case 'active': return 3
       default: return 1
     }
   }
@@ -62,13 +55,8 @@ export function SubscriptionProgress({ subscriptionStatus, userEmail, userName }
     switch (subscriptionStatus) {
       case 'pending':
         return {
-          title: 'Nous allons vous contacter',
-          description: 'Votre inscription a été reçue ! Nous allons vous contacter sous peu pour finaliser votre abonnement et discuter de vos besoins.'
-        }
-      case 'contacted':
-        return {
-          title: 'Finalisez votre paiement',
-          description: 'Nous vous avons contacté ! Une fois votre paiement effectué, votre compte sera activé et vous pourrez accéder à toutes nos fonctionnalités.'
+          title: 'Rendez-vous au studio pour procéder au paiement',
+          description: `Votre inscription a été reçue ! Merci de vous présenter au studio pour procéder au paiement. Une fois le paiement effectué, vous aurez accès au planning et pourrez vous inscrire aux classes. Contactez-nous au ${APP_CONFIG.CONTACT.PHONE} si vous avez besoin de plus d'informations.`,
         }
       case 'active':
         return {
@@ -92,22 +80,10 @@ export function SubscriptionProgress({ subscriptionStatus, userEmail, userName }
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Status Alert 
-      <Alert className={cn(
-        "border-l-4 transition-all duration-300 animate-in fade-in-0 slide-in-from-top-4",
-        subscriptionStatus === 'pending' && "border-l-blue-500 bg-blue-50 dark:bg-blue-950/20",
-        subscriptionStatus === 'contacted' && "border-l-orange-500 bg-orange-50 dark:bg-orange-950/20",
-        subscriptionStatus === 'active' && "border-l-green-500 bg-green-50 dark:bg-green-950/20",
-        subscriptionStatus === 'inactive' && "border-l-red-500 bg-red-50 dark:bg-red-950/20"
-      )}>
+      {/* Status Alert */}
+      <Alert className="border-l-4 border-l-foreground transition-all duration-300 animate-in fade-in-0 slide-in-from-top-4">
         <div className="flex items-start gap-3">
-          <div className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-full mt-1 flex-shrink-0",
-            subscriptionStatus === 'pending' && "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400",
-            subscriptionStatus === 'contacted' && "bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-400",
-            subscriptionStatus === 'active' && "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400",
-            subscriptionStatus === 'inactive' && "bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400"
-          )}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-full mt-1 flex-shrink-0 bg-muted text-foreground">
             <IconClock size={20} />
           </div>
           <AlertDescription className="flex-1">
@@ -115,7 +91,7 @@ export function SubscriptionProgress({ subscriptionStatus, userEmail, userName }
             <p className="text-sm text-muted-foreground leading-relaxed">{statusMessage.description}</p>
           </AlertDescription>
         </div>
-      </Alert>*/}
+      </Alert>
 
       {/* Progress Steps */}
       <Card className="animate-in fade-in-0 slide-in-from-bottom-6" style={{ animationDelay: '200ms' }}>

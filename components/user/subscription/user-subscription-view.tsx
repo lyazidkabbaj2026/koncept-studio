@@ -68,9 +68,8 @@ interface SubscriptionHistory {
 
 interface SubscriptionRequest {
   id: string
-  status: 'pending' | 'contacted' | 'resolved' | 'cancelled'
+  status: 'pending' | 'resolved' | 'cancelled'
   requested_at: string
-  contacted_at?: string
   resolved_at?: string
   notes?: string
   subscription_plans: {
@@ -122,8 +121,6 @@ export function UserSubscriptionView({
         return 'Annulé'
       case 'pending':
         return 'En attente'
-      case 'contacted':
-        return 'Contacté'
       case 'resolved':
         return 'Résolu'
       default:
@@ -172,7 +169,7 @@ export function UserSubscriptionView({
         {/* Current Subscription or Status */}
         {currentSubscription ? (
           <div className="mb-8">
-            <Card className="glass-effect border-l-4 border-l-primary shadow-soft">
+            <Card className="glass-effect border-l-4 border-l-foreground shadow-soft">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl font-semibold">Abonnement actuel</CardTitle>
@@ -252,15 +249,12 @@ export function UserSubscriptionView({
         ) : (
           <div className="mb-8">
             {subscriptionRequests.length > 0 ? (
-              <Alert className="border-l-4 border-l-primary">
+              <Alert className="border-l-4 border-l-foreground">
                 <IconAlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <div className="font-medium mb-2">Demande d'abonnement en cours</div>
                   <p className="text-sm">
-                    {subscriptionRequests[0].status === 'contacted' 
-                      ? 'Un administrateur vous a contacté. Effectuez le paiement pour activer votre abonnement.'
-                      : 'Votre demande d\'abonnement est en cours de traitement. Vous serez contacté sous peu.'
-                    }
+                    Votre demande d'abonnement est en cours de traitement. Notre équipe va vous attribuer un abonnement sous peu.
                   </p>
                   <div className="mt-2 text-xs text-muted-foreground">
                     Plan demandé: {subscriptionRequests[0].subscription_plans.name}
@@ -268,7 +262,7 @@ export function UserSubscriptionView({
                 </AlertDescription>
               </Alert>
             ) : (
-              <Alert className="border-l-4 border-l-primary">
+              <Alert className="border-l-4 border-l-foreground">
                 <IconAlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <div className="font-medium mb-2">Aucun abonnement actif</div>
@@ -351,7 +345,7 @@ export function UserSubscriptionView({
               </Card>
             ) : (
               subscriptionHistory.map(subscription => (
-                <Card key={subscription.id} className={`glass-effect shadow-soft ${subscription.status === 'active' ? 'border-l-4 border-l-primary' : ''}`}>
+                <Card key={subscription.id} className={`glass-effect shadow-soft ${subscription.status === 'active' ? 'border-l-4 border-l-foreground' : ''}`}>
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="space-y-3 flex-1">
@@ -425,12 +419,6 @@ export function UserSubscriptionView({
                             <div className="text-muted-foreground">Demandé le</div>
                             <div>{format(new Date(request.requested_at), 'dd/MM/yyyy à HH:mm', { locale: fr })}</div>
                           </div>
-                          {request.contacted_at && (
-                            <div>
-                              <div className="text-muted-foreground">Contacté le</div>
-                              <div>{format(new Date(request.contacted_at), 'dd/MM/yyyy à HH:mm', { locale: fr })}</div>
-                            </div>
-                          )}
                           {request.resolved_at && (
                             <div>
                               <div className="text-muted-foreground">Résolu le</div>

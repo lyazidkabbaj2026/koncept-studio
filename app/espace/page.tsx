@@ -31,7 +31,7 @@ export default async function EspacePage() {
     .single()
 
   // Check subscription status
-  const subscriptionStatus = (profile?.subscription_status || 'pending') as 'pending' | 'contacted' | 'active' | 'inactive'
+  const subscriptionStatus = (profile?.subscription_status || 'pending') as 'pending' | 'active' | 'inactive'
   
   // Redirect active users directly to planning
   if (subscriptionStatus === 'active') {
@@ -41,17 +41,7 @@ export default async function EspacePage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Page Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Bienvenue, {profile?.full_name}
-          </h1>
-          <p className="text-muted-foreground">
-            Votre espace personnel Koncept Studio
-          </p>
-        </div>
-
-        {/* Show subscription progress for pending and contacted users */}
+        {/* Show subscription progress for pending users */}
         <SubscriptionProgress 
           subscriptionStatus={subscriptionStatus}
           userEmail={profile?.email}

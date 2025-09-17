@@ -25,7 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { IconCalendar, IconUsers, IconSettings, IconHome, IconLogout, IconBarbell, IconCalendarEvent, IconCreditCard, IconCalendarStats, IconX, IconClock } from '@tabler/icons-react'
+import { IconCalendar, IconUsers, IconSettings, IconHome, IconLogout, IconBarbell, IconCalendarEvent, IconCreditCard, IconCalendarStats, IconX, IconClock, IconBrandWhatsapp } from '@tabler/icons-react'
 import { SidebarThemeToggle } from '@/components/theme-toggle'
 
 const navigation = [
@@ -68,6 +68,11 @@ const navigation = [
     title: 'Liste d\'attente',
     href: '/admin/waitlist',
     icon: IconClock,
+  },
+  {
+    title: 'WhatsApp Logs',
+    href: '/admin/whatsapp-logs',
+    icon: IconBrandWhatsapp,
   },
   {
     title: 'Paramètres',

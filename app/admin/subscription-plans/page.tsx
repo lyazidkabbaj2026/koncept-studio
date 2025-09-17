@@ -218,9 +218,14 @@ export default function SubscriptionPlansPage() {
 
   if (loading && plans.length === 0) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="flex-1 space-y-8 p-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Forfaits</h1>
+          <div>
+            <h1 className="text-3xl font-bold">Forfaits</h1>
+            <p className="text-muted-foreground mt-2">
+              Gérer les formules d'abonnement et les tarifs
+            </p>
+          </div>
         </div>
         <div className="text-center py-12">
           <p className="text-muted-foreground">Chargement des forfaits...</p>
@@ -230,9 +235,14 @@ export default function SubscriptionPlansPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="flex-1 space-y-8 p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Forfaits</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Forfaits</h1>
+          <p className="text-muted-foreground mt-2">
+            Gérer les formules d'abonnement et les tarifs
+          </p>
+        </div>
         <Dialog open={showForm} onOpenChange={setShowForm}>
           <DialogTrigger asChild>
             <Button onClick={() => resetForm()}>

@@ -13,6 +13,7 @@ export const APP_CONFIG = {
     PHONE: '0663235797',
     EMAIL: 'contact@konceptstudio.ma',
     LOCATION: 'Rabat, Maroc',
+    ADDRESS: 'Hay Riad, Rabat, Maroc',
     INSTAGRAM: {
       URL: 'https://instagram.com/k_oncept_training',
       HANDLE: '@k_oncept_training'

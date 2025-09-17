@@ -13,6 +13,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Separator } from '@/components/ui/separator'
 import { IconCalendar, IconClock, IconMapPin, IconUser, IconUsers, IconEdit, IconTrash, IconX, IconAlertTriangle, IconRepeat } from '@tabler/icons-react'
+import { deleteClassEvent, cancelClassEvent } from '@/app/admin/calendar/actions'
+import { toast } from 'sonner'
 
 interface EventDetailsModalProps {
   event: CalendarEvent
@@ -30,28 +32,17 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
     setError('')
 
     try {
-      if (event.is_recurring) {
-        // This is a recurring instance - mark as exception
-        const { error } = await supabase
-          .from('class_schedules')
-          .update({
-            is_exception: true,
-            exception_reason: 'Supprimé par l\'administrateur'
-          })
-          .eq('id', event.id)
+      const result = await deleteClassEvent({
+        eventId: event.id,
+        deleteType: 'single'
+      })
 
-        if (error) throw error
+      if (result.success) {
+        toast.success('Cours supprimé avec succès')
+        onClose()
       } else {
-        // This is a single event - delete entirely
-        const { error } = await supabase
-          .from('class_schedules')
-          .delete()
-          .eq('id', event.id)
-
-        if (error) throw error
+        setError(result.error || 'Erreur lors de la suppression')
       }
-
-      onClose()
     } catch (err: any) {
       console.error('Error deleting event:', err)
       setError(err.message || 'Erreur lors de la suppression')
@@ -65,27 +56,18 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
     setError('')
 
     try {
-      if (event.is_recurring && event.recurrence_rule) {
-        // Delete all instances of the recurring series
-        // Use a safer approach by matching on class_id and is_recurring
-        const { error } = await supabase
-          .from('class_schedules')
-          .delete()
-          .eq('class_id', event.class_id)
-          .eq('is_recurring', true)
+      const result = await deleteClassEvent({
+        eventId: event.id,
+        deleteType: 'all_recurring',
+        classId: event.class_id
+      })
 
-        if (error) throw error
+      if (result.success) {
+        toast.success('Série de cours supprimée avec succès')
+        onClose()
       } else {
-        // Just delete this single event
-        const { error } = await supabase
-          .from('class_schedules')
-          .delete()
-          .eq('id', event.id)
-
-        if (error) throw error
+        setError(result.error || 'Erreur lors de la suppression de la série')
       }
-
-      onClose()
     } catch (err: any) {
       console.error('Error deleting series:', err)
       setError(err.message || 'Erreur lors de la suppression de la série')
@@ -99,17 +81,16 @@ export function EventDetailsModal({ event, onClose, onEdit }: EventDetailsModalP
     setError('')
 
     try {
-      const { error } = await supabase
-        .from('class_schedules')
-        .update({
-          is_cancelled: true,
-          cancellation_reason: 'Annulé par l\'administrateur'
-        })
-        .eq('id', event.id)
+      const result = await cancelClassEvent({
+        eventId: event.id
+      })
 
-      if (error) throw error
-
-      onClose()
+      if (result.success) {
+        toast.success('Cours annulé avec succès')
+        onClose()
+      } else {
+        setError(result.error || 'Erreur lors de l\'annulation')
+      }
     } catch (err: any) {
       console.error('Error cancelling event:', err)
       setError(err.message || 'Erreur lors de l\'annulation')

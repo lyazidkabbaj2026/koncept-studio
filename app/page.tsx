@@ -33,112 +33,19 @@ import {
   IconMapPin,
   IconClock,
   IconCircleCheck,
-  IconBarbell,
   IconFlame,
   IconShield,
   IconCalendar,
   IconCreditCard,
-  IconUserPlus,
-  IconRun,
-  IconBike
+  IconUserPlus
 } from '@tabler/icons-react'
 
-const workouts = [
-  {
-    name: "Power Glute",
-    description: "Fessiers/hanche : hip thrust, bandes, kettlebells, tempo. Résultats visibles + protection du bas du dos.",
-    duration: "45 min",
-    intensity: "Tous niveaux",
-    icon: IconTrophy,
-    color: "bg-red-500/10 text-red-500"
-  },
-  {
-    name: "TRX Training",
-    description: "Travail en suspension pour le gainage profond, la stabilité et la puissance.",
-    duration: "45 min",
-    intensity: "Tous niveaux",
-    icon: IconActivity,
-    color: "bg-green-500/10 text-green-500"
-  },
-  {
-    name: "AbdoBurn",
-    description: "Sangle abdominale (grand droit, obliques, transverse), gainage anti-extension/rotation, respect du dos. Idéal en add-on après une séance.",
-    duration: "30 min",
-    intensity: "Tous niveaux",
-    icon: IconTarget,
-    color: "bg-orange-500/10 text-orange-500"
-  },
-  {
-    name: "Mobilité & Stretching",
-    description: "Souplesse, récupération, prévention des blessures.",
-    duration: "30 min",
-    intensity: "Tous niveaux",
-    icon: IconHeart,
-    color: "bg-pink-500/10 text-pink-500"
-  },
-  {
-    name: "PowerBox Koncept",
-    description: "Boxe sur sac + exercices avec haltères. Puissance, cardio et renforcement musculaire dans une séance explosive.",
-    duration: "45 min",
-    intensity: "Tous niveaux",
-    icon: IconBolt,
-    color: "bg-blue-500/10 text-blue-500"
-  },
-  {
-    name: "HIIT & Cross Training",
-    description: "Circuits courts et explosifs, gros boost métabolique.",
-    duration: "40 min",
-    intensity: "Avancé",
-    icon: IconFlame,
-    color: "bg-red-600/10 text-red-600"
-  },
-  {
-    name: "CrossBike",
-    description: "Enchaînement vélo + renforcement. Cardio puissant, jambes brûlantes, haut du corps actif.",
-    duration: "45 min",
-    intensity: "Avancé",
-    icon: IconBike,
-    color: "bg-purple-500/10 text-purple-500"
-  },
-  {
-    name: "Koncept Bootcamp",
-    description: "Mélange de force et de cardio inspiré de l'entraînement militaire, circuits avec haltères et poids du corps. Intensité maximale, résultats visibles.",
-    duration: "45 min",
-    intensity: "Tous niveaux",
-    icon: IconShield,
-    color: "bg-orange-600/10 text-orange-600"
-  },
-  {
-    name: "Renforcement Musculaire",
-    description: "Full body avec poids libres, TRX, élastiques. Objectifs : force, tonus, posture",
-    duration: "45 min",
-    intensity: "Tous niveaux",
-    icon: IconBarbell,
-    color: "bg-blue-600/10 text-blue-600"
-  },
-  {
-    name: "Cardio - Boxe",
-    description: "Mouvements de boxe + cardio pour brûler et se défouler.",
-    duration: "45 min",
-    intensity: "Tous niveaux",
-    icon: IconRun,
-    color: "bg-yellow-500/10 text-yellow-500"
-  },
-  {
-    name: "Coaching personalisé",
-    description: "Bilan, suivi, programme sur mesure, complément parfait aux cours.",
-    duration: "60 min",
-    intensity: "Tous niveaux",
-    icon: IconUserPlus,
-    color: "bg-purple-600/10 text-purple-600"
-  }
-]
 
 
 const faqs = [
   {
     question: "Quels sont les horaires d'ouverture ?",
-    answer: "Nous sommes ouverts du lundi au samedi de 6h00 à 22h00, et le dimanche de 8h00 à 20h00. Les cours ont lieu tout au long de la journée avec des créneaux adaptés à tous les emplois du temps."
+    answer: "Nous sommes ouverts du lundi au vendredi de 7h00 à 21h00, et le samedi de 10h00 à 13h00. Le dimanche, le studio est fermé. Les cours sont organisés tout au long de la semaine avec des créneaux adaptés à différents emplois du temps."
   },
   {
     question: "Faut-il avoir un niveau minimum pour commencer ?",
@@ -150,11 +57,7 @@ const faqs = [
   },
   {
     question: "Puis-je suspendre mon abonnement temporairement ?",
-    answer: "Oui, nous offrons la possibilité de suspendre votre abonnement pour des raisons de santé, voyage ou autres circonstances particulières. Contactez-nous pour étudier votre situation."
-  },
-  {
-    question: "Y a-t-il un suivi nutritionnel ?",
-    answer: "Coach K est certifié en nutrition sportive. Un suivi nutritionnel est inclus dans certaines formules et disponible en option pour les autres abonnements."
+    answer: "Oui, nous offrons la possibilité de suspendre votre abonnement pour une durée maximale d’un mois. Contactez-nous pour effectuer la demande."
   },
   {
     question: "Comment réserver mes cours ?",
@@ -202,7 +105,7 @@ export default function HomePage() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="space-y-8 animate-fade-in">
               {/* Badge */}
-              <div className="inline-flex items-center space-x-2 bg-primary/10 rounded-full px-4 py-2 text-primary">
+              <div className="inline-flex items-center space-x-2 bg-primary/10 rounded-full px-4 py-2 text-foreground">
                 <IconTrophy className="w-4 h-4" />
                 <span className="text-sm font-medium tracking-wide">Bien plus qu'une salle de sport</span>
               </div>
@@ -213,7 +116,7 @@ export default function HomePage() {
                   <span className="text-gradient">KONCEPT</span>
                   <br />
                   <span className="relative inline-block">
-                    <span className="text-primary">STUDIO</span>
+                    <span className="text-foreground">STUDIO</span>
                     <div className="absolute -bottom-2 left-0 w-full h-1 bg-primary/20 rounded-full"></div>
                   </span>
                 </h1>
@@ -222,7 +125,7 @@ export default function HomePage() {
               {/* Subtitle */}
               <div className="space-y-6">
                 <p className="text-lg lg:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                Un lieu unique où chaque séance devient une véritable expérience sportive. Dans une ambiance conviviale et motivante, vous vous entraînez en petit groupe — jusqu’à 12 personnes — afin de profiter pleinement de l’énergie collective, tout en bénéficiant d’un accompagnement personnalisé adapté à vos objectifs.
+                Un lieu unique où chaque séance devient une véritable expérience sportive. Dans une ambiance conviviale et motivante, vous vous entraînez en petit groupe afin de profiter pleinement de l’énergie collective, tout en bénéficiant d’un accompagnement personnalisé adapté à vos objectifs.
                 </p>
                 <p className="text-base lg:text-lg font-medium text-foreground max-w-2xl leading-relaxed">
                 Rejoignez-nous et transformez votre façon de vous entraîner.
@@ -247,22 +150,22 @@ export default function HomePage() {
                   className="font-medium px-8 py-4 border-2 hover:bg-primary/5"
                   asChild
                 >
-                  <Link href="#workouts">Découvrir nos cours</Link>
+                  <Link href="#presentation-coach">Découvrir notre coach</Link>
                 </Button>
               </div>
 
               {/* Stats */}
               <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border">
                 <div className="text-center">
-                  <div className="text-2xl lg:text-3xl font-bold text-primary">100+</div>
+                  <div className="text-2xl lg:text-3xl font-bold text-foreground">100+</div>
                   <div className="text-sm text-muted-foreground">Membres actifs</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl lg:text-3xl font-bold text-primary">10+</div>
+                  <div className="text-2xl lg:text-3xl font-bold text-foreground">10+</div>
                   <div className="text-sm text-muted-foreground">Cours différents</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl lg:text-3xl font-bold text-primary">5★</div>
+                  <div className="text-2xl lg:text-3xl font-bold text-foreground">5★</div>
                   <div className="text-sm text-muted-foreground">Satisfaction garantie</div>
                 </div>
               </div>
@@ -283,7 +186,7 @@ export default function HomePage() {
               {/* Floating Stats Cards */}
               <div className="absolute -top-4 -right-4 bg-card p-4 rounded-2xl shadow-brutal border border-border">
                 <div className="flex items-center space-x-2">
-                  <IconTrophy className="w-5 h-5 text-primary" />
+                  <IconTrophy className="w-5 h-5 text-foreground" />
                   <div>
                     <div className="font-semibold">Coach K</div>
                     <div className="text-xs text-muted-foreground">Expert certifié</div>
@@ -315,10 +218,10 @@ export default function HomePage() {
             {/* Content */}
             <div className="space-y-8">
               <div className="space-y-4">
-                <Badge className="text-primary bg-primary/10">Notre Studio</Badge>
+                <Badge className="text-foreground bg-primary/10">Notre Studio</Badge>
                 <h2 className="text-3xl lg:text-5xl font-bold leading-tight">
                   Un espace pensé pour
-                  <span className="text-primary"> votre réussite</span>
+                  <span className="text-foreground"> votre réussite</span>
                 </h2>
               </div>
 
@@ -331,7 +234,7 @@ export default function HomePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="flex items-start space-x-3">
                     <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                      <IconCircleCheck className="w-5 h-5 text-primary" />
+                      <IconCircleCheck className="w-5 h-5 text-foreground" />
                     </div>
                     <div>
                       <h4 className="font-semibold mb-1">Équipement Premium</h4>
@@ -341,17 +244,17 @@ export default function HomePage() {
 
                   <div className="flex items-start space-x-3">
                     <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                      <IconUsers className="w-5 h-5 text-primary" />
+                      <IconUsers className="w-5 h-5 text-foreground" />
                     </div>
                     <div>
                       <h4 className="font-semibold mb-1">Petits Groupes</h4>
-                      <p className="text-sm text-muted-foreground">Maximum 12 personnes par cours pour un suivi optimal</p>
+                      <p className="text-sm text-muted-foreground">Les cours se déroulent en petits groupes afin de garantir un suivi personnalisé et optimal.</p>
                     </div>
                   </div>
 
                   <div className="flex items-start space-x-3">
                     <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                      <IconHeart className="w-5 h-5 text-primary" />
+                      <IconHeart className="w-5 h-5 text-foreground" />
                     </div>
                     <div>
                       <h4 className="font-semibold mb-1">Ambiance Conviviale</h4>
@@ -361,7 +264,7 @@ export default function HomePage() {
 
                   <div className="flex items-start space-x-3">
                     <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                      <IconTarget className="w-5 h-5 text-primary" />
+                      <IconTarget className="w-5 h-5 text-foreground" />
                     </div>
                     <div>
                       <h4 className="font-semibold mb-1">Résultats Garantis</h4>
@@ -382,9 +285,9 @@ export default function HomePage() {
             {/* Content */}
             <div className="space-y-8">
               <div className="space-y-4">
-                <Badge className="text-primary bg-primary/10">Notre Coach</Badge>
+                <Badge className="text-foreground bg-primary/10">Notre Coach</Badge>
                 <h2 className="text-3xl lg:text-5xl font-bold leading-tight">
-                  <span className="text-primary">Coach K</span>
+                  <span className="text-foreground">Coach K</span>
                 </h2>
                 <h3 className="text-xl lg:text-2xl font-semibold text-muted-foreground">
                   Manager Sportif | Coach International | Expert Taekwondo & Fitness
@@ -425,7 +328,7 @@ export default function HomePage() {
                 </div>
                 <Card className="p-6">
                   <div className="text-center space-y-2">
-                    <div className="text-2xl font-bold text-primary">3e Dan</div>
+                    <div className="text-2xl font-bold text-foreground">3e Dan</div>
                     <div className="text-sm text-muted-foreground">Taekwondo</div>
                   </div>
                 </Card>
@@ -433,7 +336,7 @@ export default function HomePage() {
               <div className="space-y-6 pt-12">
                 <Card className="p-6">
                   <div className="text-center space-y-2">
-                    <div className="text-2xl font-bold text-primary">20+</div>
+                    <div className="text-2xl font-bold text-foreground">20+</div>
                     <div className="text-sm text-muted-foreground">Années d'expérience</div>
                   </div>
                 </Card>
@@ -451,53 +354,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Workouts Section */}
-      <section className="py-16 lg:py-24 bg-muted/30" id="workouts">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge className="text-primary bg-primary/10 mb-4">Nos Cours</Badge>
-            <h2 className="text-3xl lg:text-5xl font-bold mb-6">
-              Des entraînements
-              <span className="text-primary"> variés et exigeants</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Découvrez notre gamme complète de cours conçus pour tous les niveaux et tous les objectifs.
-              Chaque séance est une nouvelle opportunité de vous surpasser.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
-            {workouts.map((workout, index) => {
-              const IconComponent = workout.icon
-              return (
-                <Card key={index} className="group hover:shadow-brutal transition-all duration-300 hover:-translate-y-0.5 border-border bg-card/50 backdrop-blur-sm">
-                  <CardHeader className="space-y-4">
-                    <div className={`w-16 h-16 rounded-2xl ${workout.color} flex items-center justify-center group-hover:scale-105 transition-transform`}>
-                      <IconComponent className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl mb-2">{workout.name}</CardTitle>
-                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                        <div className="flex items-center space-x-1">
-                          <IconClock className="w-4 h-4" />
-                          <span>{workout.duration}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <IconFlame className="w-4 h-4" />
-                          <span>{workout.intensity}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground leading-relaxed">{workout.description}</p>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        </div>
-      </section>
 
 
       {/* FAQ Section */}
@@ -505,10 +361,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-16">
-              <Badge className="text-primary bg-primary/10 mb-4">FAQ</Badge>
+              <Badge className="text-foreground bg-primary/10 mb-4">FAQ</Badge>
               <h2 className="text-3xl lg:text-5xl font-bold mb-6">
                 Questions
-                <span className="text-primary"> fréquentes</span>
+                <span className="text-foreground"> fréquentes</span>
               </h2>
               <p className="text-lg text-muted-foreground">
                 Retrouvez les réponses aux questions les plus courantes sur K-ONCEPT STUDIO.
@@ -552,10 +408,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
-              <Badge className="text-primary bg-primary/10 mb-4">Contact</Badge>
+              <Badge className="text-foreground bg-primary/10 mb-4">Contact</Badge>
               <h2 className="text-3xl lg:text-5xl font-bold mb-6">
                 Prêt à commencer
-                <span className="text-primary"> votre transformation ?</span>
+                <span className="text-foreground"> votre transformation ?</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
                 Contactez-nous dès maintenant pour obtenir plus d'informations sur nos programmes.
@@ -570,7 +426,7 @@ export default function HomePage() {
                   <div className="space-y-6">
                     <div className="flex items-start space-x-4">
                       <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <IconMapPin className="w-6 h-6 text-primary" />
+                        <IconMapPin className="w-6 h-6 text-foreground" />
                       </div>
                       <div>
                         <h4 className="font-semibold mb-1">Adresse</h4>
@@ -580,11 +436,11 @@ export default function HomePage() {
 
                     <div className="flex items-start space-x-4">
                       <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <IconPhone className="w-6 h-6 text-primary" />
+                        <IconPhone className="w-6 h-6 text-foreground" />
                       </div>
                       <div>
                         <h4 className="font-semibold mb-1">Téléphone</h4>
-                        <a href={createPhoneLink(APP_CONFIG.CONTACT.PHONE)} className="text-muted-foreground hover:text-primary transition-colors">
+                        <a href={createPhoneLink(APP_CONFIG.CONTACT.PHONE)} className="text-muted-foreground hover:text-foreground transition-colors">
                           {formatPhoneNumber(APP_CONFIG.CONTACT.PHONE)}
                         </a>
                       </div>
@@ -592,7 +448,7 @@ export default function HomePage() {
 
                     <div className="flex items-start space-x-4">
                       <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <IconBrandInstagram className="w-6 h-6 text-primary" />
+                        <IconBrandInstagram className="w-6 h-6 text-foreground" />
                       </div>
                       <div>
                         <h4 className="font-semibold mb-1">Instagram</h4>
@@ -600,7 +456,7 @@ export default function HomePage() {
                           href={APP_CONFIG.CONTACT.INSTAGRAM.URL}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-primary transition-colors"
+                          className="text-muted-foreground hover:text-foreground transition-colors"
                         >
                           @k_oncept_training
                         </a>
@@ -609,13 +465,13 @@ export default function HomePage() {
 
                     <div className="flex items-start space-x-4">
                       <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <IconClock className="w-6 h-6 text-primary" />
+                        <IconClock className="w-6 h-6 text-foreground" />
                       </div>
                       <div>
                         <h4 className="font-semibold mb-1">Horaires</h4>
                         <div className="text-muted-foreground space-y-1">
-                          <p>Lundi - Samedi: 6h00 - 22h00</p>
-                          <p>Dimanche: 8h00 - 20h00</p>
+                          <p>Lundi - Vendredi: 7h - 21h</p>
+                          <p>Samedi: 10h - 13h</p>
                         </div>
                       </div>
                     </div>
@@ -746,25 +602,24 @@ export default function HomePage() {
                   </span>
                 </div>
                 <p className="text-muted-foreground max-w-md leading-relaxed">
-                  Votre studio de sport à Rabat, spécialisé dans le HIIT, CrossFit et arts martiaux.
-                  Rejoignez notre communauté et transformez votre condition physique avec Coach K.
+                Votre studio de sport, spécialisé dans le renforcement, le cardio, le cardio boxing, la mobilité, le TRX, le cycling, le bootcamp et les challenges. Profitez également de séances de coaching personnalisé en one-to-one pour atteindre vos objectifs.
                 </p>
                 <div className="flex space-x-4">
                   <a
                     href="#"
-                    className="w-10 h-10 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground rounded-lg flex items-center justify-center transition-all hover:scale-102"
+                    className="w-10 h-10 bg-primary/10 hover:bg-primary text-foreground hover:text-foreground-foreground rounded-lg flex items-center justify-center transition-all hover:scale-102"
                   >
                     <IconBrandInstagram className="w-5 h-5" />
                   </a>
                   <a
                     href={createPhoneLink(APP_CONFIG.CONTACT.PHONE)}
-                    className="w-10 h-10 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground rounded-lg flex items-center justify-center transition-all hover:scale-102"
+                    className="w-10 h-10 bg-primary/10 hover:bg-primary text-foreground hover:text-foreground-foreground rounded-lg flex items-center justify-center transition-all hover:scale-102"
                   >
                     <IconPhone className="w-5 h-5" />
                   </a>
                   <a
                     href="mailto:contact@konceptstudio.ma"
-                    className="w-10 h-10 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground rounded-lg flex items-center justify-center transition-all hover:scale-102"
+                    className="w-10 h-10 bg-primary/10 hover:bg-primary text-foreground hover:text-foreground-foreground rounded-lg flex items-center justify-center transition-all hover:scale-102"
                   >
                     <IconMail className="w-5 h-5" />
                   </a>
@@ -777,25 +632,19 @@ export default function HomePage() {
                 <ul className="space-y-3">
                   <li>
                     {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                    <a href="/#presentation-studio" className="text-muted-foreground hover:text-primary transition-colors">
+                    <a href="/#presentation-studio" className="text-muted-foreground hover:text-foreground transition-colors">
                       Le Studio
                     </a>
                   </li>
                   <li>
                     {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                    <a href="/#presentation-coach" className="text-muted-foreground hover:text-primary transition-colors">
+                    <a href="/#presentation-coach" className="text-muted-foreground hover:text-foreground transition-colors">
                       Coach K
                     </a>
                   </li>
                   <li>
                     {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                    <a href="/#workouts" className="text-muted-foreground hover:text-primary transition-colors">
-                      Nos Cours
-                    </a>
-                  </li>
-                  <li>
-                    {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                    <a href="/#faq" className="text-muted-foreground hover:text-primary transition-colors">
+                    <a href="/#faq" className="text-muted-foreground hover:text-foreground transition-colors">
                       FAQ
                     </a>
                   </li>
@@ -807,28 +656,28 @@ export default function HomePage() {
                 <h3 className="text-lg font-semibold">Contact</h3>
                 <div className="space-y-4">
                   <div className="flex items-start space-x-3">
-                    <IconMapPin className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <IconMapPin className="w-5 h-5 text-foreground mt-0.5 flex-shrink-0" />
                     <div className="text-muted-foreground">
                       <p>Rabat, Maroc</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <IconPhone className="w-5 h-5 text-primary flex-shrink-0" />
-                    <a href={createPhoneLink(APP_CONFIG.CONTACT.PHONE)} className="text-muted-foreground hover:text-primary transition-colors">
+                    <IconPhone className="w-5 h-5 text-foreground flex-shrink-0" />
+                    <a href={createPhoneLink(APP_CONFIG.CONTACT.PHONE)} className="text-muted-foreground hover:text-foreground transition-colors">
                       {formatPhoneNumber(APP_CONFIG.CONTACT.PHONE)}
                     </a>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <IconMail className="w-5 h-5 text-primary flex-shrink-0" />
-                    <a href="mailto:contact@konceptstudio.ma" className="text-muted-foreground hover:text-primary transition-colors">
+                    <IconMail className="w-5 h-5 text-foreground flex-shrink-0" />
+                    <a href="mailto:contact@konceptstudio.ma" className="text-muted-foreground hover:text-foreground transition-colors">
                       contact@konceptstudio.ma
                     </a>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <IconClock className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <IconClock className="w-5 h-5 text-foreground mt-0.5 flex-shrink-0" />
                     <div className="text-muted-foreground text-sm">
-                      <p>Lun - Ven: 6h - 22h</p>
-                      <p>Sam - Dim: 8h - 20h</p>
+                      <p>Lun - Ven: 7h - 21h</p>
+                      <p>Sam: 10h - 13h</p>
                     </div>
                   </div>
                 </div>
@@ -877,13 +726,13 @@ export default function HomePage() {
                 © 2025 Koncept Studio. Tous droits réservés.
               </p>
               <div className="flex space-x-6 text-sm text-muted-foreground">
-                <a href="#" className="hover:text-primary transition-colors">
+                <a href="#" className="hover:text-foreground transition-colors">
                   Mentions légales
                 </a>
-                <a href="#" className="hover:text-primary transition-colors">
+                <a href="#" className="hover:text-foreground transition-colors">
                   Politique de confidentialité
                 </a>
-                <a href="#" className="hover:text-primary transition-colors">
+                <a href="#" className="hover:text-foreground transition-colors">
                   CGV
                 </a>
               </div>

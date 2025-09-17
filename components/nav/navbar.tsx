@@ -100,12 +100,6 @@ export default function Navbar() {
                   Coach
                 </Link>
                 <Link
-                  href="/#workouts"
-                  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
-                >
-                  Workouts
-                </Link>
-                <Link
                   href="/#faq"
                   className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
                 >
@@ -218,9 +212,6 @@ export default function Navbar() {
               </Link>
               <Link href="/#presentation-coach" className="text-xs font-medium hover:text-primary transition-colors">
                 Coach
-              </Link>
-              <Link href="/#workouts" className="text-xs font-medium hover:text-primary transition-colors">
-                Workouts
               </Link>
               <Link href="/#faq" className="text-xs font-medium hover:text-primary transition-colors">
                 FAQ

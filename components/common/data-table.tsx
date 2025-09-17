@@ -90,7 +90,7 @@ export function DataTable<T>({
         <CardContent>
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <div className="w-8 h-8 border-2 border-foreground border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
               <p className="text-muted-foreground">Chargement...</p>
             </div>
           </div>

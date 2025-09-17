@@ -274,7 +274,7 @@ export function PlanSelectorModal({ plans, selectedPlan, onSelectPlan, isLoading
 
           {isLoading && (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary border-t-transparent mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-2 border-foreground border-t-transparent mx-auto mb-4"></div>
               <p className="text-muted-foreground">Chargement des forfaits...</p>
             </div>
           )}

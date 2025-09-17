@@ -12,7 +12,6 @@ export interface SignupData {
   password: string
   fullName: string
   phone?: string
-  desiredPlan?: string
 }
 
 export interface AuthResult {
@@ -42,7 +41,7 @@ export class AuthService {
     }
   }
 
-  async signUp({ email, password, fullName, phone, desiredPlan }: SignupData): Promise<AuthResult> {
+  async signUp({ email, password, fullName, phone }: SignupData): Promise<AuthResult> {
     const { data, error } = await this.supabase.auth.signUp({
       email,
       password,
@@ -50,7 +49,6 @@ export class AuthService {
         data: {
           full_name: fullName,
           phone: phone || null,
-          desired_plan: desiredPlan || null,
         },
       },
     })

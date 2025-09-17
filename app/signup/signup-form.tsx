@@ -3,14 +3,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authService } from '@/lib/services'
-import { useAsyncData } from '@/hooks'
 import { MESSAGES } from '@/constants'
-import type { SubscriptionPlan } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { signupSchema, validateInput, sanitizeString } from '@/lib/validation'
-import { PlanSelectorModal } from '@/components/subscription/plan-selector-modal'
 import { toast } from 'sonner'
 import { IconEye, IconEyeOff } from '@tabler/icons-react'
 
@@ -21,21 +18,10 @@ export default function SignupForm() {
     password: '',
     fullName: '',
     phone: '',
-    desiredPlan: '',
   })
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  // Fetch subscription plans
-  const { data: plansData, loading: plansLoading, error: plansError } = useAsyncData<SubscriptionPlan[]>(
-    async () => {
-      const { getAvailableSubscriptionPlans } = await import('./actions')
-      return getAvailableSubscriptionPlans()
-    },
-    []
-  )
-
-  const plans = plansData || []
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,7 +39,6 @@ export default function SignupForm() {
         password: formData.password,
         fullName: formData.fullName,
         phone: formData.phone,
-        desiredPlan: formData.desiredPlan,
       })
 
       if (!validation.success) {
@@ -68,7 +53,6 @@ export default function SignupForm() {
         password: validation.data.password,
         fullName: validation.data.fullName,
         phone: validation.data.phone,
-        desiredPlan: validation.data.desiredPlan,
       })
 
       if (authError) {
@@ -87,7 +71,7 @@ export default function SignupForm() {
 
       if (user) {
         toast.success('Compte créé avec succès !')
-        router.push('/espace')
+        router.push('/signup/plan-selection')
         router.refresh()
       }
     } catch (error) {
@@ -160,15 +144,6 @@ export default function SignupForm() {
           />
         </div>
 
-        <div className="space-y-3">
-          <Label className="text-sm font-medium">Abonnement souhaité *</Label>
-          <PlanSelectorModal
-            plans={plans}
-            selectedPlan={formData.desiredPlan}
-            onSelectPlan={(planName) => setFormData(prev => ({ ...prev, desiredPlan: planName }))}
-            isLoading={plansLoading}
-          />
-        </div>
 
         <div className="space-y-3">
           <Label htmlFor="password" className="text-sm font-medium">

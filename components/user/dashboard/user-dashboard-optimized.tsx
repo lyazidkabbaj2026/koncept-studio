@@ -144,7 +144,6 @@ export function UserDashboardOptimized({ userId }: UserDashboardOptimizedProps) 
   const getStatusBadge = (status: string) => {
     const statusMap = {
       'pending': { label: 'En attente', variant: 'secondary' as const },
-      'contacted': { label: 'Contacté', variant: 'secondary' as const },
       'active': { label: 'Actif', variant: 'default' as const },
       'expired': { label: 'Expiré', variant: 'destructive' as const },
       'inactive': { label: 'Inactif', variant: 'secondary' as const }

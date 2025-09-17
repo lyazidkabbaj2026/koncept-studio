@@ -209,9 +209,8 @@ export default async function AdminPage() {
                               : 'destructive'
                           }
                         >
-                          {user.subscription_status === 'active' ? 'Actif' : 
-                           user.subscription_status === 'pending' ? 'En attente' : 
-                           user.subscription_status === 'contacted' ? 'Contacté' : 'Inactif'}
+                          {user.subscription_status === 'active' ? 'Actif' :
+                           user.subscription_status === 'pending' ? 'En attente' : 'Inactif'}
                         </Badge>
                       </TableCell>
                       <TableCell>{user.desired_plan || 'Non défini'}</TableCell>

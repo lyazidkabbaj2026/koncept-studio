@@ -16,7 +16,8 @@ export const passwordSchema = z
 
 export const phoneSchema = z
   .string()
-  .regex(/^(\+212|0)[1-9](\d{2}){4}$/, 'Format de numéro de téléphone marocain non valide')
+  .min(1, 'Le numéro de téléphone est requis')
+  .regex(/^0[6-7]\d{8}$/, 'Format de téléphone invalide (ex: 0612345678)')
 
 export const nameSchema = z
   .string()
@@ -30,7 +31,6 @@ export const signupSchema = z.object({
   password: passwordSchema,
   fullName: nameSchema,
   phone: phoneSchema,
-  desiredPlan: z.string().min(1, 'Veuillez choisir un forfait'),
 })
 
 // Login validation

@@ -201,7 +201,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-foreground mx-auto mb-4"></div>
           <p>Chargement de vos réservations...</p>
         </div>
       </div>
@@ -260,7 +260,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                 const canCancel = isFuture(startTime)
 
                 return (
-                  <Card key={booking.id} className="glass-effect shadow-soft border-l-4 border-l-primary">
+                  <Card key={booking.id} className="glass-effect shadow-soft border-l-4 border-l-foreground">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="space-y-3 flex-1">
@@ -347,7 +347,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                 )
 
                 return (
-                  <Card key={entry.id} className="glass-effect shadow-soft border-l-4 border-l-primary">
+                  <Card key={entry.id} className="glass-effect shadow-soft border-l-4 border-l-foreground">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="space-y-3 flex-1">

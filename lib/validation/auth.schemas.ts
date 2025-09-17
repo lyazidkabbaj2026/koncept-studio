@@ -28,7 +28,6 @@ export const signupSchema = z.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
       'Le mot de passe doit contenir au moins une minuscule, une majuscule et un chiffre'
     ),
-  confirmPassword: z.string(),
   fullName: z
     .string()
     .min(2, 'Le nom doit contenir au moins 2 caractères')
@@ -36,11 +35,7 @@ export const signupSchema = z.object({
   phone: z
     .string()
     .regex(/^0[6-7]\d{8}$/, 'Format de téléphone invalide (ex: 0612345678)')
-    .optional(),
-  desiredPlan: z.string().optional()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Les mots de passe ne correspondent pas",
-  path: ["confirmPassword"]
+    .optional()
 })
 
 export const resetPasswordSchema = z.object({

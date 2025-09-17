@@ -690,7 +690,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
                   return (
                     <div key={day.toISOString()} className={cn(
                       "p-4 text-center border-r border-border/50 last:border-r-0 bg-muted/20",
-                      isCurrentDay && "bg-primary/10 border-primary/20"
+                      isCurrentDay && "bg-accent/20 border-accent"
                     )}>
                       <div className={cn(
                         "font-medium text-muted-foreground capitalize text-sm",
@@ -740,7 +740,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
                             return (
                               <Card key={event.id} className={cn(
                                 "border-l-4 transition-all hover:shadow-soft cursor-pointer group bg-card/50 hover:bg-card border-border",
-                                event.user_booking && "border-l-primary bg-primary/10 hover:bg-primary/20",
+                                event.user_booking && "border-l-foreground bg-accent/10 hover:bg-accent/20",
                                 event.user_waitlist_position && "border-l-muted-foreground bg-muted hover:bg-muted/80",
                                 !event.user_booking && !event.user_waitlist_position && "border-l-border bg-background hover:bg-muted/50"
                               )}
@@ -849,7 +849,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
             return (
               <Card key={day.toISOString()} className={cn(
                 "shadow-soft transition-all border-l-4",
-                isCurrentDay ? "border-l-primary bg-primary/5" : "border-l-border"
+                isCurrentDay ? "border-l-foreground bg-accent/5" : "border-l-border"
               )}>
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center justify-between">
@@ -897,9 +897,9 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
                         return (
                           <Card key={event.id} className={cn(
                             "border-l-4 transition-all cursor-pointer hover:shadow-md",
-                            event.user_booking && "border-l-primary bg-primary/10",
+                            event.user_booking && "border-l-foreground bg-accent/10",
                             event.user_waitlist_position && "border-l-muted-foreground bg-muted",
-                            !event.user_booking && !event.user_waitlist_position && "border-l-primary bg-primary/5"
+                            !event.user_booking && !event.user_waitlist_position && "border-l-accent bg-accent/5"
                           )}
                           onClick={() => handleEventClick(event)}>
                             <CardContent className="p-4">
@@ -1162,7 +1162,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
                         <span className="text-muted-foreground">Places restantes:</span>
                         <span className={cn(
                           "font-medium",
-                          selectedEvent.max_capacity - selectedEvent.current_bookings <= 2 && "text-red-600",
+                          selectedEvent.max_capacity - selectedEvent.current_bookings <= 2 && "text-destructive",
                           selectedEvent.max_capacity - selectedEvent.current_bookings === 0 && "text-destructive"
                         )}>
                           {Math.max(0, selectedEvent.max_capacity - selectedEvent.current_bookings)}
@@ -1177,9 +1177,9 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
                           <div 
                             className={cn(
                               "h-2 rounded-full transition-all",
-                              selectedEvent.current_bookings / selectedEvent.max_capacity >= 0.9 ? "bg-red-500" :
-                              selectedEvent.current_bookings / selectedEvent.max_capacity >= 0.7 ? "bg-yellow-500" :
-                              "bg-green-500"
+                              selectedEvent.current_bookings / selectedEvent.max_capacity >= 0.9 ? "bg-destructive" :
+                              selectedEvent.current_bookings / selectedEvent.max_capacity >= 0.7 ? "bg-muted" :
+                              "bg-muted-foreground"
                             )}
                             style={{ 
                               width: `${Math.min(100, (selectedEvent.current_bookings / selectedEvent.max_capacity) * 100)}%` 
@@ -1234,7 +1234,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
                                 "h-4 w-4",
                                 level <= (selectedEvent.difficulty_level === 'all_levels' ? 1 :
                                          selectedEvent.difficulty_level === 'intermediate' ? 3 : 5)
-                                  ? "text-yellow-400 fill-yellow-400"
+                                  ? "text-muted-foreground fill-muted-foreground"
                                   : "text-muted-foreground"
                               )}
                             />

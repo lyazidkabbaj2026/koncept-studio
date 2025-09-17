@@ -22,6 +22,8 @@ import { IconUserCheck, IconMessage, IconCreditCard, IconUsers, IconUserPlus, Ic
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
+import { formatDesiredPlansDisplay, getDesiredPlansTooltip } from '@/lib/utils/plan-utils'
+import { assignSubscriptionToUser } from './actions'
 
 interface User {
   id: string
@@ -29,7 +31,7 @@ interface User {
   full_name: string
   phone?: string
   desired_plan?: string
-  subscription_status: 'pending' | 'contacted' | 'active' | 'inactive' | 'expired'
+  subscription_status: 'pending' | 'active' | 'inactive' | 'expired'
   created_at: string
   active_subscription?: {
     id: string
@@ -101,7 +103,7 @@ export default function UsersPage() {
         user.full_name?.toLowerCase().includes(searchLower) ||
         user.email?.toLowerCase().includes(searchLower) ||
         user.phone?.toLowerCase().includes(searchLower) ||
-        user.desired_plan?.toLowerCase().includes(searchLower)
+        formatDesiredPlansDisplay(user.desired_plan || null)?.toLowerCase().includes(searchLower)
       )
     }
 
@@ -176,66 +178,21 @@ export default function UsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleMarkAsContacted = async (userId: string) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ subscription_status: 'contacted' })
-        .eq('id', userId)
-
-      if (error) throw error
-
-      await fetchUsers(0)
-      toast.success('Utilisateur marqué comme contacté')
-    } catch (err: any) {
-      console.error('Error updating user:', err)
-      toast.error('Erreur lors de la mise à jour')
-    }
-  }
 
   const handleAssignSubscription = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedUser) return
 
     try {
-      const selectedPlan = plans.find(p => p.id === subscriptionForm.plan_id)
-      if (!selectedPlan) {
-        toast.error('Plan sélectionné introuvable')
-        return
+      const result = await assignSubscriptionToUser({
+        userId: selectedUser.id,
+        planId: subscriptionForm.plan_id,
+        startDate: subscriptionForm.start_date
+      })
+
+      if (!result.success) {
+        throw new Error(result.error || 'Erreur lors de l\'attribution de l\'abonnement')
       }
-
-      // Calculate expiry date
-      const startDate = new Date(subscriptionForm.start_date)
-      const expiryDate = new Date(startDate)
-      if (selectedPlan.validity_days) {
-        expiryDate.setDate(expiryDate.getDate() + selectedPlan.validity_days)
-      } else if (selectedPlan.validity_months) {
-        expiryDate.setMonth(expiryDate.getMonth() + selectedPlan.validity_months)
-      }
-
-      const subscriptionData = {
-        user_id: selectedUser.id,
-        plan_id: subscriptionForm.plan_id,
-        start_date: startDate.toISOString(),
-        end_date: expiryDate.toISOString(),
-        credits_remaining: selectedPlan.credits,
-        status: 'active'
-      }
-
-      // Create subscription
-      const { error: subscriptionError } = await supabase
-        .from('user_subscriptions')
-        .insert(subscriptionData)
-
-      if (subscriptionError) throw subscriptionError
-
-      // Update user status
-      const { error: userError } = await supabase
-        .from('profiles')
-        .update({ subscription_status: 'active' })
-        .eq('id', selectedUser.id)
-
-      if (userError) throw userError
 
       await fetchUsers(0)
       setShowSubscriptionDialog(false)
@@ -283,8 +240,6 @@ export default function UsersPage() {
     switch (status) {
       case 'pending':
         return <Badge variant="secondary">En attente</Badge>
-      case 'contacted':
-        return <Badge variant="secondary">Contacté</Badge>
       case 'active':
         return <Badge variant="secondary">Actif</Badge>
       case 'expired':
@@ -300,19 +255,17 @@ export default function UsersPage() {
     // Use filtered users for stats calculation
     const dataSource = filteredUsers.length > 0 ? filteredUsers : allUsers
     const pendingCount = dataSource.filter(u => u.subscription_status === 'pending').length
-    const contactedCount = dataSource.filter(u => u.subscription_status === 'contacted').length
     const activeCount = dataSource.filter(u => u.subscription_status === 'active').length
     const expiredCount = dataSource.filter(u => u.subscription_status === 'expired').length
     const inactiveCount = dataSource.filter(u => u.subscription_status === 'inactive').length
 
     return {
       pending: pendingCount,
-      contacted: contactedCount,
       active: activeCount,
       expired: expiredCount,
       inactive: inactiveCount,
       total: dataSource.length,
-      needsAttention: pendingCount + contactedCount
+      needsAttention: pendingCount
     }
   }
 
@@ -332,9 +285,14 @@ export default function UsersPage() {
 
   if (loading && users.length === 0) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="flex-1 space-y-8 p-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">All Active User Info</h1>
+          <div>
+            <h1 className="text-3xl font-bold">Utilisateurs</h1>
+            <p className="text-muted-foreground mt-2">
+              Gérer tous les utilisateurs inscrits
+            </p>
+          </div>
         </div>
         <div className="text-center py-12">
           <p className="text-muted-foreground">Chargement des utilisateurs...</p>
@@ -344,9 +302,14 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="flex-1 space-y-8 p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Utilisateurs</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Utilisateurs</h1>
+          <p className="text-muted-foreground mt-2">
+            Gérer tous les utilisateurs inscrits
+          </p>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -362,16 +325,6 @@ export default function UsersPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Contactés</CardTitle>
-            <IconMessage className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.contacted}</div>
-            <p className="text-xs text-muted-foreground">En attente d'abonnement</p>
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -434,7 +387,6 @@ export default function UsersPage() {
                 <SelectContent>
                   <SelectItem value="all">Tous les statuts</SelectItem>
                   <SelectItem value="pending">En attente</SelectItem>
-                  <SelectItem value="contacted">Contacté</SelectItem>
                   <SelectItem value="active">Actif</SelectItem>
                   <SelectItem value="expired">Expiré</SelectItem>
                   <SelectItem value="inactive">Inactif</SelectItem>
@@ -529,10 +481,8 @@ export default function UsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">
-                        {user.desired_plan || (
-                          <span className="text-muted-foreground">Non spécifié</span>
-                        )}
+                      <div className="text-sm" title={getDesiredPlansTooltip(user.desired_plan || null)}>
+                        {formatDesiredPlansDisplay(user.desired_plan || null)}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -545,17 +495,8 @@ export default function UsersPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
+
                         {user.subscription_status === 'pending' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleMarkAsContacted(user.id)}
-                          >
-                            <IconPhone className="h-4 w-4 mr-1" />
-                            Marquer contacté
-                          </Button>
-                        )}
-                        {user.subscription_status === 'contacted' && (
                           <Button
                             variant="outline"
                             size="sm"
