@@ -5,6 +5,7 @@ import { ConditionalNavbar } from "@/components/nav/conditional-navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import ErrorBoundary from "@/components/error-boundary";
 import { Toaster } from "sonner";
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -60,6 +61,7 @@ export default async function RootLayout({
             theme="system"
           />
         </ThemeProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
