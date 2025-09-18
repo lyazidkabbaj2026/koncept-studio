@@ -206,28 +206,28 @@ export default function Navbar() {
         {/* Mobile Navigation */}
         {isHomePage && !user && (
           <div className="md:hidden border-t border-border">
-            <div className="grid grid-cols-4 gap-1 py-4 px-2">
+            <div className="grid grid-cols-4 gap-2 py-4 px-4">
               <Link
                 href="/#presentation-studio"
-                className="text-sm font-semibold hover:text-primary transition-colors text-center py-2 px-1 rounded-md hover:bg-primary/5"
+                className="text-sm font-semibold hover:text-primary transition-colors text-center py-3 px-2 rounded-md hover:bg-primary/5"
               >
                 Studio
               </Link>
               <Link
                 href="/#presentation-coach"
-                className="text-sm font-semibold hover:text-primary transition-colors text-center py-2 px-1 rounded-md hover:bg-primary/5"
+                className="text-sm font-semibold hover:text-primary transition-colors text-center py-3 px-2 rounded-md hover:bg-primary/5"
               >
                 Coach
               </Link>
               <Link
                 href="/#faq"
-                className="text-sm font-semibold hover:text-primary transition-colors text-center py-2 px-1 rounded-md hover:bg-primary/5"
+                className="text-sm font-semibold hover:text-primary transition-colors text-center py-3 px-2 rounded-md hover:bg-primary/5"
               >
                 FAQ
               </Link>
               <Link
                 href="/#contact"
-                className="text-sm font-semibold hover:text-primary transition-colors text-center py-2 px-1 rounded-md hover:bg-primary/5"
+                className="text-sm font-semibold hover:text-primary transition-colors text-center py-3 px-2 rounded-md hover:bg-primary/5"
               >
                 Contact
               </Link>
@@ -237,10 +237,10 @@ export default function Navbar() {
 
         {user && profile.subscription_status === 'active' && isEspacePage && (
           <div className="md:hidden border-t border-border">
-            <div className="grid grid-cols-3 gap-1 py-4 px-2">
+            <div className="grid grid-cols-3 gap-2 py-4 px-4">
               <Link
                 href="/espace/planning"
-                className={`text-sm font-semibold transition-colors text-center py-2 px-1 rounded-md ${
+                className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
                   pathname === '/espace/planning'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
@@ -250,7 +250,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/espace/reservations"
-                className={`text-sm font-semibold transition-colors text-center py-2 px-1 rounded-md ${
+                className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
                   pathname === '/espace/reservations'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
@@ -260,7 +260,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/espace/abonnement"
-                className={`text-sm font-semibold transition-colors text-center py-2 px-1 rounded-md ${
+                className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
                   pathname === '/espace/abonnement'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
