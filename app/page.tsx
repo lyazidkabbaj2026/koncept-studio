@@ -430,7 +430,7 @@ export default function HomePage() {
                       </div>
                       <div>
                         <h4 className="font-semibold mb-1">Adresse</h4>
-                        <p className="text-muted-foreground">Rabat, Maroc</p>
+                        <p className="text-muted-foreground">{APP_CONFIG.CONTACT.ADDRESS}</p>
                       </div>
                     </div>
 
@@ -658,7 +658,7 @@ export default function HomePage() {
                   <div className="flex items-start space-x-3">
                     <IconMapPin className="w-5 h-5 text-foreground mt-0.5 flex-shrink-0" />
                     <div className="text-muted-foreground">
-                      <p>Rabat, Maroc</p>
+                      <p>{APP_CONFIG.CONTACT.ADDRESS}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">

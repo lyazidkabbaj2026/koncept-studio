@@ -12,8 +12,8 @@ export const APP_CONFIG = {
   CONTACT: {
     PHONE: '0663235797',
     EMAIL: 'contact@konceptstudio.ma',
-    LOCATION: 'Rabat, Maroc',
-    ADDRESS: 'Hay Riad, Rabat, Maroc',
+    LOCATION: '155 SECT 02 SAHL EL HIJAZ RYAD OULAD MTAA, Temara',
+    ADDRESS: '155 SECT 02 SAHL EL HIJAZ RYAD OULAD MTAA, Temara',
     INSTAGRAM: {
       URL: 'https://instagram.com/k_oncept_training',
       HANDLE: '@k_oncept_training'
