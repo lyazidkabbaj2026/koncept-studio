@@ -28,7 +28,7 @@ export default function Navbar() {
     return (
       <nav className="bg-background/95 backdrop-blur-md border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between h-16">
+          <div className="flex justify-between h-18 lg:h-20">
             <div className="flex items-center">
               <Link href="/" className="text-xl font-bold text-primary hover:text-primary/80 transition-colors">
                 Koncept Studio
@@ -70,7 +70,7 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 lg:h-18">
+        <div className="flex justify-between items-center h-18 lg:h-20">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="group flex items-center space-x-2">
@@ -84,30 +84,30 @@ export default function Navbar() {
           </div>
 
           {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
             {isHomePage && !user && (
               <>
                 <Link
                   href="/#presentation-studio"
-                  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                  className="px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
                 >
                   Studio
                 </Link>
                 <Link
                   href="/#presentation-coach"
-                  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                  className="px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
                 >
                   Coach
                 </Link>
                 <Link
                   href="/#faq"
-                  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                  className="px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
                 >
                   FAQ
                 </Link>
                 <Link
                   href="/#contact"
-                  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                  className="px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
                 >
                   Contact
                 </Link>
@@ -118,7 +118,7 @@ export default function Navbar() {
               <>
                 <Link
                   href="/espace/planning"
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                  className={`px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium rounded-lg transition-all ${
                     pathname === '/espace/planning'
                       ? 'text-primary bg-primary/5'
                       : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
@@ -128,7 +128,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/espace/reservations"
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                  className={`px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium rounded-lg transition-all ${
                     pathname === '/espace/reservations'
                       ? 'text-primary bg-primary/5'
                       : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
@@ -138,7 +138,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/espace/abonnement"
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                  className={`px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium rounded-lg transition-all ${
                     pathname === '/espace/abonnement'
                       ? 'text-primary bg-primary/5'
                       : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
@@ -206,17 +206,29 @@ export default function Navbar() {
         {/* Mobile Navigation */}
         {isHomePage && !user && (
           <div className="md:hidden border-t border-border">
-            <div className="flex justify-between items-center py-3 px-4">
-              <Link href="/#presentation-studio" className="text-xs font-medium hover:text-primary transition-colors">
+            <div className="grid grid-cols-4 gap-1 py-4 px-2">
+              <Link
+                href="/#presentation-studio"
+                className="text-sm font-semibold hover:text-primary transition-colors text-center py-2 px-1 rounded-md hover:bg-primary/5"
+              >
                 Studio
               </Link>
-              <Link href="/#presentation-coach" className="text-xs font-medium hover:text-primary transition-colors">
+              <Link
+                href="/#presentation-coach"
+                className="text-sm font-semibold hover:text-primary transition-colors text-center py-2 px-1 rounded-md hover:bg-primary/5"
+              >
                 Coach
               </Link>
-              <Link href="/#faq" className="text-xs font-medium hover:text-primary transition-colors">
+              <Link
+                href="/#faq"
+                className="text-sm font-semibold hover:text-primary transition-colors text-center py-2 px-1 rounded-md hover:bg-primary/5"
+              >
                 FAQ
               </Link>
-              <Link href="/#contact" className="text-xs font-medium hover:text-primary transition-colors">
+              <Link
+                href="/#contact"
+                className="text-sm font-semibold hover:text-primary transition-colors text-center py-2 px-1 rounded-md hover:bg-primary/5"
+              >
                 Contact
               </Link>
             </div>
@@ -225,30 +237,36 @@ export default function Navbar() {
 
         {user && profile.subscription_status === 'active' && isEspacePage && (
           <div className="md:hidden border-t border-border">
-            <div className="flex justify-between items-center py-3 px-4">
+            <div className="grid grid-cols-3 gap-1 py-4 px-2">
               <Link
                 href="/espace/planning"
-                className={`text-xs font-medium hover:text-primary transition-colors whitespace-nowrap ${
-                  pathname === '/espace/planning' ? 'text-primary' : ''
+                className={`text-sm font-semibold transition-colors text-center py-2 px-1 rounded-md ${
+                  pathname === '/espace/planning'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
                 }`}
               >
                 Planning
               </Link>
               <Link
                 href="/espace/reservations"
-                className={`text-xs font-medium hover:text-primary transition-colors whitespace-nowrap ${
-                  pathname === '/espace/reservations' ? 'text-primary' : ''
+                className={`text-sm font-semibold transition-colors text-center py-2 px-1 rounded-md ${
+                  pathname === '/espace/reservations'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
                 }`}
               >
-                Mes réservations
+                Réservations
               </Link>
               <Link
                 href="/espace/abonnement"
-                className={`text-xs font-medium hover:text-primary transition-colors whitespace-nowrap ${
-                  pathname === '/espace/abonnement' ? 'text-primary' : ''
+                className={`text-sm font-semibold transition-colors text-center py-2 px-1 rounded-md ${
+                  pathname === '/espace/abonnement'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
                 }`}
               >
-                Mon abonnement
+                Abonnement
               </Link>
             </div>
           </div>
