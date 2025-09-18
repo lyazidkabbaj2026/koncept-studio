@@ -140,26 +140,26 @@ export default function PlanSelectionForm() {
 
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Plan Types and Plans */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {planTypes.map((planType, typeIndex) => (
-          <div key={planType.type} className="space-y-4">
+          <div key={planType.type} className="space-y-3 sm:space-y-4">
             {/* Type Header */}
             <Card className="bg-muted/30">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-xl font-semibold">{planType.label}</h3>
-                    <p className="text-sm text-muted-foreground">{planType.description}</p>
+              <CardHeader className="pb-3 sm:pb-4">
+                <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+                  <div className="space-y-1 flex-1">
+                    <h3 className="text-lg sm:text-xl font-semibold">{planType.label}</h3>
+                    <p className="text-sm text-muted-foreground pr-2">{planType.description}</p>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => togglePlanType(typeIndex)}
-                    className="ml-4"
+                    className="ml-0 sm:ml-4 self-start sm:self-auto"
                   >
-                    {planType.expanded ? 'Masquer' : 'Voir les formules'}
+                    <span className="text-sm">{planType.expanded ? 'Masquer' : 'Voir les formules'}</span>
                     {planType.expanded ? (
                       <IconChevronUp className="w-4 h-4 ml-2" />
                     ) : (
@@ -172,7 +172,7 @@ export default function PlanSelectionForm() {
 
             {/* Plans Grid (shown when expanded) */}
             {planType.expanded && (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {planType.plans.map((plan) => (
                   <Card
                     key={plan.id}
@@ -183,49 +183,50 @@ export default function PlanSelectionForm() {
                     }`}
                     onClick={() => handlePlanToggle(plan.id)}
                   >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{plan.name}</CardTitle>
+                    <CardHeader className="pb-2 sm:pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-base sm:text-lg leading-tight flex-1 pr-2">{plan.name}</CardTitle>
                         <Checkbox
                           checked={selectedPlans.includes(plan.id)}
                           onChange={() => handlePlanToggle(plan.id)}
+                          className="mt-0.5 flex-shrink-0"
                         />
                       </div>
-                      <div className="text-2xl font-bold text-primary">
+                      <div className="text-xl sm:text-2xl font-bold text-primary">
                         {plan.price_dhs} DH
                         {plan.validity_months && planType.type !== 'abonnement' && (
-                          <span className="text-sm text-muted-foreground ml-2">
+                          <span className="text-xs sm:text-sm text-muted-foreground ml-1 sm:ml-2">
                             /{plan.validity_months} mois
                           </span>
                         )}
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-2 sm:space-y-3">
                       {plan.description && (
-                        <p className="text-sm text-muted-foreground">{plan.description}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{plan.description}</p>
                       )}
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         {/* For non-abonnement plans, show total séances */}
                         {plan.credits && planType.type !== 'abonnement' && (
-                          <Badge variant="secondary" className="text-xs">
-                            <IconCheck className="w-3 h-3 mr-1" />
-                            Total: {plan.credits} séances
+                          <Badge variant="secondary" className="text-xs px-2 py-1">
+                            <IconCheck className="w-3 h-3 mr-1 flex-shrink-0" />
+                            <span className="truncate">Total: {plan.credits} séances</span>
                           </Badge>
                         )}
 
                         {/* For non-abonnement plans, show validity in months only */}
                         {plan.validity_months && planType.type !== 'abonnement' && (
-                          <Badge variant="secondary" className="text-xs">
-                            <IconClock className="w-3 h-3 mr-1" />
-                            Valide {plan.validity_months} mois
+                          <Badge variant="secondary" className="text-xs px-2 py-1">
+                            <IconClock className="w-3 h-3 mr-1 flex-shrink-0" />
+                            <span className="truncate">Valide {plan.validity_months} mois</span>
                           </Badge>
                         )}
 
                         {/* For abonnement plans, show weekly limit */}
                         {plan.weekly_limit && planType.type === 'abonnement' && (
-                          <Badge variant="secondary" className="text-xs">
-                            <IconUsers className="w-3 h-3 mr-1" />
-                            {plan.weekly_limit} séances/semaine max
+                          <Badge variant="secondary" className="text-xs px-2 py-1">
+                            <IconUsers className="w-3 h-3 mr-1 flex-shrink-0" />
+                            <span className="truncate">{plan.weekly_limit} séances/semaine max</span>
                           </Badge>
                         )}
                       </div>
@@ -239,8 +240,8 @@ export default function PlanSelectionForm() {
       </div>
 
       {/* Submit Section */}
-      <div className="flex items-center justify-between pt-6 border-t">
-        <div className="text-sm text-muted-foreground">
+      <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 pt-6 border-t">
+        <div className="text-sm text-muted-foreground text-center sm:text-left">
           {selectedPlans.length === 0
             ? 'Aucune formule sélectionnée'
             : `${selectedPlans.length} formule${selectedPlans.length > 1 ? 's' : ''} sélectionnée${selectedPlans.length > 1 ? 's' : ''}`
@@ -250,7 +251,7 @@ export default function PlanSelectionForm() {
           onClick={handleSubmit}
           disabled={selectedPlans.length === 0 || submitting}
           size="lg"
-          className="min-w-[200px]"
+          className="min-w-[200px] w-full sm:w-auto"
         >
           {submitting ? 'Enregistrement...' : 'Confirmer ma sélection'}
         </Button>
