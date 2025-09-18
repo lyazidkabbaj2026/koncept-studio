@@ -70,7 +70,7 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-18 lg:h-20">
+        <div className="flex justify-between items-center h-18 lg:h-20 pt-2 md:pt-0">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="group flex items-center space-x-2">
@@ -205,8 +205,8 @@ export default function Navbar() {
 
         {/* Mobile Navigation */}
         {isHomePage && !user && (
-          <div className="md:hidden border-t border-border">
-            <div className="grid grid-cols-4 gap-2 py-4 px-4">
+          <div className="md:hidden border-t border-border mt-3">
+            <div className="grid grid-cols-4 gap-2 py-3 px-4">
               <Link
                 href="/#presentation-studio"
                 className="text-sm font-semibold hover:text-primary transition-colors text-center py-3 px-2 rounded-md hover:bg-primary/5"
@@ -236,8 +236,8 @@ export default function Navbar() {
         )}
 
         {user && profile.subscription_status === 'active' && isEspacePage && (
-          <div className="md:hidden border-t border-border">
-            <div className="grid grid-cols-3 gap-2 py-4 px-4">
+          <div className="md:hidden border-t border-border mt-3">
+            <div className="grid grid-cols-3 gap-2 py-3 px-4">
               <Link
                 href="/espace/planning"
                 className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
