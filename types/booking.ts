@@ -2,7 +2,6 @@ import type { Database } from '@/lib/database.types'
 
 export type ClassBooking = Database['public']['Tables']['class_bookings']['Row']
 export type ClassWaitlist = Database['public']['Tables']['class_waitlist']['Row']
-export type BookingAudit = Database['public']['Tables']['booking_audit']['Row']
 
 export interface BookingWithDetails extends ClassBooking {
   class_schedules: {

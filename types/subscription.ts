@@ -2,7 +2,6 @@ import type { Database } from '@/lib/database.types'
 
 export type SubscriptionPlan = Database['public']['Tables']['subscription_plans']['Row']
 export type UserSubscription = Database['public']['Tables']['user_subscriptions']['Row']
-export type SubscriptionRequest = Database['public']['Tables']['subscription_requests']['Row']
 
 export interface SubscriptionWithPlan extends UserSubscription {
   subscription_plans: SubscriptionPlan
@@ -18,13 +17,6 @@ export interface Subscription extends Omit<UserSubscription, 'credits_used'> {
   credits_used?: number // Optional field for tracking usage
 }
 
-export interface SubscriptionRequestWithDetails extends SubscriptionRequest {
-  subscription_plans: SubscriptionPlan
-  profiles: {
-    full_name: string
-    email: string
-  }
-}
 
 export interface SubscriptionFormData {
   plan_id: string

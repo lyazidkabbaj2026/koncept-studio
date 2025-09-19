@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
@@ -18,11 +19,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { IconUserCheck, IconMessage, IconCreditCard, IconUsers, IconUserPlus, IconPhone, IconUserMinus, IconChevronLeft, IconChevronRight, IconSearch, IconX } from '@tabler/icons-react'
+import { IconUserCheck, IconMessage, IconCreditCard, IconUsers, IconUserPlus, IconPhone, IconUserMinus, IconChevronLeft, IconChevronRight, IconSearch, IconX, IconSettings, IconPlus, IconTrash, IconEye, IconUserX } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
-import { formatDesiredPlansDisplay, getDesiredPlansTooltip } from '@/lib/utils/plan-utils'
+import { formatDesiredPlansDisplay, parseDesiredPlans } from '@/lib/utils/plan-utils'
 import { assignSubscriptionToUser } from './actions'
 
 interface User {
@@ -55,13 +56,28 @@ interface SubscriptionPlan {
   credits: number | null
   price_dhs: number
   validity_months: number | null
-  validity_days?: number | null
   weekly_limit?: number | null
 }
 
 interface SubscriptionFormData {
   plan_id: string
   start_date: string
+}
+
+interface UserSubscription {
+  id: string
+  plan_id: string
+  plan_name: string
+  plan_type: string
+  plan_price: number
+  credits_remaining: number
+  credits_used: number
+  weekly_credits_used: number
+  weekly_limit: number | null
+  start_date: string
+  end_date: string
+  status: 'active' | 'expired' | 'cancelled'
+  created_at: string
 }
 
 export default function UsersPage() {
@@ -73,6 +89,9 @@ export default function UsersPage() {
   const [showContactDialog, setShowContactDialog] = useState(false)
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false)
   const [showSubscriptionDetailsDialog, setShowSubscriptionDetailsDialog] = useState(false)
+  const [showSubscriptionManagementDialog, setShowSubscriptionManagementDialog] = useState(false)
+  const [userSubscriptions, setUserSubscriptions] = useState<UserSubscription[]>([])
+  const [loadingSubscriptions, setLoadingSubscriptions] = useState(false)
   const [subscriptionForm, setSubscriptionForm] = useState<SubscriptionFormData>({
     plan_id: '',
     start_date: format(new Date(), 'yyyy-MM-dd')
@@ -154,13 +173,57 @@ export default function UsersPage() {
     try {
       const { data, error } = await supabase
         .from('subscription_plans')
-        .select('id, name, type, credits, price_dhs, validity_months, validity_days, weekly_limit')
+        .select('id, name, type, credits, price_dhs, validity_months, weekly_limit')
         .order('price_dhs', { ascending: true })
 
       if (error) throw error
       setPlans(data || [])
     } catch (err: any) {
       console.error('Error fetching plans:', err)
+    }
+  }
+
+  const fetchUserSubscriptions = async (userId: string) => {
+    try {
+      setLoadingSubscriptions(true)
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          subscription_plans (
+            name,
+            type,
+            price_dhs,
+            weekly_limit
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      const formattedSubscriptions: UserSubscription[] = (data || []).map((sub: any) => ({
+        id: sub.id,
+        plan_id: sub.plan_id,
+        plan_name: sub.subscription_plans?.name || 'Plan inconnu',
+        plan_type: sub.subscription_plans?.type || '',
+        plan_price: sub.subscription_plans?.price_dhs || 0,
+        credits_remaining: sub.credits_remaining || 0,
+        credits_used: sub.credits_used || 0,
+        weekly_credits_used: sub.weekly_credits_used || 0,
+        weekly_limit: sub.subscription_plans?.weekly_limit || null,
+        start_date: sub.start_date,
+        end_date: sub.end_date,
+        status: sub.status,
+        created_at: sub.created_at
+      }))
+
+      setUserSubscriptions(formattedSubscriptions)
+    } catch (err: any) {
+      console.error('Error fetching user subscriptions:', err)
+      toast.error('Erreur lors du chargement des abonnements')
+    } finally {
+      setLoadingSubscriptions(false)
     }
   }
 
@@ -233,6 +296,59 @@ export default function UsersPage() {
     } catch (err: any) {
       console.error('Error deactivating user:', err)
       toast.error('Erreur lors de la désactivation')
+    }
+  }
+
+  const handleCancelSubscription = async (subscriptionId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .update({ status: 'cancelled' })
+        .eq('id', subscriptionId)
+
+      if (error) throw error
+
+      if (selectedUser) {
+        await fetchUserSubscriptions(selectedUser.id)
+        await fetchUsers(0)
+      }
+
+      toast.success('Abonnement annulé avec succès')
+    } catch (err: any) {
+      console.error('Error cancelling subscription:', err)
+      toast.error('Erreur lors de l\'annulation de l\'abonnement')
+    }
+  }
+
+  const handleAssignNewSubscription = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedUser) return
+
+    try {
+      const result = await assignSubscriptionToUser({
+        userId: selectedUser.id,
+        planId: subscriptionForm.plan_id,
+        startDate: subscriptionForm.start_date
+      })
+
+      if (!result.success) {
+        throw new Error(result.error || 'Erreur lors de l\'attribution de l\'abonnement')
+      }
+
+      // Refresh subscriptions and users data
+      await fetchUserSubscriptions(selectedUser.id)
+      await fetchUsers(0)
+
+      // Reset form
+      setSubscriptionForm({
+        plan_id: '',
+        start_date: format(new Date(), 'yyyy-MM-dd')
+      })
+
+      toast.success(`Nouvel abonnement assigné à ${selectedUser.full_name}`)
+    } catch (err: any) {
+      console.error('Error assigning subscription:', err)
+      toast.error(`Erreur lors de l'assignation: ${err?.message || 'Erreur inconnue'}`)
     }
   }
 
@@ -313,7 +429,7 @@ export default function UsersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">En Attente</CardTitle>
@@ -321,10 +437,8 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.pending}</div>
-            <p className="text-xs text-muted-foreground">À contacter</p>
           </CardContent>
         </Card>
-
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -333,7 +447,16 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.active}</div>
-            <p className="text-xs text-muted-foreground">Avec abonnement</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Inactifs</CardTitle>
+            <IconUserX className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.inactive}</div>
           </CardContent>
         </Card>
 
@@ -344,7 +467,6 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">Utilisateurs</p>
           </CardContent>
         </Card>
       </div>
@@ -388,7 +510,6 @@ export default function UsersPage() {
                   <SelectItem value="all">Tous les statuts</SelectItem>
                   <SelectItem value="pending">En attente</SelectItem>
                   <SelectItem value="active">Actif</SelectItem>
-                  <SelectItem value="expired">Expiré</SelectItem>
                   <SelectItem value="inactive">Inactif</SelectItem>
                 </SelectContent>
               </Select>
@@ -481,8 +602,41 @@ export default function UsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm" title={getDesiredPlansTooltip(user.desired_plan || null)}>
-                        {formatDesiredPlansDisplay(user.desired_plan || null)}
+                      <div className="text-sm">
+                        {parseDesiredPlans(user.desired_plan || null).length > 0 ? (
+                          <div className="space-y-1">
+                            {/* Desktop: Show all plans as badges */}
+                            <div className="hidden sm:block space-y-1">
+                              {parseDesiredPlans(user.desired_plan || null).map((plan, index) => (
+                                <div key={index} className="text-xs bg-muted/50 px-2 py-1 rounded">
+                                  {plan}
+                                </div>
+                              ))}
+                            </div>
+                            {/* Mobile: Show plan count with expandable list */}
+                            <div className="sm:hidden">
+                              <button
+                                className="text-xs bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const details = e.currentTarget.nextElementSibling as HTMLElement
+                                  if (details) {
+                                    details.style.display = details.style.display === 'none' ? 'block' : 'none'
+                                  }
+                                }}
+                              >
+                                {parseDesiredPlans(user.desired_plan || null).length} formule{parseDesiredPlans(user.desired_plan || null).length > 1 ? 's' : ''}
+                              </button>
+                              <div className="hidden mt-1 p-2 bg-muted/30 rounded text-xs space-y-1">
+                                {parseDesiredPlans(user.desired_plan || null).map((plan, index) => (
+                                  <div key={index}>{plan}</div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">Aucune formule</span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -495,56 +649,18 @@ export default function UsersPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-
-                        {user.subscription_status === 'pending' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedUser(user)
-                              setShowSubscriptionDialog(true)
-                            }}
-                          >
-                            <IconCreditCard className="h-4 w-4 mr-1" />
-                            Assigner abonnement
-                          </Button>
-                        )}
-                        {user.subscription_status === 'active' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedUser(user)
-                              setShowSubscriptionDetailsDialog(true)
-                            }}
-                          >
-                            <IconCreditCard className="h-4 w-4 mr-1" />
-                            Voir abonnement
-                          </Button>
-                        )}
-                        {user.subscription_status === 'expired' && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedUser(user)
-                                setShowSubscriptionDialog(true)
-                              }}
-                            >
-                              <IconCreditCard className="h-4 w-4 mr-1" />
-                              Assigner abonnement
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeactivateUser(user.id, user.full_name)}
-                            >
-                              <IconUserMinus className="h-4 w-4 mr-1" />
-                              Désactiver
-                            </Button>
-                          </>
-                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedUser(user)
+                            fetchUserSubscriptions(user.id)
+                            setShowSubscriptionManagementDialog(true)
+                          }}
+                        >
+                          <IconCreditCard className="h-4 w-4 mr-1" />
+                          Gérer abonnement
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -654,20 +770,20 @@ export default function UsersPage() {
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center">
                       <h5 className="text-xs font-medium text-muted-foreground mb-1">Restants</h5>
-                      <p className="text-lg font-bold font-mono text-green-600 dark:text-green-400">
+                      <p className="text-lg font-bold font-mono text-foreground">
                         {selectedUser.active_subscription.credits_remaining}
                       </p>
                     </div>
                     <div className="text-center">
                       <h5 className="text-xs font-medium text-muted-foreground mb-1">Utilisés</h5>
-                      <p className="text-lg font-bold font-mono text-blue-600 dark:text-blue-400">
+                      <p className="text-lg font-bold font-mono text-foreground">
                         {selectedUser.active_subscription.credits_used || 0}
                       </p>
                     </div>
                     {selectedUser.active_subscription.weekly_limit && (
                       <div className="text-center">
                         <h5 className="text-xs font-medium text-muted-foreground mb-1">Cette semaine</h5>
-                        <p className="text-lg font-bold font-mono text-orange-600 dark:text-orange-400">
+                        <p className="text-lg font-bold font-mono text-foreground">
                           {selectedUser.active_subscription.weekly_credits_used || 0}/{selectedUser.active_subscription.weekly_limit}
                         </p>
                       </div>
@@ -810,6 +926,264 @@ export default function UsersPage() {
                 </Button>
               </div>
             </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Comprehensive Subscription Management Dialog */}
+      <Dialog open={showSubscriptionManagementDialog} onOpenChange={setShowSubscriptionManagementDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <IconSettings className="h-5 w-5" />
+              Gestion des abonnements
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedUser && (
+            <div className="space-y-6">
+              {/* User Info */}
+              <Card className="border-muted-foreground/20">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h3 className="text-xl font-semibold text-foreground">{selectedUser.full_name}</h3>
+                      <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                      {selectedUser.phone && (
+                        <p className="text-sm text-muted-foreground">{selectedUser.phone}</p>
+                      )}
+                    </div>
+                    <div className="text-right space-y-2">
+                      <div className="text-xs font-medium text-muted-foreground">Statut</div>
+                      {getStatusBadge(selectedUser.subscription_status)}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Tabs defaultValue="subscriptions" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="subscriptions">Abonnements</TabsTrigger>
+                  <TabsTrigger value="assign">Assigner nouveau</TabsTrigger>
+                  <TabsTrigger value="user-actions">Actions utilisateur</TabsTrigger>
+                </TabsList>
+
+                {/* Current and Historical Subscriptions */}
+                <TabsContent value="subscriptions" className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-foreground">Abonnements</h3>
+                    <Badge variant="secondary" className="text-xs">
+                      {userSubscriptions.length} abonnement{userSubscriptions.length > 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+
+                  {loadingSubscriptions ? (
+                    <Card className="border-muted-foreground/20">
+                      <CardContent className="text-center py-12">
+                        <p className="text-muted-foreground">Chargement des abonnements...</p>
+                      </CardContent>
+                    </Card>
+                  ) : userSubscriptions.length === 0 ? (
+                    <Card className="border-muted-foreground/20">
+                      <CardContent className="text-center py-12">
+                        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                          <IconCreditCard className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <p className="text-foreground font-semibold text-lg mb-2">Aucun abonnement trouvé</p>
+                        <p className="text-sm text-muted-foreground">Assignez un premier abonnement à cet utilisateur</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-4">
+                      {userSubscriptions.map((subscription) => (
+                        <Card key={subscription.id} className={`border-2 ${
+                          subscription.status === 'active'
+                            ? 'border-primary/20 bg-primary/5'
+                            : subscription.status === 'expired'
+                            ? 'border-muted-foreground/20 bg-muted/20'
+                            : 'border-muted-foreground/20 bg-muted/10'
+                        }`}>
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle className="text-lg">{subscription.plan_name}</CardTitle>
+                                <p className="text-sm text-muted-foreground capitalize">{subscription.plan_type}</p>
+                              </div>
+                              <Badge
+                                variant={subscription.status === 'active' ? 'default' : 'secondary'}
+                              >
+                                {subscription.status === 'active' ? 'Actif' :
+                                 subscription.status === 'expired' ? 'Expiré' : 'Annulé'}
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            {/* Usage Statistics */}
+                            <div className={`grid gap-6 ${subscription.weekly_limit ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3'}`}>
+                              <div className="text-center space-y-2">
+                                <div className="text-2xl font-bold text-foreground">
+                                  {subscription.credits_remaining}
+                                </div>
+                                <div className="text-xs font-medium text-muted-foreground">Crédits restants</div>
+                              </div>
+                              <div className="text-center space-y-2">
+                                <div className="text-2xl font-bold text-foreground">
+                                  {subscription.credits_used}
+                                </div>
+                                <div className="text-xs font-medium text-muted-foreground">Crédits utilisés</div>
+                              </div>
+                              {subscription.weekly_limit && (
+                                <div className="text-center space-y-2">
+                                  <div className="text-2xl font-bold text-foreground">
+                                    {subscription.weekly_credits_used}/{subscription.weekly_limit}
+                                  </div>
+                                  <div className="text-xs font-medium text-muted-foreground">Cette semaine</div>
+                                </div>
+                              )}
+                              <div className="text-center space-y-2">
+                                <div className="text-2xl font-bold text-foreground">
+                                  {subscription.plan_price} DH
+                                </div>
+                                <div className="text-xs font-medium text-muted-foreground">Prix</div>
+                              </div>
+                            </div>
+
+                            {/* Dates */}
+                            <div className="grid grid-cols-2 gap-6 pt-4 border-t border-border">
+                              <div className="text-center space-y-2">
+                                <div className="text-xs font-medium text-muted-foreground">Date de début</div>
+                                <div className="text-sm font-semibold text-foreground">
+                                  {format(new Date(subscription.start_date), 'dd MMM yyyy', { locale: fr })}
+                                </div>
+                              </div>
+                              <div className="text-center space-y-2">
+                                <div className="text-xs font-medium text-muted-foreground">Date d'expiration</div>
+                                <div className="text-sm font-semibold text-foreground">
+                                  {format(new Date(subscription.end_date), 'dd MMM yyyy', { locale: fr })}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            {subscription.status === 'active' && (
+                              <div className="flex justify-end pt-4 border-t border-border">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleCancelSubscription(subscription.id)}
+                                  className="text-muted-foreground hover:text-foreground hover:bg-muted/10"
+                                >
+                                  <IconTrash className="h-4 w-4 mr-2" />
+                                  Supprimer
+                                </Button>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Assign New Subscription */}
+                <TabsContent value="assign" className="space-y-6">
+                  <h3 className="text-xl font-semibold text-foreground">Assigner un nouvel abonnement</h3>
+
+                  <Card className="border-muted-foreground/20">
+                    <CardContent className="p-6">
+                      <form onSubmit={handleAssignNewSubscription} className="space-y-6">
+                        <div className="space-y-3">
+                          <Label htmlFor="new_plan_id" className="text-sm font-medium text-foreground">Plan d'abonnement</Label>
+                          <Select
+                            value={subscriptionForm.plan_id}
+                            onValueChange={(value) => setSubscriptionForm(prev => ({ ...prev, plan_id: value }))}
+                          >
+                            <SelectTrigger className="h-12">
+                              <SelectValue placeholder="Sélectionner un plan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {plans.map((plan) => (
+                                <SelectItem key={plan.id} value={plan.id}>
+                                  <div className="flex items-center justify-between w-full">
+                                    <span className="font-medium">{plan.name}</span>
+                                    <span className="ml-3 text-sm text-muted-foreground">
+                                      {plan.price_dhs} DH
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-3">
+                          <Label htmlFor="new_start_date" className="text-sm font-medium text-foreground">Date de début</Label>
+                          <Input
+                            id="new_start_date"
+                            type="date"
+                            value={subscriptionForm.start_date}
+                            onChange={(e) => setSubscriptionForm(prev => ({ ...prev, start_date: e.target.value }))}
+                            required
+                            className="h-12"
+                          />
+                        </div>
+
+                        <div className="flex justify-end pt-4 border-t border-border">
+                          <Button type="submit" disabled={!subscriptionForm.plan_id} className="h-12 px-6">
+                            <IconPlus className="h-4 w-4 mr-2" />
+                            Assigner l'abonnement
+                          </Button>
+                        </div>
+                      </form>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* User Actions */}
+                <TabsContent value="user-actions" className="space-y-6">
+                  <h3 className="text-xl font-semibold text-foreground">Actions utilisateur</h3>
+
+                  <Card className="border-muted-foreground/20">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-foreground flex items-center gap-3">
+                        <IconUserMinus className="h-5 w-5" />
+                        Désactiver l'utilisateur
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        Cette action désactivera l'utilisateur et annulera tous ses abonnements actifs.
+                        L'utilisateur ne pourra plus se connecter à son compte.
+                      </p>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex justify-end pt-4 border-t border-border">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            handleDeactivateUser(selectedUser.id, selectedUser.full_name)
+                            setShowSubscriptionManagementDialog(false)
+                          }}
+                          className="border-foreground text-foreground hover:bg-foreground hover:text-background h-12 px-6"
+                        >
+                          <IconUserMinus className="h-4 w-4 mr-2" />
+                          Désactiver définitivement
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+
+              {/* Footer Actions */}
+              <div className="flex justify-end pt-6 border-t border-border">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSubscriptionManagementDialog(false)}
+                  className="h-12 px-6"
+                >
+                  Fermer
+                </Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>

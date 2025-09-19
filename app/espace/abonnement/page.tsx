@@ -27,8 +27,8 @@ export default async function UserSubscriptionPage() {
     .eq('id', user.id)
     .single()
 
-  // Get current subscription with plan details
-  const { data: currentSubscription } = await supabase
+  // Get all current active subscriptions with plan details
+  const { data: currentSubscriptions } = await supabase
     .from('user_subscriptions')
     .select(`
       *,
@@ -38,22 +38,10 @@ export default async function UserSubscriptionPage() {
     .eq('status', 'active')
     .gt('end_date', new Date().toISOString())
     .order('end_date', { ascending: false })
-    .limit(1)
-    .single()
 
   // Get subscription history
   const { data: subscriptionHistory } = await supabase
     .from('user_subscriptions')
-    .select(`
-      *,
-      subscription_plans (name, type)
-    `)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-
-  // Get subscription requests if no active subscription
-  const { data: subscriptionRequests } = await supabase
-    .from('subscription_requests')
     .select(`
       *,
       subscription_plans (name, type)
@@ -77,11 +65,10 @@ export default async function UserSubscriptionPage() {
     .limit(20)
 
   return (
-    <UserSubscriptionView 
+    <UserSubscriptionView
       user={profile}
-      currentSubscription={currentSubscription}
+      currentSubscriptions={currentSubscriptions || []}
       subscriptionHistory={subscriptionHistory || []}
-      subscriptionRequests={subscriptionRequests || []}
       recentBookings={recentBookings || []}
     />
   )

@@ -111,12 +111,6 @@ export const subscriptionPlanSchema = z.object({
     .int('Validity must be a whole number')
     .min(1, 'Validity must be at least 1 month')
     .max(24, 'Validity cannot exceed 24 months'),
-  validity_days: z.number()
-    .int('Validity days must be a whole number')
-    .min(1, 'Validity days must be at least 1 day')
-    .max(730, 'Validity days cannot exceed 730 days')
-    .optional()
-    .nullable(),
 })
 
 // Query parameter validation

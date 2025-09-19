@@ -9,58 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      booking_audit: {
-        Row: {
-          operation: string
-          booking_id: string | null
-          created_at: string
-          id: string
-          details: Json | null
-          user_id: string | null
-          schedule_id: string | null
-        }
-        Insert: {
-          operation: string
-          booking_id?: string | null
-          created_at?: string
-          id?: string
-          details?: Json | null
-          user_id?: string | null
-          schedule_id?: string | null
-        }
-        Update: {
-          operation?: string
-          booking_id?: string | null
-          created_at?: string
-          id?: string
-          details?: Json | null
-          user_id?: string | null
-          schedule_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_audit_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "class_bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_audit_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_audit_schedule_id_fkey"
-            columns: ["schedule_id"]
-            isOneToOne: false
-            referencedRelation: "class_schedules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       class_bookings: {
         Row: {
           booked_at: string | null
@@ -344,7 +292,6 @@ export type Database = {
           price_dhs: number
           type: string
           updated_at: string
-          validity_days: number | null
           validity_months: number
           weekly_limit: number | null
         }
@@ -356,7 +303,6 @@ export type Database = {
           price_dhs: number
           type: string
           updated_at?: string
-          validity_days?: number | null
           validity_months: number
           weekly_limit?: number | null
         }
@@ -368,7 +314,6 @@ export type Database = {
           price_dhs?: number
           type?: string
           updated_at?: string
-          validity_days?: number | null
           validity_months?: number
           weekly_limit?: number | null
         }

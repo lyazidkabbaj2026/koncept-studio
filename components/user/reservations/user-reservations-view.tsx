@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { IconCalendar, IconClock, IconUser, IconMapPin, IconCircleCheck, IconCircleX, IconAlertTriangle } from '@tabler/icons-react'
+import { IconCalendar, IconClock, IconUser, IconMapPin, IconCircleCheck, IconCircleX, IconAlertTriangle, IconInfoCircle } from '@tabler/icons-react'
+import { BookingService } from '@/lib/services/booking.service'
 import Link from 'next/link'
 
 interface Booking {
@@ -61,12 +62,24 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [hasOnlyPersonalTraining, setHasOnlyPersonalTraining] = useState(false)
   const supabase = createClient()
+  const bookingService = new BookingService()
 
   useEffect(() => {
     fetchReservations()
+    checkPersonalTrainingStatus()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
+
+  const checkPersonalTrainingStatus = async () => {
+    try {
+      const hasOnlyPT = await bookingService.hasOnlyPersonalTraining()
+      setHasOnlyPersonalTraining(hasOnlyPT)
+    } catch (error) {
+      console.error('Error checking personal training status:', error)
+    }
+  }
 
   const fetchReservations = async () => {
     try {
@@ -179,9 +192,16 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
         return 'Intermédiaire'
       case 'advanced':
         return 'Avancé'
+      case 'all_levels':
+        return 'Tous niveaux'
       default:
         return level
     }
+  }
+
+  const formatDateWithCapitalization = (date: Date, formatString: string) => {
+    const formatted = format(date, formatString, { locale: fr })
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1)
   }
 
   const upcomingBookings = bookings.filter(booking => 
@@ -225,7 +245,23 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
           </Alert>
         )}
 
-        <Tabs defaultValue="upcoming" className="space-y-6">
+        {/* Personal Training Message */}
+        {hasOnlyPersonalTraining && (
+          <Alert className="mb-6">
+            <IconInfoCircle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="font-medium mb-2">Coaching Personnel</div>
+              <p className="text-sm">
+                Vos réservations sont gérées hors ligne pour les abonnements de coaching personnel.
+                Veuillez contacter le studio pour toute information.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Show tabs only if user doesn't have personal training only */}
+        {!hasOnlyPersonalTraining && (
+          <Tabs defaultValue="upcoming" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 bg-muted/50">
             <TabsTrigger value="upcoming">
               À venir ({upcomingBookings.length})
@@ -287,7 +323,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div className="flex items-center gap-2">
                               <IconCalendar className="h-4 w-4 text-muted-foreground" />
-                              <span>{format(startTime, 'EEEE d MMM', { locale: fr })}</span>
+                              <span>{formatDateWithCapitalization(startTime, 'EEEE d MMM')}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <IconClock className="h-4 w-4 text-muted-foreground" />
@@ -373,7 +409,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div className="flex items-center gap-2">
                               <IconCalendar className="h-4 w-4 text-muted-foreground" />
-                              <span>{format(startTime, 'EEEE d MMM', { locale: fr })}</span>
+                              <span>{formatDateWithCapitalization(startTime, 'EEEE d MMM')}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <IconClock className="h-4 w-4 text-muted-foreground" />
@@ -463,7 +499,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div className="flex items-center gap-2">
                               <IconCalendar className="h-4 w-4 text-muted-foreground" />
-                              <span>{format(startTime, 'EEEE d MMM', { locale: fr })}</span>
+                              <span>{formatDateWithCapitalization(startTime, 'EEEE d MMM')}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <IconClock className="h-4 w-4 text-muted-foreground" />
@@ -499,6 +535,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
             )}
           </TabsContent>
         </Tabs>
+        )}
       </div>
     </div>
   )

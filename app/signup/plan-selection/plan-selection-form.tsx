@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
-import { IconCheck, IconClock, IconUsers, IconChevronDown, IconChevronUp } from '@tabler/icons-react'
+import { IconCheck, IconClock, IconUsers, IconChevronDown, IconChevronUp, IconInfinity } from '@tabler/icons-react'
 
 interface SubscriptionPlan {
   id: string
@@ -18,7 +18,6 @@ interface SubscriptionPlan {
   credits: number | null
   price_dhs: number
   validity_months: number | null
-  validity_days: number | null
   weekly_limit: number | null
   description?: string | null
 }
@@ -70,7 +69,7 @@ export default function PlanSelectionForm() {
     const labels: { [key: string]: string } = {
       'carnet': 'Carnet',
       'personal_training': 'Personal training',
-      'abonnement': 'Abonnement'
+      'abonnement': 'Abonnement annuel'
     }
     return labels[type] || type.charAt(0).toUpperCase() + type.slice(1)
   }
@@ -148,7 +147,7 @@ export default function PlanSelectionForm() {
             {/* Type Header */}
             <Card className="bg-muted/30">
               <CardHeader className="pb-3 sm:pb-4">
-                <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+                <div className="flex flex-col space-y-3 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
                   <div className="space-y-1 flex-1">
                     <h3 className="text-lg sm:text-xl font-semibold">{planType.label}</h3>
                     <p className="text-sm text-muted-foreground pr-2">{planType.description}</p>
@@ -157,7 +156,7 @@ export default function PlanSelectionForm() {
                     variant="ghost"
                     size="sm"
                     onClick={() => togglePlanType(typeIndex)}
-                    className="ml-0 sm:ml-4 self-start sm:self-auto"
+                    className="ml-0 sm:ml-4 self-start sm:self-start mt-0 sm:mt-0"
                   >
                     <span className="text-sm">{planType.expanded ? 'Masquer' : 'Voir les formules'}</span>
                     {planType.expanded ? (
@@ -206,12 +205,20 @@ export default function PlanSelectionForm() {
                         <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{plan.description}</p>
                       )}
                       <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                        {/* For non-abonnement plans, show total séances */}
-                        {plan.credits && planType.type !== 'abonnement' && (
+                        {/* For abonnement plans, show unlimited credits */}
+                        {planType.type === 'abonnement' ? (
                           <Badge variant="secondary" className="text-xs px-2 py-1">
-                            <IconCheck className="w-3 h-3 mr-1 flex-shrink-0" />
-                            <span className="truncate">Total: {plan.credits} séances</span>
+                            <IconInfinity className="w-3 h-3 mr-1 flex-shrink-0" />
+                            <span className="truncate">Séances illimitées</span>
                           </Badge>
+                        ) : (
+                          /* For non-abonnement plans, show total séances */
+                          plan.credits && plan.credits > 0 && (
+                            <Badge variant="secondary" className="text-xs px-2 py-1">
+                              <IconCheck className="w-3 h-3 mr-1 flex-shrink-0" />
+                              <span className="truncate">Total: {plan.credits} séances</span>
+                            </Badge>
+                          )
                         )}
 
                         {/* For non-abonnement plans, show validity in months only */}

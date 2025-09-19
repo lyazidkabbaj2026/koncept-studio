@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { IconChevronLeft, IconChevronRight, IconCalendar, IconClock, IconUser, IconMapPin, IconAlertTriangle, IconCircleCheck, IconUsers, IconInfoCircle, IconStar, IconActivity } from '@tabler/icons-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { BookingService } from '@/lib/services/booking.service'
+import confetti from 'canvas-confetti'
 
 interface UserProfile {
   id: string
@@ -63,10 +65,9 @@ interface ClassEvent {
 interface UserCalendarViewProps {
   user: UserProfile
   subscription?: Subscription
-  subscriptionRequest?: any
 }
 
-export function UserCalendarView({ user, subscription: initialSubscription, subscriptionRequest }: UserCalendarViewProps) {
+export function UserCalendarView({ user, subscription: initialSubscription }: UserCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [events, setEvents] = useState<ClassEvent[]>([])
   const [loading, setLoading] = useState(true)
@@ -74,12 +75,101 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
   const [selectedEvent, setSelectedEvent] = useState<ClassEvent | null>(null)
   const [showEventModal, setShowEventModal] = useState(false)
   const [subscription, setSubscription] = useState(initialSubscription)
+  const [hasOnlyPersonalTraining, setHasOnlyPersonalTraining] = useState(false)
   const supabase = createClient()
+  const bookingService = new BookingService()
+
+  // Confetti animation for successful booking
+  const triggerConfetti = () => {
+    const duration = 3000
+    const animationEnd = Date.now() + duration
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
+
+    function randomInRange(min: number, max: number) {
+      return Math.random() * (max - min) + min
+    }
+
+    const interval = setInterval(function() {
+      const timeLeft = animationEnd - Date.now()
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval)
+      }
+
+      const particleCount = 50 * (timeLeft / duration)
+
+      // From left
+      confetti(Object.assign({}, defaults, {
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+      }))
+
+      // From right
+      confetti(Object.assign({}, defaults, {
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+      }))
+    }, 250)
+  }
 
   // Sync subscription state with props
   useEffect(() => {
     setSubscription(initialSubscription)
   }, [initialSubscription])
+
+  // Function to refresh subscription data
+  const refreshSubscriptionData = async () => {
+    if (!subscription) {
+      console.log('🟡 No subscription to refresh')
+      return
+    }
+
+    try {
+      console.log('🟡 Refreshing subscription data for ID:', subscription.id)
+      console.log('🟡 Current subscription before refresh:', {
+        weekly_credits_used: subscription.weekly_credits_used,
+        credits_remaining: subscription.credits_remaining,
+        credits_used: subscription.credits_used
+      })
+
+      const { data: updatedSubscription, error } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          subscription_plans (*)
+        `)
+        .eq('id', subscription.id)
+        .single()
+
+      console.log('🟡 Subscription refresh result:', { error, data: updatedSubscription })
+
+      if (!error && updatedSubscription) {
+        console.log('🟡 Updated subscription data:', {
+          weekly_credits_used: updatedSubscription.weekly_credits_used,
+          credits_remaining: updatedSubscription.credits_remaining,
+          credits_used: updatedSubscription.credits_used
+        })
+        setSubscription(updatedSubscription)
+      } else {
+        console.error('Error refreshing subscription:', error)
+      }
+    } catch (error) {
+      console.error('Error refreshing subscription:', error)
+    }
+  }
+
+  // Check personal training status
+  useEffect(() => {
+    const checkPersonalTrainingStatus = async () => {
+      try {
+        const hasOnlyPT = await bookingService.hasOnlyPersonalTraining()
+        setHasOnlyPersonalTraining(hasOnlyPT)
+      } catch (error) {
+        console.error('Error checking personal training status:', error)
+      }
+    }
+    checkPersonalTrainingStatus()
+  }, [])
 
   // Calculate 7 consecutive days starting from next available class
   const [weekStartDate, setWeekStartDate] = useState<Date>(new Date())
@@ -177,173 +267,76 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
     try {
       setLoading(true)
 
-      // Check credits/limits before proceeding
-      if (!subscription) {
-        toast.error('Aucun abonnement valide trouvé')
-        return
-      }
-
-      const planType = subscription.subscription_plans?.type ||
-                      'carnet'
-
-      // Check if user has available credits/limits
-      if (planType === 'abonnement') {
-        const weeklyLimit = subscription.subscription_plans.weekly_limit || 0
-        if (subscription.weekly_credits_used >= weeklyLimit) {
-          toast.error('Limite hebdomadaire atteinte', {
-            description: 'Vous avez utilisé tous vos cours pour cette semaine. La limite se réinitialise chaque semaine.'
-          })
-          return
-        }
-      } else {
-        // Personal training or carnet
-        if (subscription.credits_remaining <= 0) {
-          toast.error('Plus de crédits disponibles', {
-            description: 'Contactez-nous pour renouveler votre abonnement ou acheter de nouveaux crédits.',
-            action: {
-              label: 'Contacter',
-              onClick: () => window.open('tel:0663235797')
-            }
-          })
-          return
-        }
-      }
-
-      // Step 1: Check if user already has a booking (any status to avoid unique constraint violation)
-      const { data: existingBookings } = await supabase
-        .from('class_bookings')
-        .select('id, status')
-        .eq('user_id', user.id)
-        .eq('schedule_id', event.id)
-
-      const activeBooking = existingBookings?.find(booking =>
-        booking.status === 'confirmed' || booking.status === 'pending'
-      )
-
-      if (activeBooking) {
-        toast.error('Vous avez déjà réservé ce cours')
-        return
-      }
-
-      // Step 2: Check if class is full
-      const { data: currentBookings } = await supabase
-        .from('class_bookings')
-        .select('id')
-        .eq('schedule_id', event.id)
-        .eq('status', 'confirmed')
-
-      if (currentBookings && currentBookings.length >= event.max_capacity) {
-        toast.error('Ce cours est complet', {
-          description: 'Vous pouvez rejoindre la liste d\'attente si disponible.'
+      // Check if user has only personal training subscription
+      if (hasOnlyPersonalTraining) {
+        toast.error('Réservation non disponible', {
+          description: 'Vous ne pouvez pas réserver un cours avec votre abonnement actuel. Merci d\'ajouter un abonnement ou un carnet pour effectuer une réservation.',
+          action: {
+            label: 'Contacter',
+            onClick: () => window.open('tel:0663235797')
+          }
         })
         return
       }
 
-      // Step 3: Create or update booking
-      let newBooking
-      const cancelledBooking = existingBookings?.find(booking => booking.status === 'cancelled')
+      // Use the new booking service
+      const result = await bookingService.bookClass({ scheduleId: event.id })
 
-      if (cancelledBooking) {
-        // Update existing cancelled booking
-        const { data, error: bookingError } = await supabase
-          .from('class_bookings')
-          .update({
-            status: 'confirmed',
-            subscription_id: subscription?.id,
-            cancelled_at: null,
-            booked_at: new Date().toISOString()
-          })
-          .eq('id', cancelledBooking.id)
-          .select()
-          .single()
-
-        if (bookingError) throw bookingError
-        newBooking = data
-      } else {
-        // Create new booking
-        const { data, error: bookingError } = await supabase
-          .from('class_bookings')
-          .insert({
-            user_id: user.id,
-            schedule_id: event.id,
-            subscription_id: subscription?.id,
-            status: 'confirmed'
-          })
-          .select()
-          .single()
-
-        if (bookingError) throw bookingError
-        newBooking = data
-      }
-
-      // Step 4: Update subscription credits
-      if (!subscription?.id) {
-        throw new Error('Aucun abonnement valide trouvé')
-      }
-
-      // Updating credits for subscription
-
-      // Plan type determined for credit update
-
-      let updateData: any = {}
-
-      if (planType === 'abonnement') {
-        updateData.weekly_credits_used = subscription.weekly_credits_used + 1
-        // Abonnement: incrementing weekly_credits_used
-      } else {
-        updateData.credits_remaining = subscription.credits_remaining - 1
-        updateData.credits_used = (subscription.credits_used || 0) + 1
-        // Carnet/PT: decrementing credits_remaining and incrementing credits_used
-      }
-
-      // Prepared update data for subscription
-
-      // Use RPC function to update credits (bypasses RLS policies)
-      const creditsChange = planType === 'abonnement' ? 0 : -1
-      const weeklyCreditsChange = planType === 'abonnement' ? 1 : 0
-      const creditsUsedChange = planType === 'abonnement' ? 0 : 1
-
-      // Using RPC function for credit update
-
-      const { data: updateResult, error: updateError } = await supabase.rpc('update_subscription_credits', {
-        subscription_uuid: subscription.id,
-        credits_change: creditsChange,
-        weekly_credits_change: weeklyCreditsChange,
-        credits_used_change: creditsUsedChange
-      })
-
-      // RPC update completed
-
-      if (updateError) {
-        console.error('Credit update RPC error:', updateError)
-        throw updateError
-      }
-
-      if (!updateResult?.success) {
-        throw new Error(updateResult?.message || 'Échec de la mise à jour des crédits')
-      }
-
-      // Credits updated successfully
-
-      // Update local state with values from RPC response
-      if (updateResult.subscription) {
-        const newSubscriptionData = {
-          ...subscription,
-          credits_remaining: updateResult.subscription.credits_remaining,
-          weekly_credits_used: updateResult.subscription.weekly_credits_used,
-          credits_used: updateResult.subscription.credits_used
+      if (!result.success) {
+        // Handle specific error cases with appropriate messages
+        switch (result.error) {
+          case 'Vous ne pouvez pas réserver un cours avec votre abonnement actuel. Merci d\'ajouter un abonnement ou un carnet pour effectuer une réservation.':
+            toast.error('Réservation non disponible', {
+              description: result.error,
+              action: {
+                label: 'Contacter',
+                onClick: () => window.open('tel:0663235797')
+              }
+            })
+            break
+          case 'Limite hebdomadaire de séances atteinte':
+            toast.error('Limite hebdomadaire atteinte', {
+              description: 'Vous avez utilisé tous vos cours pour cette semaine. La limite se réinitialise chaque semaine.'
+            })
+            break
+          case 'Plus de crédits disponibles':
+            toast.error('Plus de crédits disponibles', {
+              description: 'Contactez-nous pour renouveler votre abonnement ou acheter de nouveaux crédits.',
+              action: {
+                label: 'Contacter',
+                onClick: () => window.open('tel:0663235797')
+              }
+            })
+            break
+          case 'Le cours est complet':
+            toast.error('Ce cours est complet', {
+              description: 'Vous pouvez rejoindre la liste d\'attente si disponible.'
+            })
+            break
+          case 'Vous avez déjà réservé ce cours':
+            toast.error('Vous avez déjà réservé ce cours')
+            break
+          default:
+            toast.error('Erreur lors de la réservation', {
+              description: result.error || 'Une erreur inattendue s\'est produite'
+            })
         }
-        setSubscription(newSubscriptionData)
-        console.log('Updated local subscription state:', newSubscriptionData)
+        return
       }
 
       // Refresh events to show updated booking status
       await fetchEvents()
 
+      // Refresh subscription data to show updated credits
+      await refreshSubscriptionData()
+
       // Show success message
       toast.success('Cours réservé avec succès!', {
         description: `Votre cours "${event.title}" a été réservé.`
       })
+
+      // Trigger confetti celebration
+      triggerConfetti()
 
     } catch (err: any) {
       console.error('Booking error:', err)
@@ -357,17 +350,35 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
 
   const handleJoinWaitlist = async (event: ClassEvent) => {
     try {
-      const { data, error } = await supabase.rpc('join_waitlist', {
-        user_uuid: user.id,
-        schedule_uuid: event.id
-      })
+      setLoading(true)
 
-      if (error) throw error
+      // Use the BookingService to handle waitlist joining
+      const result = await bookingService.joinWaitlist({ scheduleId: event.id })
+
+      if (!result.success) {
+        toast.error('Erreur lors de l\'ajout à la liste d\'attente', {
+          description: result.error || 'Une erreur inattendue s\'est produite'
+        })
+        return
+      }
 
       // Refresh events to show updated waitlist status
       await fetchEvents()
+
+      // Refresh subscription data to show updated credits
+      await refreshSubscriptionData()
+
+      toast.success('Ajouté à la liste d\'attente!', {
+        description: 'Vous serez automatiquement inscrit si une place se libère.'
+      })
+
     } catch (err: any) {
-      setError(err.message)
+      console.error('Waitlist join error:', err)
+      toast.error('Erreur lors de l\'ajout à la liste d\'attente', {
+        description: err.message || 'Une erreur inattendue s\'est produite'
+      })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -396,47 +407,29 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
     try {
       setLoading(true)
 
-      // Step 1: Cancel the booking
-      const { error: cancelError } = await supabase
-        .from('class_bookings')
-        .update({
-          status: 'cancelled',
-          cancelled_at: new Date().toISOString()
+      // Use the BookingService to handle cancellation and credit refund
+      const result = await bookingService.cancelBooking(event.user_booking.id)
+
+      if (!result.success) {
+        toast.error('Erreur lors de l\'annulation', {
+          description: result.error || 'Une erreur inattendue s\'est produite'
         })
-        .eq('id', event.user_booking.id)
-
-      if (cancelError) throw cancelError
-
-      // Step 2: Refund credits
-      if (subscription) {
-        let updateData: any = {}
-
-        if (subscription.subscription_plans.type === 'abonnement') {
-          updateData.weekly_credits_used = Math.max(0, subscription.weekly_credits_used - 1)
-        } else {
-          updateData.credits_remaining = subscription.credits_remaining + 1
-          updateData.credits_used = Math.max(0, (subscription.credits_used || 0) - 1)
-        }
-
-        const { error: updateError } = await supabase
-          .from('user_subscriptions')
-          .update(updateData)
-          .eq('id', subscription.id)
-
-        if (updateError) throw updateError
-
-        // Update local state
-        setSubscription({
-          ...subscription,
-          ...updateData
-        })
+        return
       }
 
-      // Refresh events
+      // Refresh events and subscription data
       await fetchEvents()
-      setError('')
+      await refreshSubscriptionData()
+
+      toast.success('Cours annulé avec succès!', {
+        description: `Votre réservation pour "${event.title}" a été annulée et vos crédits ont été remboursés.`
+      })
+
     } catch (err: any) {
-      setError(err.message)
+      console.error('Cancellation error:', err)
+      toast.error('Erreur lors de l\'annulation', {
+        description: err.message || 'Une erreur inattendue s\'est produite'
+      })
     } finally {
       setLoading(false)
     }
@@ -603,7 +596,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
       )
     }
     
-    const isContacted = subscriptionRequest?.status === 'contacted'
+    // Remove subscription request logic since we no longer use subscription_requests table
     
     return (
       <div className="min-h-screen bg-background p-6">
@@ -619,13 +612,10 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
             <IconAlertTriangle className="h-4 w-4" />
             <AlertDescription>
               <div className="font-medium mb-2">
-                {isContacted ? 'Paiement en attente' : 'Compte en attente de validation'}
+                Compte en attente de validation
               </div>
               <p className="text-sm">
-                {isContacted 
-                  ? 'Un administrateur vous a contacté. Effectuez le paiement pour activer votre abonnement et commencer à réserver des cours.'
-                  : 'Votre compte doit être validé par un administrateur après paiement pour pouvoir réserver des cours. Vous serez contacté sous peu.'
-                }
+                Votre compte doit être validé par un administrateur après paiement pour pouvoir réserver des cours. Vous serez contacté sous peu.
               </p>
             </AlertDescription>
           </Alert>
@@ -815,7 +805,7 @@ export function UserCalendarView({ user, subscription: initialSubscription, subs
                                               size="sm"
                                               className="w-full text-xs h-6"
                                             >
-                                              Liste d'attente
+                                              Rejoindre liste d'attente
                                             </Button>
                                           ) : isPast(new Date(event.start_datetime)) ? (
                                             <Badge variant="secondary" className="text-xs w-full justify-center">Commencé</Badge>

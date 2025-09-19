@@ -90,7 +90,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-background text-foreground">
 
       {/* Hero Section */}
-      <section className="relative min-h-[120vh] flex items-center overflow-hidden py-16 lg:py-24" id="presentation-studio">
+      <section className="relative min-h-[120vh] flex items-center overflow-hidden py-8 lg:py-12" id="presentation-studio">
         {/* Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/70 to-background/95" />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-muted/10 to-primary/5" />
@@ -199,7 +199,7 @@ export default function HomePage() {
       </section>
 
       {/* Studio Presentation */}
-      <section className="py-16 lg:py-24 mt-8 lg:mt-12">
+      <section className="py-16 lg:py-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             {/* Image */}

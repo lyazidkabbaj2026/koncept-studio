@@ -25,14 +25,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { IconCalendar, IconUsers, IconSettings, IconHome, IconLogout, IconBarbell, IconCalendarEvent, IconCreditCard, IconCalendarStats, IconX, IconClock, IconBrandWhatsapp } from '@tabler/icons-react'
-import { SidebarThemeToggle } from '@/components/theme-toggle'
+import { IconCalendar, IconUsers, IconSettings, IconLogout, IconBarbell, IconCalendarEvent, IconCreditCard, IconCalendarStats, IconX, IconClock, IconBrandWhatsapp, IconSun, IconMoon } from '@tabler/icons-react'
+import { useTheme } from 'next-themes'
+import { Badge } from '@/components/ui/badge'
 
 const navigation = [
   {
-    title: 'Tableau de bord',
-    href: '/admin',
-    icon: IconHome,
+    title: 'Utilisateurs',
+    href: '/admin/users',
+    icon: IconUsers,
   },
   {
     title: 'Cours',
@@ -48,11 +49,6 @@ const navigation = [
     title: 'Forfaits',
     href: '/admin/subscription-plans',
     icon: IconCreditCard,
-  },
-  {
-    title: 'Utilisateurs',
-    href: '/admin/users',
-    icon: IconUsers,
   },
   {
     title: 'Réservations',
@@ -95,7 +91,14 @@ interface UserProfile {
 export function AdminSidebar() {
   const pathname = usePathname()
   const [user, setUser] = useState<UserProfile | null>(null)
+  const [pendingUsersCount, setPendingUsersCount] = useState<number>(0)
+  const [mounted, setMounted] = useState(false)
+  const { theme, setTheme } = useTheme()
   const supabase = createClient()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const getUser = async () => {
@@ -114,12 +117,42 @@ export function AdminSidebar() {
       }
     }
 
+    const getPendingUsersCount = async () => {
+      const { count } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('subscription_status', 'pending')
+
+      setPendingUsersCount(count || 0)
+    }
+
     getUser()
+    getPendingUsersCount()
+
+    // Set up real-time subscription for pending users count
+    const channel = supabase
+      .channel('pending-users-count')
+      .on('postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: 'subscription_status=eq.pending'
+        },
+        () => {
+          getPendingUsersCount()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [supabase])
 
   return (
-    <Sidebar className="border-r">
-      <SidebarHeader className="border-b px-6 py-4">
+    <Sidebar className="border-r h-screen flex flex-col">
+      <SidebarHeader className="border-b px-6 py-4 flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <IconCalendar className="h-4 w-4" />
@@ -130,40 +163,67 @@ export function AdminSidebar() {
           </div>
         </div>
       </SidebarHeader>
-      
-      <SidebarContent className="px-3 py-4">
-        <SidebarMenu>
-          {navigation.slice(0, -1).map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild isActive={pathname === item.href}>
-                <Link href={item.href} className="flex items-center gap-3 px-3 py-2">
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
 
-          <SidebarSeparator className="-mx-3 w-auto my-2" />
+      <SidebarContent className="flex-1 flex flex-col px-3 py-4 overflow-hidden">
+        <div className="flex flex-col flex-1">
+          <SidebarMenu className="space-y-1 flex-1">
+            {navigation.slice(0, -1).map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild isActive={pathname === item.href}>
+                  <Link href={item.href} className="flex items-center gap-4 px-4 py-3 text-base">
+                    <item.icon className="h-5 w-5" />
+                    <span className="flex-1 font-medium">{item.title}</span>
+                    {item.title === 'Utilisateurs' && pendingUsersCount > 0 && (
+                      <Badge variant="secondary" className="ml-auto text-xs">
+                        {pendingUsersCount}
+                      </Badge>
+                    )}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
 
-          {navigation.slice(-1).map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild isActive={pathname === item.href}>
-                <Link href={item.href} className="flex items-center gap-3 px-3 py-2">
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          <div className="mt-auto">
+            <SidebarSeparator className="-mx-3 w-auto mb-3" />
 
-          <SidebarMenuItem>
-            <SidebarThemeToggle />
-          </SidebarMenuItem>
-        </SidebarMenu>
+            <SidebarMenu className="space-y-1">
+              {navigation.slice(-1).map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={pathname === item.href}>
+                    <Link href={item.href} className="flex items-center gap-4 px-4 py-3 text-base">
+                      <item.icon className="h-5 w-5" />
+                      <span className="font-medium">{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <button
+                    onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                    className="flex items-center gap-4 px-4 py-3 text-base w-full text-left hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
+                  >
+                    {!mounted ? (
+                      <div className="h-5 w-5" />
+                    ) : theme === "light" ? (
+                      <IconSun className="h-5 w-5" />
+                    ) : (
+                      <IconMoon className="h-5 w-5" />
+                    )}
+                    <span className="font-medium">
+                      {!mounted ? "Thème" : theme === "light" ? "Thème clair" : "Thème sombre"}
+                    </span>
+                  </button>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </div>
+        </div>
       </SidebarContent>
-      
-      <SidebarFooter className="border-t px-3 py-4">
+
+      <SidebarFooter className="border-t px-3 py-4 flex-shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="w-full justify-start h-12 px-3">

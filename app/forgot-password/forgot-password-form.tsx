@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { validateInput, emailSchema } from '@/lib/validation'
 import { MESSAGES } from '@/constants'
+import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState('')
@@ -59,45 +60,61 @@ export default function ForgotPasswordForm() {
 
   if (sent) {
     return (
-      <div className="text-center space-y-4">
-        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-          <svg
-            className="w-8 h-8 text-foreground"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-foreground">Email envoyé !</h3>
-          <p className="text-muted-foreground mt-2">
-            Si un compte existe avec cette adresse email, vous recevrez un lien de réinitialisation sous peu.
-          </p>
-          <p className="text-sm text-muted-foreground mt-4">
+      <>
+        <CardHeader className="text-center space-y-4 pb-8">
+          <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center shadow-soft">
+            <svg
+              className="w-8 h-8 text-foreground"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+          <div>
+            <CardTitle className="text-3xl font-bold text-gradient mb-2">Email envoyé !</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Si un compte existe avec cette adresse email, vous recevrez un lien de réinitialisation sous peu.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <div className="text-center space-y-4">
+          <p className="text-sm text-muted-foreground">
             Vérifiez également vos spams si vous ne recevez rien.
           </p>
+          <Button
+            onClick={() => router.push('/login')}
+            className="w-full h-12 shadow-soft hover:shadow-brutal transition-all font-semibold"
+            size="lg"
+          >
+            Retour à la connexion
+          </Button>
         </div>
-        <Button
-          onClick={() => router.push('/login')}
-          className="w-full h-12 shadow-soft hover:shadow-brutal transition-all font-semibold"
-          size="lg"
-        >
-          Retour à la connexion
-        </Button>
-      </div>
+      </>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="space-y-6">
+    <>
+      <CardHeader className="text-center space-y-4 pb-8">
+        <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-soft">
+          <div className="w-8 h-8 bg-primary-foreground rounded-lg"></div>
+        </div>
+        <div>
+          <CardTitle className="text-3xl font-bold text-gradient mb-2">Mot de passe oublié</CardTitle>
+          <CardDescription className="text-muted-foreground">
+            Saisissez votre email pour recevoir un lien de réinitialisation
+          </CardDescription>
+        </div>
+      </CardHeader>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="space-y-6">
         <div className="space-y-3">
           <Label htmlFor="email" className="text-sm font-medium">
             Adresse email
@@ -132,6 +149,7 @@ export default function ForgotPasswordForm() {
           </p>
         </div>
       </div>
-    </form>
+      </form>
+    </>
   )
 }

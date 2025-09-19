@@ -185,12 +185,12 @@ export default function WhatsAppLogsPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
-              <IconCircleX className="h-4 w-4 text-destructive" />
+              <IconCircleX className="h-4 w-4 text-foreground" />
               Échecs
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{stats.failed}</div>
+            <div className="text-2xl font-bold text-foreground">{stats.failed}</div>
             <p className="text-xs text-muted-foreground">
               {stats.total > 0 ? Math.round((stats.failed / stats.total) * 100) : 0}% du total
             </p>

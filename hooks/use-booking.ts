@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { APP_CONFIG } from '@/constants/config'
+import confetti from 'canvas-confetti'
 
 interface UseBookingProps {
   subscription: any
@@ -21,6 +22,39 @@ export function useBooking({
   const [isBooking, setIsBooking] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
   const supabase = createClient()
+
+  const triggerConfetti = () => {
+    // Create a celebration confetti effect
+    const duration = 3000
+    const animationEnd = Date.now() + duration
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
+
+    function randomInRange(min: number, max: number) {
+      return Math.random() * (max - min) + min
+    }
+
+    const interval = setInterval(function() {
+      const timeLeft = animationEnd - Date.now()
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval)
+      }
+
+      const particleCount = 50 * (timeLeft / duration)
+
+      // From left
+      confetti(Object.assign({}, defaults, {
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+      }))
+
+      // From right
+      confetti(Object.assign({}, defaults, {
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+      }))
+    }, 250)
+  }
 
   const canBook = (event: any): { canBook: boolean; reason?: string } => {
     if (!subscription?.id) {
@@ -75,6 +109,7 @@ export function useBooking({
       }
 
       toast.success('Classe réservée avec succès!')
+      triggerConfetti()
       onBookingSuccess?.()
       return true
     } catch (error: any) {

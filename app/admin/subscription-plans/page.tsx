@@ -40,7 +40,6 @@ interface SubscriptionPlan {
   credits: number
   price_dhs: number
   validity_months: number
-  validity_days?: number | null
   weekly_limit?: number | null
   created_at: string
   updated_at: string
@@ -62,7 +61,6 @@ export default function SubscriptionPlansPage() {
     credits: '',
     price_dhs: '',
     validity_months: '',
-    validity_days: '',
     weekly_limit: ''
   })
 
@@ -93,6 +91,15 @@ export default function SubscriptionPlansPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Clear irrelevant fields when subscription type changes
+  useEffect(() => {
+    if (formData.type === 'abonnement') {
+      setFormData(prev => ({ ...prev, credits: '' }))
+    } else {
+      setFormData(prev => ({ ...prev, weekly_limit: '' }))
+    }
+  }, [formData.type])
+
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
@@ -104,7 +111,6 @@ export default function SubscriptionPlansPage() {
       credits: '',
       price_dhs: '',
       validity_months: '',
-      validity_days: '',
       weekly_limit: ''
     })
     setEditingPlan(null)
@@ -118,7 +124,6 @@ export default function SubscriptionPlansPage() {
       credits: plan.credits.toString(),
       price_dhs: plan.price_dhs.toString(),
       validity_months: plan.validity_months.toString(),
-      validity_days: plan.validity_days?.toString() || '',
       weekly_limit: plan.weekly_limit?.toString() || ''
     })
     setShowForm(true)
@@ -129,14 +134,26 @@ export default function SubscriptionPlansPage() {
     setLoading(true)
     setError('')
 
+    // Validate required fields based on subscription type
+    if (formData.type !== 'abonnement' && !formData.credits) {
+      setError('Le nombre de crédits est requis pour ce type d\'abonnement')
+      setLoading(false)
+      return
+    }
+
+    if (formData.type === 'abonnement' && !formData.weekly_limit) {
+      setError('La limite hebdomadaire est requise pour les abonnements')
+      setLoading(false)
+      return
+    }
+
     const planData = {
       name: formData.name,
       type: formData.type,
-      credits: parseInt(formData.credits),
+      credits: formData.type !== 'abonnement' ? parseInt(formData.credits) : 0,
       price_dhs: parseInt(formData.price_dhs),
       validity_months: parseInt(formData.validity_months),
-      validity_days: formData.validity_days ? parseInt(formData.validity_days) : null,
-      weekly_limit: formData.weekly_limit ? parseInt(formData.weekly_limit) : null
+      weekly_limit: formData.type === 'abonnement' ? parseInt(formData.weekly_limit) : null
     }
 
     try {
@@ -284,18 +301,7 @@ export default function SubscriptionPlansPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="credits">Crédits</Label>
-                  <Input
-                    id="credits"
-                    type="number"
-                    value={formData.credits}
-                    onChange={(e) => handleInputChange('credits', e.target.value)}
-                    required
-                  />
-                </div>
-
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price_dhs">Prix (DHS)</Label>
                   <Input
@@ -319,18 +325,21 @@ export default function SubscriptionPlansPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* Dynamic fields based on subscription type */}
+              {formData.type !== 'abonnement' && (
                 <div className="space-y-2">
-                  <Label htmlFor="validity_days">Validité (jours)</Label>
+                  <Label htmlFor="credits">Crédits</Label>
                   <Input
-                    id="validity_days"
+                    id="credits"
                     type="number"
-                    value={formData.validity_days}
-                    onChange={(e) => handleInputChange('validity_days', e.target.value)}
-                    placeholder="Validité en jours (optionnel)"
+                    value={formData.credits}
+                    onChange={(e) => handleInputChange('credits', e.target.value)}
+                    required
                   />
                 </div>
+              )}
 
+              {formData.type === 'abonnement' && (
                 <div className="space-y-2">
                   <Label htmlFor="weekly_limit">Limite Hebdomadaire</Label>
                   <Input
@@ -338,10 +347,11 @@ export default function SubscriptionPlansPage() {
                     type="number"
                     value={formData.weekly_limit}
                     onChange={(e) => handleInputChange('weekly_limit', e.target.value)}
-                    placeholder="Séances par semaine (optionnel)"
+                    placeholder="Séances par semaine"
+                    required
                   />
                 </div>
-              </div>
+              )}
 
 
               {error && (
@@ -416,7 +426,7 @@ export default function SubscriptionPlansPage() {
                     </TableCell>
                     <TableCell>
                       <span className="font-medium">
-                        {plan.validity_days ? `${plan.validity_days} jours` : `${plan.validity_months} mois`}
+                        {plan.validity_months} mois
                       </span>
                     </TableCell>
                     <TableCell>

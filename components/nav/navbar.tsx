@@ -16,15 +16,115 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 export default function Navbar() {
   const { user, signOut, loading } = useAuth()
   const { subscription } = useSubscription()
   const pathname = usePathname()
   const router = useRouter()
+  const [hasOnlineSubscription, setHasOnlineSubscription] = useState(false)
+  const [hasAnyValidSubscription, setHasAnyValidSubscription] = useState(false)
+  const [checkingSubscriptions, setCheckingSubscriptions] = useState(true)
+  const [activeSection, setActiveSection] = useState('')
+  const supabase = createClient()
 
-  // Show loading state while determining auth status
-  if (loading) {
+  // Check if user has any online-eligible subscriptions (abonnement or carnet)
+  useEffect(() => {
+    const checkOnlineSubscriptions = async () => {
+      if (!user) {
+        setHasOnlineSubscription(false)
+        setHasAnyValidSubscription(false)
+        setCheckingSubscriptions(false)
+        return
+      }
+
+      try {
+        const { data: subscriptions, error } = await supabase
+          .from('user_subscriptions')
+          .select(`
+            *,
+            subscription_plans (
+              type
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .gte('end_date', new Date().toISOString())
+
+        if (error) {
+          console.error('Error checking subscriptions:', error)
+          setHasOnlineSubscription(false)
+          setHasAnyValidSubscription(false)
+          return
+        }
+
+        // Check if user has any abonnement or carnet subscriptions (for online booking)
+        const hasOnlineEligible = subscriptions?.some(sub =>
+          sub.subscription_plans?.type &&
+          ['abonnement', 'carnet'].includes(sub.subscription_plans.type)
+        ) || false
+
+        // Check if user has any valid subscription (including personal_training)
+        const hasAnyValid = subscriptions?.some(sub =>
+          sub.subscription_plans?.type &&
+          ['abonnement', 'carnet', 'personal_training'].includes(sub.subscription_plans.type)
+        ) || false
+
+        setHasOnlineSubscription(hasOnlineEligible)
+        setHasAnyValidSubscription(hasAnyValid)
+      } catch (error) {
+        console.error('Error checking online subscriptions:', error)
+        setHasOnlineSubscription(false)
+        setHasAnyValidSubscription(false)
+      } finally {
+        setCheckingSubscriptions(false)
+      }
+    }
+
+    checkOnlineSubscriptions()
+  }, [user, supabase])
+
+  // Check if we're on the home page (anonymous public page)
+  const isHomePage = pathname === '/'
+  // Check if we're on espace pages
+  const isEspacePage = pathname.startsWith('/espace')
+
+  // Scroll detection for active section highlighting
+  useEffect(() => {
+    if (!isHomePage) return
+
+    const handleScroll = () => {
+      const sections = ['presentation-studio', 'presentation-coach', 'faq', 'contact']
+      const scrollPosition = window.scrollY + 100 // Offset for navbar height
+
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const section = document.getElementById(sections[i])
+        if (section) {
+          const offsetTop = section.offsetTop
+          if (scrollPosition >= offsetTop) {
+            setActiveSection(sections[i])
+            break
+          }
+        }
+      }
+
+      // If we're at the very top, set studio as active
+      if (window.scrollY < 50) {
+        setActiveSection('presentation-studio')
+      }
+    }
+
+    // Set initial active section
+    handleScroll()
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [isHomePage])
+
+  // Show loading state while determining auth status or checking subscriptions
+  if (loading || (user && checkingSubscriptions)) {
     return (
       <nav className="bg-background/95 backdrop-blur-md border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-4">
@@ -51,11 +151,6 @@ export default function Navbar() {
     subscription_status: subscription?.status || 'pending'
   }
 
-  // Check if we're on the home page (anonymous public page)
-  const isHomePage = pathname === '/'
-  // Check if we're on espace pages
-  const isEspacePage = pathname.startsWith('/espace')
-
   const handleLogout = async () => {
     try {
       await signOut()
@@ -70,7 +165,7 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-18 lg:h-20 pt-2 md:pt-0">
+        <div className="flex justify-between items-center h-18 lg:h-20 pt-2 md:pt-0 pb-2 md:pb-0">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="group flex items-center space-x-2">
@@ -89,32 +184,48 @@ export default function Navbar() {
               <>
                 <Link
                   href="/#presentation-studio"
-                  className="px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                  className={`px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium rounded-lg transition-all ${
+                    activeSection === 'presentation-studio'
+                      ? 'text-primary bg-primary/5'
+                      : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                  }`}
                 >
                   Studio
                 </Link>
                 <Link
                   href="/#presentation-coach"
-                  className="px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                  className={`px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium rounded-lg transition-all ${
+                    activeSection === 'presentation-coach'
+                      ? 'text-primary bg-primary/5'
+                      : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                  }`}
                 >
                   Coach
                 </Link>
                 <Link
                   href="/#faq"
-                  className="px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                  className={`px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium rounded-lg transition-all ${
+                    activeSection === 'faq'
+                      ? 'text-primary bg-primary/5'
+                      : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                  }`}
                 >
                   FAQ
                 </Link>
                 <Link
                   href="/#contact"
-                  className="px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                  className={`px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium rounded-lg transition-all ${
+                    activeSection === 'contact'
+                      ? 'text-primary bg-primary/5'
+                      : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                  }`}
                 >
                   Contact
                 </Link>
               </>
             )}
 
-            {user && profile.subscription_status === 'active' && isEspacePage && (
+            {user && hasAnyValidSubscription && isEspacePage && (
               <>
                 <Link
                   href="/espace/planning"
@@ -209,25 +320,41 @@ export default function Navbar() {
             <div className="grid grid-cols-4 gap-2 py-3 px-4">
               <Link
                 href="/#presentation-studio"
-                className="text-sm font-semibold hover:text-primary transition-colors text-center py-3 px-2 rounded-md hover:bg-primary/5"
+                className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
+                  activeSection === 'presentation-studio'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                }`}
               >
                 Studio
               </Link>
               <Link
                 href="/#presentation-coach"
-                className="text-sm font-semibold hover:text-primary transition-colors text-center py-3 px-2 rounded-md hover:bg-primary/5"
+                className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
+                  activeSection === 'presentation-coach'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                }`}
               >
                 Coach
               </Link>
               <Link
                 href="/#faq"
-                className="text-sm font-semibold hover:text-primary transition-colors text-center py-3 px-2 rounded-md hover:bg-primary/5"
+                className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
+                  activeSection === 'faq'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                }`}
               >
                 FAQ
               </Link>
               <Link
                 href="/#contact"
-                className="text-sm font-semibold hover:text-primary transition-colors text-center py-3 px-2 rounded-md hover:bg-primary/5"
+                className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
+                  activeSection === 'contact'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                }`}
               >
                 Contact
               </Link>
@@ -235,7 +362,7 @@ export default function Navbar() {
           </div>
         )}
 
-        {user && profile.subscription_status === 'active' && isEspacePage && (
+        {user && hasAnyValidSubscription && isEspacePage && (
           <div className="md:hidden border-t border-border mt-3">
             <div className="grid grid-cols-3 gap-2 py-3 px-4">
               <Link

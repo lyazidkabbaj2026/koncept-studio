@@ -54,7 +54,12 @@ export default function ResetPasswordForm() {
       })
 
       if (error) {
-        toast.error(error.message || 'Une erreur est survenue')
+        // Translate specific error messages
+        let errorMessage = error.message || 'Une erreur est survenue'
+        if (errorMessage.includes('New password should be different from the old password')) {
+          errorMessage = 'Le nouveau mot de passe doit être différent de l\'ancien mot de passe.'
+        }
+        toast.error(errorMessage)
         return
       }
 

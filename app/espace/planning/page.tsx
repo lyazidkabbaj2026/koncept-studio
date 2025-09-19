@@ -44,29 +44,10 @@ export default async function UserPlanningPage() {
 
   const subscription = subscriptionData
 
-  // Get subscription requests if no active subscription (fallback query)
-  let subscriptionRequest = null
-  if (!subscription) {
-    const { data } = await supabase
-      .from('subscription_requests')
-      .select(`
-        id,
-        status,
-        subscription_plans(name)
-      `)
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    subscriptionRequest = data
-  }
-
   return (
     <UserCalendarView
       user={profile}
       subscription={subscription}
-      subscriptionRequest={subscriptionRequest}
     />
   )
 }

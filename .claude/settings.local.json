@@ -14,7 +14,9 @@
       "Bash(npm run type-check:*)",
       "Bash(npm run build:*)",
       "Bash(git push:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(cat:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
