@@ -103,8 +103,12 @@ export default function ForgotPasswordForm() {
   return (
     <>
       <CardHeader className="text-center space-y-4 pb-8">
-        <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-soft">
-          <div className="w-8 h-8 bg-primary-foreground rounded-lg"></div>
+        <div className="mx-auto w-16 h-16 flex items-center justify-center">
+          <img
+            src="/images/logo.svg"
+            alt="Koncept Studio Logo"
+            className="w-16 h-16 dark:invert"
+          />
         </div>
         <div>
           <CardTitle className="text-3xl font-bold text-gradient mb-2">Mot de passe oublié</CardTitle>

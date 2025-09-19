@@ -169,10 +169,12 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="group flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 bg-primary-foreground rounded-sm"></div>
-              </div>
-              <span className="text-xl lg:text-2xl font-bold text-gradient group-hover:scale-102 transition-transform">
+              <img
+                src="/images/logo.svg"
+                alt="Koncept Studio Logo"
+                className="w-8 h-8 dark:invert"
+              />
+              <span className="text-xl lg:text-2xl font-bold group-hover:scale-102 transition-transform">
                 Koncept Studio
               </span>
             </Link>

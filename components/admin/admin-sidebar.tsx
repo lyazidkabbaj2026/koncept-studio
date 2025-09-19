@@ -154,9 +154,11 @@ export function AdminSidebar() {
     <Sidebar className="border-r h-screen flex flex-col">
       <SidebarHeader className="border-b px-6 py-4 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <IconCalendar className="h-4 w-4" />
-          </div>
+          <img
+            src="/images/logo.svg"
+            alt="Koncept Studio Logo"
+            className="h-8 w-8 dark:invert"
+          />
           <div className="flex flex-col">
             <span className="text-sm font-semibold">Koncept Studio</span>
             <span className="text-xs text-muted-foreground">Administration</span>

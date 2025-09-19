@@ -17,6 +17,16 @@ const ibmPlexSans = IBM_Plex_Sans({
 export const metadata: Metadata = {
   title: "Koncept Studio",
   description: "Réservez vos cours de fitness en ligne",
+  icons: {
+    icon: [
+      {
+        url: '/images/logo.svg',
+        type: 'image/svg+xml',
+      }
+    ],
+    shortcut: '/images/logo.svg',
+    apple: '/images/logo.svg',
+  },
 };
 
 export default async function RootLayout({
