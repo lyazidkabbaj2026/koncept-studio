@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import ErrorBoundary from "@/components/error-boundary";
 import { Toaster } from "sonner";
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { BackToTop } from "@/components/ui/back-to-top";
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -71,6 +72,7 @@ export default async function RootLayout({
             theme="system"
           />
         </ThemeProvider>
+        <BackToTop />
         <SpeedInsights />
       </body>
     </html>
