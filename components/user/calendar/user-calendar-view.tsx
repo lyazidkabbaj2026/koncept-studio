@@ -584,10 +584,10 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
             <Alert className="mb-6">
               <IconAlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                <div className="font-medium mb-2">Configuration en cours</div>
+                <div className="font-medium mb-2">Aucun abonnement actif</div>
                 <p className="text-sm">
-                  Votre compte est activé mais votre abonnement est en cours de configuration. 
-                  Veuillez contacter l'administration pour finaliser la configuration.
+                  Vous n'avez actuellement aucun abonnement actif.
+                  Veuillez contacter l'administration pour renouveler votre abonnement ou en souscrire un nouveau.
                 </p>
               </AlertDescription>
             </Alert>
