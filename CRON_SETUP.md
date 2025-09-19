@@ -2,7 +2,7 @@
 
 This document explains how to set up automated maintenance tasks:
 1. **Waitlist Cleanup**: Expired waitlist entries cleanup daily at 17:59 UTC
-2. **Subscription Expiration**: Automatic subscription status updates daily at 23:59 UTC
+2. **Subscription Expiration**: Automatic subscription status updates daily at 00:00 UTC
 
 ## Option 1: Vercel Cron Jobs (Recommended)
 
@@ -16,7 +16,7 @@ This document explains how to set up automated maintenance tasks:
     },
     {
       "path": "/api/cron/expire-subscriptions",
-      "schedule": "59 23 * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
@@ -25,7 +25,7 @@ This document explains how to set up automated maintenance tasks:
 ### Step 2: Deploy to Vercel
 The cron jobs will automatically run:
 - **Waitlist cleanup**: Daily at 17:59 UTC
-- **Subscription expiration**: Daily at 23:59 UTC
+- **Subscription expiration**: Daily at 00:00 UTC
 
 ### Step 3: Test manually
 - Waitlist cleanup: `https://your-domain.com/api/cron/cleanup-waitlist`
@@ -42,7 +42,7 @@ The cron jobs will automatically run:
 1. Create account with cron service
 2. Set up two cron jobs:
    - **Waitlist cleanup**: URL `https://your-domain.com/api/cron/cleanup-waitlist`, schedule `59 17 * * *`
-   - **Subscription expiration**: URL `https://your-domain.com/api/cron/expire-subscriptions`, schedule `59 23 * * *`
+   - **Subscription expiration**: URL `https://your-domain.com/api/cron/expire-subscriptions`, schedule `0 0 * * *`
 3. Set method: POST or GET
 
 ## Option 3: Supabase pg_cron (Advanced)
@@ -132,7 +132,7 @@ Use **Vercel Cron Jobs** (Option 1) as it's:
   3. Remove expired waitlist entries
   4. Log cleanup results
 
-### 🕚 Subscription Expiration (23:59 UTC daily)
+### 🕛 Subscription Expiration (00:00 UTC daily)
 - **Endpoint**: `/api/cron/expire-subscriptions`
 - **Purpose**: Automatically expire subscriptions based on business rules
 - **Logic**:
