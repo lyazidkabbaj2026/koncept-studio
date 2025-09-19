@@ -39,7 +39,7 @@ import {
   IconCreditCard,
   IconUserPlus
 } from '@tabler/icons-react'
-
+import { LocalBusinessJsonLd, FAQJsonLd, OrganizationJsonLd } from '@/components/seo/json-ld'
 
 
 const faqs = [
@@ -88,6 +88,10 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* SEO Structured Data */}
+      <LocalBusinessJsonLd />
+      <OrganizationJsonLd />
+      <FAQJsonLd faqs={faqs} />
 
       {/* Hero Section */}
       <section className="relative min-h-[120vh] flex items-center overflow-hidden py-8 lg:py-12" id="presentation-studio">
@@ -180,6 +184,8 @@ export default function HomePage() {
                     alt="Intérieur du studio K-ONCEPT - Espace d'entraînement moderne"
                     fill
                     className="object-cover"
+                    priority
+                    sizes="(max-width: 768px) 100vw, 50vw"
                   />
                 </div>
               </div>
@@ -210,6 +216,8 @@ export default function HomePage() {
                   alt="Koncept Studio - Espace d'entraînement moderne et équipé"
                   fill
                   className="object-cover rounded-3xl"
+                  loading="lazy"
+                  sizes="(max-width: 768px) 100vw, 50vw"
                 />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-background/20 via-transparent to-transparent rounded-3xl" />
@@ -324,6 +332,8 @@ export default function HomePage() {
                     alt="Coach K - Portrait professionnel"
                     fill
                     className="object-cover"
+                    loading="lazy"
+                    sizes="(max-width: 768px) 50vw, 25vw"
                   />
                 </div>
                 <Card className="p-6">
@@ -346,6 +356,8 @@ export default function HomePage() {
                     alt="Coach K - En action d'entraînement"
                     fill
                     className="object-cover"
+                    loading="lazy"
+                    sizes="(max-width: 768px) 50vw, 25vw"
                   />
                 </div>
               </div>

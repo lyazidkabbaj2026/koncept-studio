@@ -2,6 +2,16 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import SignupForm from './signup-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: "Inscription",
+  description: "Créez votre compte Koncept Studio et commencez votre parcours fitness. Accédez à nos cours de renforcement, cardio, boxing et plus encore.",
+  robots: {
+    index: false,
+    follow: true,
+  },
+}
 
 export default async function SignupPage() {
   const supabase = await createClient()

@@ -16,8 +16,56 @@ const ibmPlexSans = IBM_Plex_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Koncept Studio",
-  description: "Réservez vos cours de fitness en ligne",
+  metadataBase: new URL('https://konceptstudio.ma'),
+  title: {
+    default: "Koncept Studio - Studio de Fitness à Temara",
+    template: "%s | Koncept Studio"
+  },
+  description: "Studio de fitness à Temara spécialisé dans le renforcement, cardio, cardio boxing, mobilité, TRX, cycling, bootcamp et coaching personnalisé. Réservez vos cours en ligne.",
+  keywords: ["fitness", "gym", "studio", "Temara", "Rabat", "musculation", "cardio", "boxing", "TRX", "cycling", "bootcamp", "coaching personnel", "sport", "entraînement"],
+  authors: [{ name: "Koncept Studio" }],
+  creator: "Koncept Studio",
+  publisher: "Koncept Studio",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'fr_FR',
+    url: 'https://konceptstudio.ma',
+    siteName: 'Koncept Studio',
+    title: 'Koncept Studio - Studio de Fitness à Temara',
+    description: 'Studio de fitness à Temara spécialisé dans le renforcement, cardio, cardio boxing, mobilité, TRX, cycling, bootcamp et coaching personnalisé.',
+    images: [
+      {
+        url: '/images/logo.svg',
+        width: 1200,
+        height: 630,
+        alt: 'Koncept Studio - Studio de Fitness à Temara',
+      }
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Koncept Studio - Studio de Fitness à Temara',
+    description: 'Studio de fitness à Temara spécialisé dans le renforcement, cardio, cardio boxing, mobilité, TRX, cycling, bootcamp et coaching personnalisé.',
+    images: ['/images/logo.svg'],
+  },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+  },
+  alternates: {
+    canonical: 'https://konceptstudio.ma',
+  },
+  category: 'fitness',
   icons: {
     icon: [
       {

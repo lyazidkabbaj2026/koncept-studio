@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Block admin and user dashboard pages
+Disallow: /admin/
+Disallow: /espace/
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+
+# Block API routes
+Disallow: /api/
+
+Sitemap: https://konceptstudio.ma/sitemap.xml

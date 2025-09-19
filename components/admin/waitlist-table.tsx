@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/common/data-table'
 import { formatDateTime } from '@/lib/utils/date'
-import { IconUser, IconClock, IconCalendarEvent, IconArrowUp, IconArrowDown, IconCheck, IconX } from '@tabler/icons-react'
+import { IconUser, IconClock, IconCalendarEvent, IconCheck } from '@tabler/icons-react'
 import { promoteFromWaitlist } from '@/app/admin/waitlist/actions'
 import { toast } from 'sonner'
 
@@ -144,41 +144,11 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
           <Button
             size="sm"
             variant="outline"
-            onClick={() => {
-              // TODO: Implement move up functionality
-              console.log('Move up:', entry.id)
-            }}
-          >
-            <IconArrowUp className="w-4 h-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              // TODO: Implement move down functionality
-              console.log('Move down:', entry.id)
-            }}
-          >
-            <IconArrowDown className="w-4 h-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
             onClick={() => handlePromote(entry.id)}
             disabled={promotingId === entry.id}
+            title="Promouvoir depuis la liste d'attente"
           >
             <IconCheck className="w-4 h-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-destructive hover:text-destructive"
-            onClick={() => {
-              // TODO: Implement remove functionality
-              console.log('Remove:', entry.id)
-            }}
-          >
-            <IconX className="w-4 h-4" />
           </Button>
         </div>
       )
