@@ -16,7 +16,7 @@ const ibmPlexSans = IBM_Plex_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://konceptstudio.ma'),
+  metadataBase: new URL('https://k-onceptstudio.com'),
   title: {
     default: "Koncept Studio - Studio de Fitness à Temara",
     template: "%s | Koncept Studio"
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'fr_FR',
-    url: 'https://konceptstudio.ma',
+    url: 'https://k-onceptstudio.com',
     siteName: 'Koncept Studio',
     title: 'Koncept Studio - Studio de Fitness à Temara',
     description: 'Studio de fitness à Temara spécialisé dans le renforcement, cardio, cardio boxing, mobilité, TRX, cycling, bootcamp et coaching personnalisé.',
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     google: process.env.GOOGLE_SITE_VERIFICATION,
   },
   alternates: {
-    canonical: 'https://konceptstudio.ma',
+    canonical: 'https://k-onceptstudio.com',
   },
   category: 'fitness',
   icons: {

@@ -4,15 +4,15 @@ export function LocalBusinessJsonLd() {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    "@id": "https://konceptstudio.ma",
+    "@id": "https://k-onceptstudio.com",
     "name": "Koncept Studio",
     "alternateName": "K-ONCEPT Studio",
     "description": "Studio de fitness à Temara spécialisé dans le renforcement, cardio, cardio boxing, mobilité, TRX, cycling, bootcamp et coaching personnalisé",
-    "url": "https://konceptstudio.ma",
-    "logo": "https://konceptstudio.ma/images/logo.svg",
+    "url": "https://k-onceptstudio.com",
+    "logo": "https://k-onceptstudio.com/images/logo.svg",
     "image": [
-      "https://konceptstudio.ma/images/studio/studio-main.jpg",
-      "https://konceptstudio.ma/images/studio/studio-interior.jpg"
+      "https://k-onceptstudio.com/images/studio/studio-main.jpg",
+      "https://k-onceptstudio.com/images/studio/studio-interior.jpg"
     ],
     "address": {
       "@type": "PostalAddress",
@@ -136,8 +136,8 @@ export function OrganizationJsonLd() {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "Koncept Studio",
-    "url": "https://konceptstudio.ma",
-    "logo": "https://konceptstudio.ma/images/logo.svg",
+    "url": "https://k-onceptstudio.com",
+    "logo": "https://k-onceptstudio.com/images/logo.svg",
     "contactPoint": {
       "@type": "ContactPoint",
       "telephone": APP_CONFIG.CONTACT.PHONE,

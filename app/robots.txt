@@ -12,4 +12,4 @@ Disallow: /reset-password
 # Block API routes
 Disallow: /api/
 
-Sitemap: https://konceptstudio.ma/sitemap.xml
+Sitemap: https://k-onceptstudio.com/sitemap.xml
