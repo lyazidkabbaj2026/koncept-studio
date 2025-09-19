@@ -1,6 +1,6 @@
 # Waitlist Cleanup Cron Job Setup
 
-This document explains how to set up automatic cleanup of expired waitlist entries every 12 hours.
+This document explains how to set up automatic cleanup of expired waitlist entries once daily at 17:59 UTC.
 
 ## Option 1: Vercel Cron Jobs (Recommended)
 
@@ -10,14 +10,14 @@ This document explains how to set up automatic cleanup of expired waitlist entri
   "crons": [
     {
       "path": "/api/cron/cleanup-waitlist",
-      "schedule": "0 */12 * * *"
+      "schedule": "59 17 * * *"
     }
   ]
 }
 ```
 
 ### Step 2: Deploy to Vercel
-The cron job will automatically run every 12 hours (00:00 and 12:00 UTC).
+The cron job will automatically run once daily at 17:59 UTC.
 
 ### Step 3: Test manually
 Visit: `https://your-domain.com/api/cron/cleanup-waitlist`
@@ -32,7 +32,7 @@ Visit: `https://your-domain.com/api/cron/cleanup-waitlist`
 ### Setup:
 1. Create account with cron service
 2. Set URL: `https://your-domain.com/api/cron/cleanup-waitlist`
-3. Set schedule: `0 */12 * * *` (every 12 hours)
+3. Set schedule: `59 17 * * *` (daily at 17:59 UTC)
 4. Set method: POST or GET
 
 ## Option 3: Supabase pg_cron (Advanced)
@@ -60,7 +60,7 @@ SELECT cron.schedule(
 name: Cleanup Expired Waitlists
 on:
   schedule:
-    - cron: '0 */12 * * *'  # Every 12 hours
+    - cron: '59 17 * * *'  # Daily at 17:59 UTC
   workflow_dispatch:  # Allow manual trigger
 
 jobs:

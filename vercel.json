@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/cleanup-waitlist",
-      "schedule": "0 */12 * * *"
+      "schedule": "59 17 * * *"
     }
   ]
 }
