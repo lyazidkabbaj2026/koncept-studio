@@ -729,6 +729,32 @@ export class BookingService {
   }
 
 
+  // New method to expire subscriptions automatically
+  async expireSubscriptions(): Promise<{ success: boolean; message?: string; expiredSubscriptions?: number }> {
+    try {
+      const { data: result, error } = await this.supabase
+        .rpc('expire_subscriptions')
+
+      if (error) {
+        console.error('🔴 Error expiring subscriptions:', error)
+        return { success: false, message: error.message }
+      }
+
+      console.log('🟢 Subscription expiration completed:', result)
+      return {
+        success: result.success,
+        message: result.message,
+        expiredSubscriptions: result.expired_subscriptions
+      }
+    } catch (error) {
+      console.error('🔴 Error in expireSubscriptions:', error)
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
   // New method to clean up expired waitlist entries and refund credits
   async cleanupExpiredWaitlists(): Promise<{ success: boolean; message?: string; refundedEntries?: number }> {
     try {

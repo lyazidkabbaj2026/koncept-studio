@@ -1,6 +1,8 @@
-# Waitlist Cleanup Cron Job Setup
+# Automated Maintenance Cron Jobs Setup
 
-This document explains how to set up automatic cleanup of expired waitlist entries once daily at 17:59 UTC.
+This document explains how to set up automated maintenance tasks:
+1. **Waitlist Cleanup**: Expired waitlist entries cleanup daily at 17:59 UTC
+2. **Subscription Expiration**: Automatic subscription status updates daily at 23:59 UTC
 
 ## Option 1: Vercel Cron Jobs (Recommended)
 
@@ -11,16 +13,23 @@ This document explains how to set up automatic cleanup of expired waitlist entri
     {
       "path": "/api/cron/cleanup-waitlist",
       "schedule": "59 17 * * *"
+    },
+    {
+      "path": "/api/cron/expire-subscriptions",
+      "schedule": "59 23 * * *"
     }
   ]
 }
 ```
 
 ### Step 2: Deploy to Vercel
-The cron job will automatically run once daily at 17:59 UTC.
+The cron jobs will automatically run:
+- **Waitlist cleanup**: Daily at 17:59 UTC
+- **Subscription expiration**: Daily at 23:59 UTC
 
 ### Step 3: Test manually
-Visit: `https://your-domain.com/api/cron/cleanup-waitlist`
+- Waitlist cleanup: `https://your-domain.com/api/cron/cleanup-waitlist`
+- Subscription expiration: `https://your-domain.com/api/cron/expire-subscriptions`
 
 ## Option 2: External Cron Service
 
@@ -31,9 +40,10 @@ Visit: `https://your-domain.com/api/cron/cleanup-waitlist`
 
 ### Setup:
 1. Create account with cron service
-2. Set URL: `https://your-domain.com/api/cron/cleanup-waitlist`
-3. Set schedule: `59 17 * * *` (daily at 17:59 UTC)
-4. Set method: POST or GET
+2. Set up two cron jobs:
+   - **Waitlist cleanup**: URL `https://your-domain.com/api/cron/cleanup-waitlist`, schedule `59 17 * * *`
+   - **Subscription expiration**: URL `https://your-domain.com/api/cron/expire-subscriptions`, schedule `59 23 * * *`
+3. Set method: POST or GET
 
 ## Option 3: Supabase pg_cron (Advanced)
 
@@ -110,3 +120,31 @@ Use **Vercel Cron Jobs** (Option 1) as it's:
 - ✅ Easy to monitor
 - ✅ Automatically scales
 - ✅ No external dependencies
+
+## What Each Cron Job Does
+
+### 🕕 Waitlist Cleanup (17:59 UTC daily)
+- **Endpoint**: `/api/cron/cleanup-waitlist`
+- **Purpose**: Clean up expired waitlist entries and refund credits
+- **Logic**:
+  1. Find waitlist entries for classes that have already started
+  2. Refund credits to users' subscriptions
+  3. Remove expired waitlist entries
+  4. Log cleanup results
+
+### 🕚 Subscription Expiration (23:59 UTC daily)
+- **Endpoint**: `/api/cron/expire-subscriptions`
+- **Purpose**: Automatically expire subscriptions based on business rules
+- **Logic**:
+  1. **Abonnement**: Expire if `end_date <= NOW()`
+  2. **Carnet**: Expire if `end_date <= NOW()` OR (no credits AND no future bookings)
+  3. **Personal Training**: Expire if `end_date <= NOW()` OR (no credits AND no future bookings)
+  4. Update subscription status from "active" to "expired"
+  5. Log expiration results
+
+### Benefits of Automation:
+- ✅ **Consistent data state**: No more "active" but expired subscriptions
+- ✅ **Better user experience**: Accurate subscription status in dashboards
+- ✅ **Reduced admin work**: No manual status updates needed
+- ✅ **Accurate reporting**: Analytics show true active subscriptions
+- ✅ **Credit management**: Automatic refunds for unused waitlist credits
