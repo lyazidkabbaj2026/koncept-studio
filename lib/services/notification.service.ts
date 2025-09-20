@@ -27,10 +27,24 @@ export class NotificationService {
   async init(): Promise<void> {
     if ('serviceWorker' in navigator) {
       try {
+        // Wait for service worker to be ready
         this.registration = await navigator.serviceWorker.ready
+        console.log('✅ Service Worker ready for notifications')
       } catch (error) {
-        console.error('Service Worker registration failed:', error)
+        console.error('❌ Service Worker registration failed:', error)
+
+        // For mobile PWA, try to register manually if needed
+        try {
+          const registration = await navigator.serviceWorker.register('/sw.js')
+          await navigator.serviceWorker.ready
+          this.registration = registration
+          console.log('✅ Service Worker manually registered')
+        } catch (manualError) {
+          console.error('❌ Manual Service Worker registration failed:', manualError)
+        }
       }
+    } else {
+      console.warn('⚠️ Service Worker not supported in this browser')
     }
   }
 
@@ -51,31 +65,87 @@ export class NotificationService {
   }
 
   async showNotification(options: NotificationOptions): Promise<void> {
-    const permission = this.getPermissionStatus()
+    try {
+      console.log('🔔 Attempting to show notification:', options.title)
 
-    if (permission === 'denied') {
-      throw new Error('Les notifications sont bloquées')
-    }
+      const permission = this.getPermissionStatus()
+      console.log('📋 Current permission status:', permission)
 
-    if (permission === 'default') {
-      const newPermission = await this.requestPermission()
-      if (newPermission !== 'granted') {
-        throw new Error('Permission de notification refusée')
+      if (permission === 'denied') {
+        console.error('❌ Notifications are blocked by user')
+        throw new Error('Les notifications sont bloquées. Activez-les dans les paramètres du navigateur.')
       }
-    }
 
-    const notificationOptions: NotificationOptions = {
-      icon: '/images/logo.svg',
-      badge: '/images/logo.svg',
-      ...options,
-    }
+      if (permission === 'default') {
+        console.log('🤔 Requesting notification permission...')
+        const newPermission = await this.requestPermission()
+        console.log('📝 New permission status:', newPermission)
 
-    if (this.registration) {
-      // Use service worker notification for better control
-      await this.registration.showNotification(options.title, notificationOptions)
-    } else {
-      // Fallback to basic notification
-      new Notification(options.title, notificationOptions)
+        if (newPermission !== 'granted') {
+          console.error('❌ Permission denied by user')
+          throw new Error('Permission de notification refusée')
+        }
+      }
+
+      const notificationOptions: NotificationOptions = {
+        icon: '/images/logo.svg',
+        badge: '/images/logo.svg',
+        ...options,
+      }
+
+      console.log('🔧 Notification options:', notificationOptions)
+      console.log('⚙️ Service Worker registration:', !!this.registration)
+
+      if (this.registration) {
+        console.log('📢 Using Service Worker notification')
+        try {
+          await this.registration.showNotification(options.title, notificationOptions)
+        } catch (swError) {
+          console.error('❌ Service Worker notification failed:', swError)
+
+          // Fallback to basic notification for mobile
+          console.log('🔄 Falling back to basic notification')
+          const notification = new Notification(options.title, notificationOptions)
+
+          notification.onclick = () => {
+            console.log('🖱️ Notification clicked')
+            if ('focus' in window) window.focus()
+          }
+
+          notification.onerror = (error) => {
+            console.error('❌ Basic notification error:', error)
+          }
+        }
+      } else {
+        console.log('📢 Using basic browser notification')
+
+        // Check if we're in a mobile PWA context
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                            (window.navigator as any).standalone ||
+                            document.referrer.includes('android-app://');
+
+        if (isStandalone) {
+          console.log('📱 Detected mobile PWA - using enhanced notification')
+        }
+
+        const notification = new Notification(options.title, notificationOptions)
+
+        notification.onclick = () => {
+          console.log('🖱️ Notification clicked')
+          if ('focus' in window) window.focus()
+        }
+
+        notification.onerror = (error) => {
+          console.error('❌ Notification error:', error)
+          console.log('📋 Notification options that failed:', notificationOptions)
+        }
+      }
+
+      console.log('✅ Notification sent successfully')
+
+    } catch (error) {
+      console.error('💥 Error in showNotification:', error)
+      throw error
     }
   }
 

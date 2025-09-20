@@ -1,4 +1,5 @@
 import { NotificationTester } from '@/components/notifications/notification-tester'
+import { MobileDebugInfo } from '@/components/notifications/mobile-debug'
 
 export default function TestNotificationsPage() {
   return (
@@ -15,6 +16,8 @@ export default function TestNotificationsPage() {
         </div>
 
         <NotificationTester />
+
+        <MobileDebugInfo />
 
         <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground">

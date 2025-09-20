@@ -5,6 +5,11 @@ const withPWA = require('next-pwa')({
   disable: process.env.NODE_ENV === 'development',
   buildExcludes: [/middleware-manifest\.json$/],
   publicExcludes: ['!robots.txt', '!sitemap.xml'],
+  scope: '/',
+  sw: 'sw.js',
+  fallbacks: {
+    document: '/offline',
+  },
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

@@ -24,8 +24,16 @@ export function NotificationTester() {
   const requestPermission = async () => {
     setIsLoading(true)
     try {
+      console.log('🚀 Starting permission request...')
+
+      // Check if notifications are supported
+      if (!('Notification' in window)) {
+        throw new Error('Ce navigateur ne supporte pas les notifications')
+      }
+
       const newPermission = await notificationService.requestPermission()
       setPermission(newPermission)
+      console.log('📝 Permission result:', newPermission)
 
       if (newPermission === 'granted') {
         toast.success('Notifications activées avec succès!')
@@ -35,8 +43,9 @@ export function NotificationTester() {
         toast.error('Permission de notification refusée')
       }
     } catch (error) {
-      toast.error('Erreur lors de la demande de permission')
-      console.error(error)
+      console.error('💥 Permission request error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la demande de permission'
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -44,11 +53,13 @@ export function NotificationTester() {
 
   const sendTestNotification = async () => {
     try {
+      console.log('🧪 Sending test notification...')
       await notificationService.showTestNotification()
       toast.success('Notification de test envoyée!')
     } catch (error) {
-      toast.error('Erreur lors de l\'envoi de la notification')
-      console.error(error)
+      console.error('💥 Test notification error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'envoi de la notification'
+      toast.error(errorMessage)
     }
   }
 
