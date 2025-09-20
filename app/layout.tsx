@@ -66,15 +66,43 @@ export const metadata: Metadata = {
     canonical: 'https://k-onceptstudio.com',
   },
   category: 'fitness',
+  manifest: '/manifest.json',
   icons: {
     icon: [
       {
         url: '/images/logo.svg',
         type: 'image/svg+xml',
+      },
+      {
+        url: '/images/logo.svg',
+        sizes: '192x192',
+        type: 'image/svg+xml',
+      },
+      {
+        url: '/images/logo.svg',
+        sizes: '512x512',
+        type: 'image/svg+xml',
       }
     ],
     shortcut: '/images/logo.svg',
-    apple: '/images/logo.svg',
+    apple: [
+      {
+        url: '/images/logo.svg',
+        sizes: '152x152',
+        type: 'image/svg+xml',
+      }
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Koncept Studio',
+    startupImage: [
+      {
+        url: '/images/logo.svg',
+        media: '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)',
+      }
+    ],
   },
 };
 

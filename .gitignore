@@ -128,3 +128,13 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
+
+# PWA icon placeholders (to be replaced with actual icons)
+public/images/icons/
+public/images/screenshot-*.png
+
+# PWA generated files
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
