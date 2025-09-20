@@ -60,14 +60,50 @@ export class NotificationService {
             })
           }
         } else {
-          console.log('⚠️ No Service Worker registration found, waiting for next-pwa to register...')
+          console.log('⚠️ No Service Worker registration found, attempting manual registration...')
 
-          // Wait for next-pwa to register the service worker
+          // Try to manually register the service worker
           try {
-            this.registration = await navigator.serviceWorker.ready
-            console.log('✅ Service Worker ready via next-pwa')
-          } catch (readyError) {
-            console.error('❌ Service Worker ready failed:', readyError)
+            console.log('🔄 Manually registering Service Worker at /sw.js')
+            const registration = await navigator.serviceWorker.register('/sw.js', {
+              scope: '/'
+            })
+            console.log('✅ Service Worker manually registered:', registration)
+
+            // Wait for it to become active
+            if (registration.installing) {
+              console.log('⏳ Waiting for Service Worker to install...')
+              await new Promise((resolve) => {
+                registration.installing!.addEventListener('statechange', (e) => {
+                  if ((e.target as ServiceWorker).state === 'activated') {
+                    console.log('✅ Service Worker installation complete')
+                    resolve(void 0)
+                  }
+                })
+              })
+            }
+
+            this.registration = registration
+
+            // Also try the next-pwa ready method as fallback
+            try {
+              await navigator.serviceWorker.ready
+              console.log('✅ Service Worker ready confirmed')
+            } catch (readyError) {
+              console.warn('⚠️ Service Worker ready check failed, but manual registration succeeded')
+            }
+
+          } catch (manualError) {
+            console.error('❌ Manual Service Worker registration failed:', manualError)
+
+            // Final fallback: try to wait for next-pwa
+            try {
+              console.log('🔄 Fallback: waiting for next-pwa Service Worker...')
+              this.registration = await navigator.serviceWorker.ready
+              console.log('✅ Service Worker ready via next-pwa fallback')
+            } catch (readyError) {
+              console.error('❌ All Service Worker registration methods failed:', readyError)
+            }
           }
         }
 
