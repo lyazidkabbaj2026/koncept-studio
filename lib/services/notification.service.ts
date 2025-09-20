@@ -96,36 +96,47 @@ export class NotificationService {
       console.log('🔧 Notification options:', notificationOptions)
       console.log('⚙️ Service Worker registration:', !!this.registration)
 
-      // Check if we should use Service Worker notifications
-      const shouldUseServiceWorker = this.registration && 'showNotification' in this.registration
+      // Check if we're in a PWA context that requires Service Worker notifications
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                          (window.navigator as any).standalone ||
+                          document.referrer.includes('android-app://') ||
+                          window.location.search.includes('pwa=true');
 
-      if (shouldUseServiceWorker) {
-        console.log('📢 Using Service Worker notification')
-        try {
-          await this.registration!.showNotification(options.title, notificationOptions)
+      const isSecureContext = window.isSecureContext || location.protocol === 'https:';
+
+      console.log('📱 PWA Standalone mode:', isStandalone)
+      console.log('🔒 Secure context:', isSecureContext)
+
+      // Force Service Worker notifications in PWA context
+      if (isStandalone || this.registration) {
+        console.log('🚀 PWA detected - ensuring Service Worker notification')
+
+        // Make sure we have a valid Service Worker registration
+        if (!this.registration) {
+          console.log('⚠️ No Service Worker registration, attempting to get one...')
+          try {
+            this.registration = await navigator.serviceWorker.ready
+            console.log('✅ Service Worker registration obtained')
+          } catch (swError) {
+            console.error('❌ Failed to get Service Worker registration:', swError)
+            throw new Error('Service Worker requis pour les notifications PWA')
+          }
+        }
+
+        if (this.registration && 'showNotification' in this.registration) {
+          console.log('📢 Using Service Worker notification (PWA mode)')
+          await this.registration.showNotification(options.title, notificationOptions)
           console.log('✅ Service Worker notification sent successfully')
           return
-        } catch (swError) {
-          console.error('❌ Service Worker notification failed:', swError)
-          console.log('🔄 Falling back to basic notification')
+        } else {
+          console.error('❌ Service Worker registration invalid')
+          throw new Error('Service Worker indisponible pour les notifications PWA')
         }
       }
 
-      // Use basic notifications (fallback or when SW not available)
-      {
-        console.log('📢 Using basic browser notification')
-
-        // Check if we're in a mobile PWA context
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                            (window.navigator as any).standalone ||
-                            document.referrer.includes('android-app://') ||
-                            window.matchMedia('(display-mode: fullscreen)').matches ||
-                            window.matchMedia('(display-mode: minimal-ui)').matches;
-
-        if (isStandalone) {
-          console.log('📱 Detected mobile PWA - using enhanced notification')
-        }
-
+      // Only use basic notifications if NOT in PWA mode
+      if (!isStandalone) {
+        console.log('📢 Using basic browser notification (non-PWA mode)')
         const notification = new Notification(options.title, notificationOptions)
 
         notification.onclick = () => {
@@ -134,12 +145,13 @@ export class NotificationService {
         }
 
         notification.onerror = (error) => {
-          console.error('❌ Notification error:', error)
-          console.log('📋 Notification options that failed:', notificationOptions)
+          console.error('❌ Basic notification error:', error)
         }
-      }
 
-      console.log('✅ Notification sent successfully')
+        console.log('✅ Basic notification sent successfully')
+      } else {
+        throw new Error('Impossible d\'envoyer la notification en mode PWA sans Service Worker')
+      }
 
     } catch (error) {
       console.error('💥 Error in showNotification:', error)
