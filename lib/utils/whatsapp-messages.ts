@@ -116,7 +116,7 @@ Nous sommes désolés de vous informer que le cours suivant a été annulé :
 📅 *Cours:* ${className}
 🕒 *Date et heure:* ${classDate} à ${classTime}
 
-Nous nous excusons pour ce désagrément. Votre crédit sera automatiquement remboursé sur votre compte.
+Nous nous excusons pour ce désagrément. Votre séance vous sera restitutée en crédits sur vore solde.
 
 💡 *Alternatives:*
 • Consultez notre planning pour d'autres créneaux disponibles
