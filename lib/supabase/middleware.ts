@@ -30,7 +30,13 @@ export async function updateSession(request: NextRequest) {
             request,
           })
           cookiesToSet.forEach(({ name, value, options }) => {
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              path: '/',
+            })
           })
         },
       },
@@ -39,9 +45,22 @@ export async function updateSession(request: NextRequest) {
 
   // This will refresh session if expired - required for Server Components
   // https://supabase.com/docs/guides/auth/server-side/nextjs
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  try {
+    const {
+      data: { user },
+      error
+    } = await supabase.auth.getUser()
 
-  return { supabaseResponse, user }
+    if (error && error.message.includes('refresh_token_not_found')) {
+      // Clear invalid cookies and redirect to login
+      supabaseResponse.cookies.delete('sb-access-token')
+      supabaseResponse.cookies.delete('sb-refresh-token')
+      console.warn('Invalid refresh token cleared:', error.message)
+    }
+
+    return { supabaseResponse, user: error ? null : user }
+  } catch (error) {
+    console.error('Auth error in middleware:', error)
+    return { supabaseResponse, user: null }
+  }
 }
