@@ -20,7 +20,9 @@ export function MobileDebugInfo() {
       // Check if PWA is running in standalone mode
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                           (window.navigator as any).standalone ||
-                          document.referrer.includes('android-app://')
+                          document.referrer.includes('android-app://') ||
+                          window.location.href.includes('?pwa=true') ||
+                          sessionStorage.getItem('isPWA') === 'true'
 
       // Check service worker support
       const serviceWorkerSupported = 'serviceWorker' in navigator

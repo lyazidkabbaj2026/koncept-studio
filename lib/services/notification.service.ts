@@ -96,33 +96,31 @@ export class NotificationService {
       console.log('🔧 Notification options:', notificationOptions)
       console.log('⚙️ Service Worker registration:', !!this.registration)
 
-      if (this.registration) {
+      // Check if we should use Service Worker notifications
+      const shouldUseServiceWorker = this.registration && 'showNotification' in this.registration
+
+      if (shouldUseServiceWorker) {
         console.log('📢 Using Service Worker notification')
         try {
-          await this.registration.showNotification(options.title, notificationOptions)
+          await this.registration!.showNotification(options.title, notificationOptions)
+          console.log('✅ Service Worker notification sent successfully')
+          return
         } catch (swError) {
           console.error('❌ Service Worker notification failed:', swError)
-
-          // Fallback to basic notification for mobile
           console.log('🔄 Falling back to basic notification')
-          const notification = new Notification(options.title, notificationOptions)
-
-          notification.onclick = () => {
-            console.log('🖱️ Notification clicked')
-            if ('focus' in window) window.focus()
-          }
-
-          notification.onerror = (error) => {
-            console.error('❌ Basic notification error:', error)
-          }
         }
-      } else {
+      }
+
+      // Use basic notifications (fallback or when SW not available)
+      {
         console.log('📢 Using basic browser notification')
 
         // Check if we're in a mobile PWA context
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                             (window.navigator as any).standalone ||
-                            document.referrer.includes('android-app://');
+                            document.referrer.includes('android-app://') ||
+                            window.matchMedia('(display-mode: fullscreen)').matches ||
+                            window.matchMedia('(display-mode: minimal-ui)').matches;
 
         if (isStandalone) {
           console.log('📱 Detected mobile PWA - using enhanced notification')
