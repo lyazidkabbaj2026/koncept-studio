@@ -166,7 +166,7 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-18 lg:h-20 pt-2 md:pt-0 pb-2 md:pb-0">
+        <div className="flex justify-between items-center h-16 lg:h-20">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="group flex items-center space-x-2">
@@ -315,13 +315,6 @@ export default function Navbar() {
                     </>
                   )}
 
-                  {/* Test features - available to all users for testing */}
-                  <DropdownMenuItem asChild>
-                    <Link href="/test-notifications" className="gap-2">
-                      🔔 Test Notifications
-                    </Link>
-                  </DropdownMenuItem>
-
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <button onClick={handleLogout} className="w-full text-left">
@@ -336,8 +329,8 @@ export default function Navbar() {
 
         {/* Mobile Navigation */}
         {isHomePage && !user && (
-          <div className="md:hidden border-t border-border mt-3">
-            <div className="grid grid-cols-4 gap-2 py-3 px-4">
+          <div className="md:hidden border-t border-border">
+            <div className="grid grid-cols-4 gap-1 py-2 px-2">
               <Link
                 href="/#presentation-studio"
                 className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
@@ -383,8 +376,8 @@ export default function Navbar() {
         )}
 
         {user && hasAnyValidSubscription && isEspacePage && (
-          <div className="md:hidden border-t border-border mt-3">
-            <div className="grid grid-cols-3 gap-2 py-3 px-4">
+          <div className="md:hidden border-t border-border">
+            <div className="grid grid-cols-3 gap-1 py-2 px-2">
               <Link
                 href="/espace/planning"
                 className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${

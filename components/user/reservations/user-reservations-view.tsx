@@ -11,6 +11,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { IconCalendar, IconClock, IconUser, IconMapPin, IconCircleCheck, IconCircleX, IconAlertTriangle, IconInfoCircle } from '@tabler/icons-react'
 import { BookingService } from '@/lib/services/booking.service'
+import { waitlistService } from '@/lib/services/waitlist.service'
+import { toast } from 'sonner'
 import Link from 'next/link'
 
 interface Booking {
@@ -150,7 +152,9 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
     const timeDifferenceInHours = (classStartTime.getTime() - now.getTime()) / (1000 * 60 * 60)
 
     if (timeDifferenceInHours <= 1) {
-      setError('Vous ne pouvez pas annuler cette réservation car elle commence dans moins d\'une heure.')
+      toast.error('Annulation non autorisée', {
+        description: 'Vous ne pouvez pas annuler cette réservation car elle commence dans moins d\'une heure. Nous vous invitons à assister au cours. Quoi qu\'il en soit, celui-ci sera comptabilisé comme consommé.'
+      })
       return
     }
 
@@ -175,17 +179,25 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
 
   const handleLeaveWaitlist = async (waitlistEntry: WaitlistEntry) => {
     try {
-      const { error } = await supabase
-        .from('class_waitlist')
-        .delete()
-        .eq('id', waitlistEntry.id)
+      const result = await waitlistService.leaveWaitlist(waitlistEntry.id)
 
-      if (error) throw error
+      if (!result.success) {
+        toast.error('Erreur lors de la sortie de liste d\'attente', {
+          description: result.error || 'Une erreur inattendue s\'est produite'
+        })
+        return
+      }
 
       // Refresh data
       await fetchReservations()
+
+      toast.success('Retiré de la liste d\'attente', {
+        description: 'Vos crédits ont été remboursés.'
+      })
     } catch (err: any) {
-      setError(err.message)
+      toast.error('Erreur lors de la sortie de liste d\'attente', {
+        description: err.message || 'Une erreur inattendue s\'est produite'
+      })
     }
   }
 
@@ -272,7 +284,7 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
         {/* Show tabs only if user doesn't have personal training only */}
         {!hasOnlyPersonalTraining && (
           <Tabs defaultValue="upcoming" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-muted/50">
+          <TabsList className="grid w-full grid-cols-3 bg-card border border-border rounded-lg p-1">
             <TabsTrigger value="upcoming">
               À venir ({upcomingBookings.length})
             </TabsTrigger>
@@ -306,46 +318,46 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                 const canCancel = isFuture(startTime)
 
                 return (
-                  <Card key={booking.id} className="glass-effect shadow-soft border-l-4 border-l-foreground">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-3 flex-1">
+                  <Card key={booking.id} className="glass-effect shadow-soft border-l-4 border-l-primary">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="space-y-3 flex-1 min-w-0">
                           <div>
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
                               <h3 className="font-semibold text-lg">
                                 {booking.class_schedules.classes.title}
                               </h3>
-                              <Badge variant="secondary">
+                              <Badge variant="secondary" className="text-xs">
                                 {getDifficultyLabel(booking.class_schedules.classes.difficulty_level)}
                               </Badge>
-                              <Badge variant="secondary" className="flex items-center gap-1">
+                              <Badge variant="default" className="flex items-center gap-1 text-xs">
                                 <IconCircleCheck className="h-3 w-3" />
                                 Confirmé
                               </Badge>
                             </div>
                             {booking.class_schedules.classes.description && (
-                              <p className="text-muted-foreground text-sm">
+                              <p className="text-muted-foreground text-sm line-clamp-2">
                                 {booking.class_schedules.classes.description}
                               </p>
                             )}
                           </div>
 
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
                             <div className="flex items-center gap-2">
-                              <IconCalendar className="h-4 w-4 text-muted-foreground" />
-                              <span>{formatDateWithCapitalization(startTime, 'EEEE d MMM')}</span>
+                              <IconCalendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <span className="truncate">{formatDateWithCapitalization(startTime, 'EEEE d MMM')}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <IconClock className="h-4 w-4 text-muted-foreground" />
+                              <IconClock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                               <span>{format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <IconUser className="h-4 w-4 text-muted-foreground" />
-                              <span>{booking.class_schedules.classes.coach}</span>
+                              <IconUser className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <span className="truncate">{booking.class_schedules.classes.coach}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <IconMapPin className="h-4 w-4 text-muted-foreground" />
-                              <span>{booking.class_schedules.classes.location}</span>
+                              <IconMapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <span className="truncate">{booking.class_schedules.classes.location}</span>
                             </div>
                           </div>
 
@@ -355,14 +367,16 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
                         </div>
 
                         {canCancel && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCancelBooking(booking)}
-                            className="border-foreground text-foreground hover:bg-foreground hover:text-background"
-                          >
-                            Annuler
-                          </Button>
+                          <div className="flex-shrink-0 self-start sm:self-center">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCancelBooking(booking)}
+                              className="w-full sm:w-auto"
+                            >
+                              Annuler
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </CardContent>

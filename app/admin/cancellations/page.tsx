@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { CancellationsTable } from '@/components/admin/cancellations-table'
 import { IconX, IconClock, IconTrendingDown } from '@tabler/icons-react'
 import { useAuth } from '@/hooks/use-auth'
+import type { BookingWithDetails } from '@/types/booking'
 
 interface CancellationStats {
   total: number
@@ -48,7 +49,7 @@ interface Cancellation {
 }
 
 export default function CancellationsPage() {
-  const [cancellations, setCancellations] = useState<Cancellation[]>([])
+  const [cancellations, setCancellations] = useState<BookingWithDetails[]>([])
   const [stats, setStats] = useState<CancellationStats>({ total: 0, today: 0, week: 0, month: 0 })
   const [topReasons, setTopReasons] = useState<[string, number][]>([])
   const [loading, setLoading] = useState(true)
@@ -125,7 +126,7 @@ export default function CancellationsPage() {
         .order('cancelled_at', { ascending: false })
 
       if (error) throw error
-      setCancellations((data || []) as unknown as Cancellation[])
+      setCancellations((data || []) as unknown as BookingWithDetails[])
     } catch (err) {
       console.error('Error fetching cancellations:', err)
       setError('Erreur lors du chargement des annulations')

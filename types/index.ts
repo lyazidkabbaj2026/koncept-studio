@@ -71,7 +71,7 @@ export interface DashboardStats {
 
 export interface DashboardData {
   stats: DashboardStats
-  recent_bookings: BookingWithDetails[]
-  upcoming_classes: CalendarEvent[]
-  pending_requests: WaitlistWithDetails[]
+  recent_bookings: import('./booking').BookingWithDetails[]
+  upcoming_classes: import('./class').CalendarEvent[]
+  pending_requests: import('./booking').WaitlistWithDetails[]
 }

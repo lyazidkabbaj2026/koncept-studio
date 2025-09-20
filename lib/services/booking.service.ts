@@ -713,12 +713,26 @@ export class BookingService {
 
       if (promotionError) {
         console.log('🔴 Promotion function error:', promotionError)
-      } else if (promotionResult?.success) {
+      } else if (promotionResult?.success && promotionResult?.promoted_user_id) {
         console.log('🟢 Successfully promoted user from waitlist!', {
           promotedUserId: promotionResult.promoted_user_id,
           newBookingId: promotionResult.new_booking_id,
           waitlistPosition: promotionResult.waitlist_position
         })
+
+        // Send WhatsApp notification for the promoted user
+        try {
+          const { sendWaitlistPromotionNotification } = await import('@/app/espace/reservations/actions')
+          const notificationResult = await sendWaitlistPromotionNotification(promotionResult.promoted_user_id)
+
+          if (notificationResult.success) {
+            console.log('🟢 WhatsApp auto-promotion notification sent successfully')
+          } else {
+            console.error('🔴 Failed to send WhatsApp auto-promotion notification:', notificationResult.error)
+          }
+        } catch (error) {
+          console.error('🔴 Error importing or calling sendWaitlistPromotionNotification:', error)
+        }
       } else {
         console.log('🟡 No promotion needed:', promotionResult?.message)
       }

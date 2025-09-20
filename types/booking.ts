@@ -4,7 +4,24 @@ export type ClassBooking = Database['public']['Tables']['class_bookings']['Row']
 export type ClassWaitlist = Database['public']['Tables']['class_waitlist']['Row']
 
 export interface BookingWithDetails extends ClassBooking {
-  class_schedules: {
+  user?: {
+    id: string
+    full_name: string
+    email: string
+    phone?: string
+  }
+  schedule?: {
+    id: string
+    start_datetime: string
+    end_datetime: string
+    class?: {
+      title: string
+      coach: string
+      location: string
+      difficulty_level: string
+    }
+  }
+  class_schedules?: {
     id: string
     start_datetime: string
     end_datetime: string
@@ -13,6 +30,13 @@ export interface BookingWithDetails extends ClassBooking {
       coach: string
       location: string
       difficulty_level: string
+    }
+  }
+  subscription?: {
+    id: string
+    plan: {
+      name: string
+      type: string
     }
   }
   user_subscriptions?: {
@@ -25,14 +49,29 @@ export interface BookingWithDetails extends ClassBooking {
 }
 
 export interface WaitlistWithDetails extends ClassWaitlist {
-  class_schedules: {
+  user?: {
+    id: string
+    full_name: string
+    email: string
+    phone?: string
+  }
+  schedule?: {
     id: string
     start_datetime: string
     end_datetime: string
-    classes: {
+    current_bookings: number
+    class: {
       title: string
       coach: string
       location: string
+      max_capacity: number
+    }
+  }
+  subscription?: {
+    id: string
+    plan: {
+      name: string
+      type: string
     }
   }
 }

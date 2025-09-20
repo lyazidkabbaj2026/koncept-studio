@@ -10,6 +10,7 @@ import { WaitlistTable } from '@/components/admin/waitlist-table'
 import { formatDateTime } from '@/lib/utils/date'
 import { IconClock, IconCalendarEvent, IconCheck, IconUsers } from '@tabler/icons-react'
 import { useAuth } from '@/hooks/use-auth'
+import type { WaitlistWithDetails } from '@/types/booking'
 
 interface WaitlistEntry {
   id: string
@@ -51,7 +52,7 @@ interface WaitlistStats {
 }
 
 export default function WaitlistPage() {
-  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([])
+  const [waitlist, setWaitlist] = useState<WaitlistWithDetails[]>([])
   const [stats, setStats] = useState<WaitlistStats>({ total: 0, today: 0, tomorrow: 0, notified: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -129,7 +130,7 @@ export default function WaitlistPage() {
         .order('position', { ascending: true })
 
       if (error) throw error
-      setWaitlist((data || []) as unknown as WaitlistEntry[])
+      setWaitlist((data || []) as unknown as WaitlistWithDetails[])
     } catch (err) {
       console.error('Error fetching waitlist:', err)
       setError('Erreur lors du chargement de la liste d\'attente')
