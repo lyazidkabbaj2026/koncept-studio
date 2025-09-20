@@ -29,88 +29,99 @@ export class NotificationService {
       try {
         console.log('🔄 Initializing Service Worker...')
 
-        // First, check if there's already a registration
-        const existingRegistration = await navigator.serviceWorker.getRegistration()
+        // Try multiple methods to get Service Worker registration
+        let registration: ServiceWorkerRegistration | undefined
 
-        if (existingRegistration) {
-          console.log('✅ Found existing Service Worker registration')
-          this.registration = existingRegistration
-
-          // Ensure it's active
-          if (existingRegistration.active) {
-            console.log('✅ Service Worker is active and ready')
-          } else {
-            console.log('⏳ Waiting for Service Worker to become active...')
-            await new Promise((resolve) => {
-              if (existingRegistration.installing) {
-                existingRegistration.installing.addEventListener('statechange', (e) => {
-                  if ((e.target as ServiceWorker).state === 'activated') {
-                    resolve(void 0)
-                  }
-                })
-              } else if (existingRegistration.waiting) {
-                existingRegistration.waiting.addEventListener('statechange', (e) => {
-                  if ((e.target as ServiceWorker).state === 'activated') {
-                    resolve(void 0)
-                  }
-                })
-              } else {
-                resolve(void 0)
-              }
-            })
+        // Method 1: Check for existing registration
+        try {
+          registration = await navigator.serviceWorker.getRegistration('/')
+          if (registration) {
+            console.log('✅ Found existing Service Worker registration via getRegistration')
           }
-        } else {
-          console.log('⚠️ No Service Worker registration found, attempting manual registration...')
+        } catch (error) {
+          console.log('⚠️ getRegistration failed:', error)
+        }
 
-          // Try to manually register the service worker
+        // Method 2: Try navigator.serviceWorker.ready
+        if (!registration) {
           try {
-            console.log('🔄 Manually registering Service Worker at /sw.js')
-            const registration = await navigator.serviceWorker.register('/sw.js', {
-              scope: '/'
-            })
-            console.log('✅ Service Worker manually registered:', registration)
-
-            // Wait for it to become active
-            if (registration.installing) {
-              console.log('⏳ Waiting for Service Worker to install...')
-              await new Promise((resolve) => {
-                registration.installing!.addEventListener('statechange', (e) => {
-                  if ((e.target as ServiceWorker).state === 'activated') {
-                    console.log('✅ Service Worker installation complete')
-                    resolve(void 0)
-                  }
-                })
-              })
+            console.log('🔄 Trying navigator.serviceWorker.ready...')
+            registration = await Promise.race([
+              navigator.serviceWorker.ready,
+              new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('Timeout')), 5000)
+              )
+            ])
+            if (registration) {
+              console.log('✅ Service Worker ready via ready method')
             }
-
-            this.registration = registration
-
-            // Also try the next-pwa ready method as fallback
-            try {
-              await navigator.serviceWorker.ready
-              console.log('✅ Service Worker ready confirmed')
-            } catch (readyError) {
-              console.warn('⚠️ Service Worker ready check failed, but manual registration succeeded')
-            }
-
-          } catch (manualError) {
-            console.error('❌ Manual Service Worker registration failed:', manualError)
-
-            // Final fallback: try to wait for next-pwa
-            try {
-              console.log('🔄 Fallback: waiting for next-pwa Service Worker...')
-              this.registration = await navigator.serviceWorker.ready
-              console.log('✅ Service Worker ready via next-pwa fallback')
-            } catch (readyError) {
-              console.error('❌ All Service Worker registration methods failed:', readyError)
-            }
+          } catch (error) {
+            console.log('⚠️ serviceWorker.ready failed or timed out:', error)
           }
         }
 
+        // Method 3: Manual registration
+        if (!registration) {
+          try {
+            console.log('🔄 Manual Service Worker registration...')
+            registration = await navigator.serviceWorker.register('/sw.js', {
+              scope: '/',
+              type: 'classic'
+            })
+            console.log('✅ Service Worker manually registered')
+
+            // Wait for it to be ready
+            await navigator.serviceWorker.ready
+            console.log('✅ Manual registration confirmed active')
+          } catch (error) {
+            console.error('❌ Manual registration failed:', error)
+          }
+        }
+
+        // Method 4: Force reload and retry if in PWA mode
+        if (!registration && this.isPWAMode()) {
+          console.log('🔄 PWA mode detected, attempting force registration...')
+          try {
+            // Unregister any existing service workers
+            const registrations = await navigator.serviceWorker.getRegistrations()
+            await Promise.all(registrations.map(reg => reg.unregister()))
+
+            // Fresh registration
+            registration = await navigator.serviceWorker.register('/sw.js', {
+              scope: '/',
+              updateViaCache: 'none'
+            })
+
+            // Wait for it to become active
+            await new Promise((resolve) => {
+              const checkState = () => {
+                if (registration?.active) {
+                  resolve(void 0)
+                } else {
+                  setTimeout(checkState, 100)
+                }
+              }
+              checkState()
+            })
+
+            console.log('✅ Force registration successful')
+          } catch (error) {
+            console.error('❌ Force registration failed:', error)
+          }
+        }
+
+        this.registration = registration
+
         if (this.registration) {
           console.log('🎉 Service Worker successfully initialized for notifications')
+          console.log('📋 Registration state:', {
+            scope: this.registration.scope,
+            active: !!this.registration.active,
+            installing: !!this.registration.installing,
+            waiting: !!this.registration.waiting
+          })
         } else {
-          console.warn('⚠️ No Service Worker registration available')
+          console.warn('⚠️ No Service Worker registration available after all attempts')
         }
 
       } catch (error) {
@@ -119,6 +130,12 @@ export class NotificationService {
     } else {
       console.warn('⚠️ Service Worker not supported in this browser')
     }
+  }
+
+  private isPWAMode(): boolean {
+    return window.matchMedia('(display-mode: standalone)').matches ||
+           (window.navigator as any).standalone ||
+           window.location.search.includes('pwa=true')
   }
 
   async requestPermission(): Promise<NotificationPermission> {
