@@ -7,6 +7,7 @@ import ErrorBoundary from "@/components/error-boundary";
 import { Toaster } from "sonner";
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { BackToTop } from "@/components/ui/back-to-top";
+import { NotificationDebug } from "@/components/debug/notification-debug";
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -149,6 +150,7 @@ export default async function RootLayout({
           />
         </ThemeProvider>
         <BackToTop />
+        <NotificationDebug />
         <SpeedInsights />
       </body>
     </html>
