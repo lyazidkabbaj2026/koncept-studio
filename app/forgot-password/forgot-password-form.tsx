@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { validateInput, emailSchema } from '@/lib/validation'
+import Image from 'next/image'
 import { MESSAGES } from '@/constants'
 import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
@@ -104,9 +105,11 @@ export default function ForgotPasswordForm() {
     <>
       <CardHeader className="text-center space-y-4 pb-8">
         <div className="mx-auto w-16 h-16 flex items-center justify-center">
-          <img
+          <Image
             src="/images/logo.svg"
             alt="Koncept Studio Logo"
+            width={64}
+            height={64}
             className="w-16 h-16 dark:invert"
           />
         </div>

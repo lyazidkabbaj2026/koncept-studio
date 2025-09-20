@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import PlanSelectionForm from './plan-selection-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import Image from 'next/image'
 
 export default async function PlanSelectionPage() {
   const supabase = await createClient()
@@ -34,9 +35,11 @@ export default async function PlanSelectionPage() {
         <Card className="shadow-brutal border-2 border-border bg-card/95 backdrop-blur-sm animate-slide-up">
           <CardHeader className="text-center space-y-4 pb-8">
             <div className="mx-auto w-16 h-16 flex items-center justify-center">
-              <img
+              <Image
                 src="/images/logo.svg"
                 alt="Koncept Studio Logo"
+                width={64}
+                height={64}
                 className="w-16 h-16 dark:invert"
               />
             </div>

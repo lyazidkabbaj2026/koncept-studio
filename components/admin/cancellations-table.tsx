@@ -4,9 +4,10 @@ import { Badge } from '@/components/ui/badge'
 import { DataTable } from '@/components/common/data-table'
 import { formatDateTime } from '@/lib/utils/date'
 import { IconUser, IconX, IconCalendarEvent } from '@tabler/icons-react'
+import type { BookingWithDetails } from '@/types'
 
 interface CancellationsTableProps {
-  cancellations: any[]
+  cancellations: BookingWithDetails[]
 }
 
 export function CancellationsTable({ cancellations }: CancellationsTableProps) {
@@ -14,7 +15,7 @@ export function CancellationsTable({ cancellations }: CancellationsTableProps) {
     {
       key: 'user' as const,
       header: 'Utilisateur',
-      cell: (cancellation: any) => (
+      cell: (cancellation: BookingWithDetails) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
             <IconUser className="w-4 h-4 text-primary" />
@@ -29,7 +30,7 @@ export function CancellationsTable({ cancellations }: CancellationsTableProps) {
     {
       key: 'class' as const,
       header: 'Cours Annulé',
-      cell: (cancellation: any) => (
+      cell: (cancellation: BookingWithDetails) => (
         <div>
           <div className="font-medium">{cancellation.schedule?.class?.title}</div>
           <div className="text-sm text-muted-foreground">
@@ -45,7 +46,7 @@ export function CancellationsTable({ cancellations }: CancellationsTableProps) {
     {
       key: 'cancelled_at' as const,
       header: 'Annulé le',
-      cell: (cancellation: any) => (
+      cell: (cancellation: BookingWithDetails) => (
         <div className="flex items-center gap-2">
           <IconX className="w-4 h-4 text-muted-foreground" />
           <span>{formatDateTime(cancellation.cancelled_at)}</span>
@@ -55,7 +56,7 @@ export function CancellationsTable({ cancellations }: CancellationsTableProps) {
     {
       key: 'cancellation_reason' as const,
       header: 'Raison',
-      cell: (cancellation: any) => (
+      cell: (cancellation: BookingWithDetails) => (
         <div>
           {cancellation.cancellation_reason ? (
             <Badge variant="outline">
@@ -70,7 +71,7 @@ export function CancellationsTable({ cancellations }: CancellationsTableProps) {
     {
       key: 'subscription' as const,
       header: 'Abonnement',
-      cell: (cancellation: any) => (
+      cell: (cancellation: BookingWithDetails) => (
         <Badge variant="secondary">
           {cancellation.subscription?.plan?.name}
         </Badge>

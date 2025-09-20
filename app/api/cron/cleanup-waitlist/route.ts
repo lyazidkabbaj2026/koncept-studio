@@ -4,11 +4,11 @@ import { NextRequest, NextResponse } from 'next/server'
 // API endpoint for cron job to clean up expired waitlist entries
 export async function POST(request: NextRequest) {
   try {
-    // Optional: Add authentication/authorization here
-    // const authHeader = request.headers.get('authorization')
-    // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    // }
+    // Authenticate cron request
+    const authHeader = request.headers.get('authorization')
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const supabase = await createClient()
 

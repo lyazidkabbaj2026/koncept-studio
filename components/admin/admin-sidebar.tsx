@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { logout } from '@/app/actions/auth'
+import Image from 'next/image'
 import {
   Sidebar,
   SidebarContent,
@@ -154,9 +155,11 @@ export function AdminSidebar() {
     <Sidebar className="border-r h-screen flex flex-col">
       <SidebarHeader className="border-b px-6 py-4 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <img
+          <Image
             src="/images/logo.svg"
             alt="Koncept Studio Logo"
+            width={32}
+            height={32}
             className="h-8 w-8 dark:invert"
           />
           <div className="flex flex-col">

@@ -606,9 +606,11 @@ export default function HomePage() {
               {/* Brand Section */}
               <div className="lg:col-span-2 space-y-6">
                 <div className="flex items-center space-x-2">
-                  <img
+                  <Image
                     src="/images/logo.svg"
                     alt="Koncept Studio Logo"
+                    width={40}
+                    height={40}
                     className="w-10 h-10 dark:invert"
                   />
                   <span className="text-2xl font-bold">

@@ -8,9 +8,10 @@ import { formatDateTime } from '@/lib/utils/date'
 import { IconUser, IconClock, IconCalendarEvent, IconCheck } from '@tabler/icons-react'
 import { promoteFromWaitlist } from '@/app/admin/waitlist/actions'
 import { toast } from 'sonner'
+import type { WaitlistWithDetails } from '@/types'
 
 interface WaitlistTableProps {
-  waitlist: any[]
+  waitlist: WaitlistWithDetails[]
   showActions?: boolean
 }
 
@@ -39,7 +40,7 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
     {
       key: 'position' as const,
       header: 'Position',
-      cell: (entry: any) => (
+      cell: (entry: WaitlistWithDetails) => (
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center p-0">
             #{entry.position}
@@ -50,7 +51,7 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
     {
       key: 'user' as const,
       header: 'Utilisateur',
-      cell: (entry: any) => (
+      cell: (entry: WaitlistWithDetails) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
             <IconUser className="w-4 h-4 text-muted-foreground" />
@@ -65,7 +66,7 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
     {
       key: 'class' as const,
       header: 'Cours',
-      cell: (entry: any) => (
+      cell: (entry: WaitlistWithDetails) => (
         <div>
           <div className="font-medium">{entry.schedule?.class?.title}</div>
           <div className="text-sm text-muted-foreground">
@@ -81,7 +82,7 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
     {
       key: 'capacity_status' as const,
       header: 'Capacité',
-      cell: (entry: any) => {
+      cell: (entry: WaitlistWithDetails) => {
         const current = entry.schedule?.current_bookings || 0
         const max = entry.schedule?.class?.max_capacity || 0
         const isFull = current >= max
@@ -99,7 +100,7 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
     {
       key: 'joined_at' as const,
       header: 'Inscrit le',
-      cell: (entry: any) => (
+      cell: (entry: WaitlistWithDetails) => (
         <div className="flex items-center gap-2">
           <IconClock className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm">{formatDateTime(entry.joined_at)}</span>
@@ -109,7 +110,7 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
     {
       key: 'notification_status' as const,
       header: 'Notification',
-      cell: (entry: any) => (
+      cell: (entry: WaitlistWithDetails) => (
         <div>
           {entry.notified_at ? (
             <Badge variant="secondary">
@@ -127,7 +128,7 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
     {
       key: 'subscription' as const,
       header: 'Abonnement',
-      cell: (entry: any) => (
+      cell: (entry: WaitlistWithDetails) => (
         <Badge variant="secondary">
           {entry.subscription?.plan?.name}
         </Badge>
@@ -137,9 +138,9 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
 
   if (showActions) {
     columns.push({
-      key: 'actions' as any,
+      key: 'actions' as const,
       header: 'Actions',
-      cell: (entry: any) => (
+      cell: (entry: WaitlistWithDetails) => (
         <div className="flex items-center gap-2">
           <Button
             size="sm"

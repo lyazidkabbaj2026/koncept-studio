@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface AuthLayoutProps {
   title: string
@@ -21,9 +22,11 @@ export function AuthLayout({
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <img
+            <Image
               src="/images/logo.svg"
               alt="Koncept Studio Logo"
+              width={48}
+              height={48}
               className="h-12 w-12 dark:invert"
             />
           </div>

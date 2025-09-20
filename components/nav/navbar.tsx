@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { NavbarThemeToggle } from './navbar-client'
+import Image from 'next/image'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -169,9 +170,11 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="group flex items-center space-x-2">
-              <img
+              <Image
                 src="/images/logo.svg"
                 alt="Koncept Studio Logo"
+                width={32}
+                height={32}
                 className="w-8 h-8 dark:invert"
               />
               <span className="text-xl lg:text-2xl font-bold group-hover:scale-102 transition-transform">

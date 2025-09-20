@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getSubscriptionPlansByType, saveUserPlanSelection } from './actions'
@@ -41,9 +41,9 @@ export default function PlanSelectionForm() {
 
   useEffect(() => {
     fetchPlanTypes()
-  }, [])
+  }, [fetchPlanTypes])
 
-  const fetchPlanTypes = async () => {
+  const fetchPlanTypes = useCallback(async () => {
     try {
       const groupedPlans = await getSubscriptionPlansByType()
 
@@ -63,7 +63,7 @@ export default function PlanSelectionForm() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const getTypeLabel = (type: string): string => {
     const labels: { [key: string]: string } = {

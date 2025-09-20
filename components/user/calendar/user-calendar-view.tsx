@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isToday, isPast, isAfter } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/client'
@@ -77,7 +77,7 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
   const [subscription, setSubscription] = useState(initialSubscription)
   const [hasOnlyPersonalTraining, setHasOnlyPersonalTraining] = useState(false)
   const supabase = createClient()
-  const bookingService = new BookingService()
+  const bookingService = useMemo(() => new BookingService(), [])
 
   // Confetti animation for successful booking
   const triggerConfetti = () => {
@@ -169,7 +169,7 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
       }
     }
     checkPersonalTrainingStatus()
-  }, [])
+  }, [bookingService])
 
   // Calculate 7 consecutive days starting from next available class
   const [weekStartDate, setWeekStartDate] = useState<Date>(new Date())

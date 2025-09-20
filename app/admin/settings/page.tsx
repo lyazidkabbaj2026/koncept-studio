@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -48,19 +48,7 @@ export default function AdminSettingsPage() {
   const [hasChanges, setHasChanges] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    if (authLoading) return
-
-    if (!user) {
-      router.push('/login')
-      return
-    }
-
-    // Check if user is admin
-    checkAdminAccess()
-  }, [user, authLoading, router])
-
-  const checkAdminAccess = async () => {
+  const checkAdminAccess = useCallback(async () => {
     try {
       const { data: profile } = await supabase
         .from('profiles')
@@ -79,7 +67,19 @@ export default function AdminSettingsPage() {
       console.error('Error checking admin access:', err)
       router.push('/')
     }
-  }
+  }, [user, router, supabase])
+
+  useEffect(() => {
+    if (authLoading) return
+
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    // Check if user is admin
+    checkAdminAccess()
+  }, [user, authLoading, router, checkAdminAccess])
 
   const loadSettings = async () => {
     try {

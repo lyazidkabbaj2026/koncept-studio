@@ -1,6 +1,8 @@
 export * from './booking'
 export * from './class'
 export * from './subscription'
+export type { BookingWithDetails, WaitlistWithDetails } from './booking'
+export type { CalendarEvent } from './class'
 
 // Common types
 export interface User {
@@ -69,7 +71,7 @@ export interface DashboardStats {
 
 export interface DashboardData {
   stats: DashboardStats
-  recent_bookings: any[]
-  upcoming_classes: any[]
-  pending_requests: any[]
+  recent_bookings: BookingWithDetails[]
+  upcoming_classes: CalendarEvent[]
+  pending_requests: WaitlistWithDetails[]
 }

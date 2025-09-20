@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -57,18 +57,7 @@ export default function CancellationsPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  useEffect(() => {
-    if (authLoading) return
-
-    if (!user) {
-      router.push('/login')
-      return
-    }
-
-    checkAdminAccess()
-  }, [user, authLoading, router])
-
-  const checkAdminAccess = async () => {
+  const checkAdminAccess = useCallback(async () => {
     try {
       const { data: profile } = await supabase
         .from('profiles')
@@ -86,7 +75,18 @@ export default function CancellationsPage() {
       console.error('Error checking admin access:', err)
       router.push('/')
     }
-  }
+  }, [user, router, supabase])
+
+  useEffect(() => {
+    if (authLoading) return
+
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    checkAdminAccess()
+  }, [user, authLoading, router, checkAdminAccess])
 
   const fetchCancellations = async () => {
     try {

@@ -84,8 +84,8 @@ export function ClassForm({ initialData, classId }: ClassFormProps) {
 
       router.push('/admin/classes')
       router.refresh()
-    } catch (err: any) {
-      setError(err.message || 'Une erreur s\'est produite')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Une erreur s\'est produite')
     } finally {
       setLoading(false)
     }
