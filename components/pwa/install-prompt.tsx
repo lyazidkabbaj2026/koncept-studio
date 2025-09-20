@@ -15,8 +15,12 @@ export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
+    // Set client-side flag
+    setIsClient(true)
+
     // Check if already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                         (window.navigator as any).standalone ||
@@ -81,7 +85,14 @@ export function InstallPrompt() {
 
   const handleDismiss = () => {
     setShowInstallPrompt(false)
-    localStorage.setItem('installPromptDismissed', Date.now().toString())
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('installPromptDismissed', Date.now().toString())
+    }
+  }
+
+  // Don't render on server-side
+  if (!isClient) {
+    return null
   }
 
   // Don't show if already installed or recently dismissed
