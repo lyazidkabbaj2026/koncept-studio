@@ -186,6 +186,24 @@ export async function forcePromoteFromWaitlist(waitlistEntryId: string): Promise
       return { success: false, error: 'Cours non trouvé' }
     }
 
+    // Check if user already has a booking for this schedule
+    const { data: existingBooking, error: existingBookingError } = await supabase
+      .from('class_bookings')
+      .select('id, status')
+      .eq('user_id', user.id)
+      .eq('schedule_id', schedule.id)
+      .single()
+
+    if (existingBookingError && existingBookingError.code !== 'PGRST116') {
+      // PGRST116 means no rows found, which is expected
+      console.error('Error checking existing booking:', existingBookingError)
+      return { success: false, error: 'Erreur lors de la vérification des réservations existantes' }
+    }
+
+    if (existingBooking) {
+      return { success: false, error: `L'utilisateur a déjà une réservation (${existingBooking.status}) pour ce cours` }
+    }
+
     // Get user's subscription (no capacity check for forced promotion)
     const { data: subscription, error: subscriptionError } = await supabase
       .from('user_subscriptions')
@@ -209,13 +227,17 @@ export async function forcePromoteFromWaitlist(waitlistEntryId: string): Promise
         schedule_id: schedule.id,
         subscription_id: subscription.id,
         status: 'confirmed',
-        booked_at: new Date().toISOString(),
-        booking_notes: 'Promotion manuelle admin (surbooking)'
+        booked_at: new Date().toISOString()
       })
 
     if (bookingError) {
       console.error('Error creating force booking:', bookingError)
-      return { success: false, error: 'Erreur lors de la création de la réservation forcée' }
+      console.error('Booking details:', {
+        user_id: user.id,
+        schedule_id: schedule.id,
+        subscription_id: subscription.id
+      })
+      return { success: false, error: `Erreur lors de la création de la réservation forcée: ${bookingError.message}` }
     }
 
     // Remove from waitlist
