@@ -15,7 +15,7 @@ export const APP_CONFIG = {
     LOCATION: '155 SECT 02 SAHL EL HIJAZ RYAD OULAD MTAA, Temara',
     ADDRESS: '155 SECT 02 SAHL EL HIJAZ RYAD OULAD MTAA, Temara',
     INSTAGRAM: {
-      URL: 'https://instagram.com/k_oncept_training',
+      URL: 'https://www.instagram.com/k_oncept_training/',
       HANDLE: '@k_oncept_training'
     }
   },

@@ -312,10 +312,9 @@ export default function Navbar() {
                           <Link href="/espace">Mon espace</Link>
                         </DropdownMenuItem>
                       )}
+                      <DropdownMenuSeparator />
                     </>
                   )}
-
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <button onClick={handleLogout} className="w-full text-left">
                       Se déconnecter

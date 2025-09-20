@@ -622,7 +622,9 @@ export default function HomePage() {
                 </p>
                 <div className="flex space-x-4">
                   <a
-                    href="#"
+                    href={APP_CONFIG.CONTACT.INSTAGRAM.URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="w-10 h-10 bg-primary/10 hover:bg-primary text-foreground hover:text-foreground-foreground rounded-lg flex items-center justify-center transition-all hover:scale-102"
                   >
                     <IconBrandInstagram className="w-5 h-5" />
