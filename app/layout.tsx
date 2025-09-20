@@ -7,7 +7,6 @@ import ErrorBoundary from "@/components/error-boundary";
 import { Toaster } from "sonner";
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { BackToTop } from "@/components/ui/back-to-top";
-import { NotificationDebug } from "@/components/debug/notification-debug";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { PWAManager } from "@/components/pwa/pwa-manager";
 
@@ -152,7 +151,6 @@ export default async function RootLayout({
           />
         </ThemeProvider>
         <BackToTop />
-        <NotificationDebug />
         <InstallPrompt />
         <PWAManager />
         <SpeedInsights />
