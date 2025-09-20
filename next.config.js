@@ -12,7 +12,6 @@ const withPWA = require('next-pwa')({
   },
   cacheOnFrontEndNav: true,
   reloadOnOnline: false,
-  swcMinify: true,
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
