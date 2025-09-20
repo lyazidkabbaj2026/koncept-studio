@@ -298,12 +298,20 @@ export default function Navbar() {
                     </div>
                   </DropdownMenuLabel>
 
-                  {profile.role === 'admin' && (
+                  <DropdownMenuSeparator />
+
+                  {/* Show navigation based on user role and current page */}
+                  {pathname === '/' && (
                     <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin">Administration</Link>
-                      </DropdownMenuItem>
+                      {profile.role === 'admin' ? (
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin">Administration</Link>
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem asChild>
+                          <Link href="/espace">Mon espace</Link>
+                        </DropdownMenuItem>
+                      )}
                     </>
                   )}
 
