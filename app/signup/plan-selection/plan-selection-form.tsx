@@ -39,10 +39,6 @@ export default function PlanSelectionForm() {
   const router = useRouter()
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchPlanTypes()
-  }, [fetchPlanTypes])
-
   const fetchPlanTypes = useCallback(async () => {
     try {
       const groupedPlans = await getSubscriptionPlansByType()
@@ -64,6 +60,10 @@ export default function PlanSelectionForm() {
       setLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    fetchPlanTypes()
+  }, [fetchPlanTypes])
 
   const getTypeLabel = (type: string): string => {
     const labels: { [key: string]: string } = {
