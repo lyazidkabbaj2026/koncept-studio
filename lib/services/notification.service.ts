@@ -78,9 +78,102 @@ export class NotificationService {
           }
         }
 
-        // Method 4: Force reload and retry if in PWA mode
-        if (!registration && this.isPWAMode()) {
-          console.log('🔄 PWA mode detected, attempting force registration...')
+        // Method 4: Chrome Android specific registration
+        if (!registration && this.isChromeAndroid() && this.isPWAMode()) {
+          console.log('🔄 Chrome Android PWA mode detected, attempting enhanced registration...')
+          try {
+            // Chrome Android needs special handling
+            console.log('📱 Chrome Android PWA - forcing Service Worker registration')
+
+            // Check if sw.js exists first
+            try {
+              const swResponse = await fetch('/sw.js', { method: 'HEAD' })
+              if (!swResponse.ok) {
+                throw new Error('Service Worker file not found')
+              }
+              console.log('✅ Service Worker file exists')
+            } catch (fetchError) {
+              console.error('❌ Service Worker file check failed:', fetchError)
+              throw new Error('Service Worker file not available')
+            }
+
+            // Unregister any existing service workers first for clean slate
+            const existingRegistrations = await navigator.serviceWorker.getRegistrations()
+            console.log(`🗑️ Unregistering ${existingRegistrations.length} existing registrations`)
+            await Promise.all(existingRegistrations.map(reg => reg.unregister()))
+
+            // Wait for cleanup to complete
+            await new Promise(resolve => setTimeout(resolve, 2000))
+
+            // Fresh registration with Chrome Android optimizations
+            registration = await navigator.serviceWorker.register('/sw.js', {
+              scope: '/',
+              updateViaCache: 'none',
+              type: 'classic'
+            })
+
+            console.log('✅ Chrome Android registration initiated:', registration)
+
+            // Enhanced activation waiting for Chrome Android
+            const waitForServiceWorker = async (): Promise<void> => {
+              if (registration.installing) {
+                console.log('⏳ Chrome Android Service Worker installing...')
+                await new Promise((resolve) => {
+                  const worker = registration.installing!
+                  const handleStateChange = () => {
+                    console.log('📝 Chrome SW state:', worker.state)
+                    if (worker.state === 'installed' || worker.state === 'activated') {
+                      worker.removeEventListener('statechange', handleStateChange)
+                      resolve(void 0)
+                    }
+                  }
+                  worker.addEventListener('statechange', handleStateChange)
+                })
+              }
+
+              if (registration.waiting) {
+                console.log('⏳ Chrome Android Service Worker waiting, forcing activation...')
+                registration.waiting.postMessage({ type: 'SKIP_WAITING' })
+
+                // Wait for activation
+                await new Promise((resolve) => {
+                  const checkActive = () => {
+                    if (registration.active) {
+                      console.log('✅ Chrome Android Service Worker now active')
+                      resolve(void 0)
+                    } else {
+                      setTimeout(checkActive, 100)
+                    }
+                  }
+                  checkActive()
+                })
+              }
+
+              // Final ready check
+              const readyRegistration = await navigator.serviceWorker.ready
+              console.log('✅ Chrome Android Service Worker confirmed ready:', readyRegistration.active?.state)
+            }
+
+            await waitForServiceWorker()
+
+          } catch (error) {
+            console.error('❌ Chrome Android enhanced registration failed:', error)
+
+            // Final fallback - try simple registration for Chrome Android
+            try {
+              console.log('🔧 Chrome Android fallback: trying simple registration...')
+              registration = await navigator.serviceWorker.register('/sw.js')
+              await navigator.serviceWorker.ready
+              console.log('✅ Chrome Android simple registration succeeded')
+            } catch (fallbackError) {
+              console.error('❌ Chrome Android fallback registration also failed:', fallbackError)
+            }
+          }
+        }
+
+        // Method 5: General force registration for other PWA browsers
+        if (!registration && this.isPWAMode() && !this.isChromeAndroid()) {
+          console.log('🔄 General PWA mode detected, attempting force registration...')
           try {
             // Unregister any existing service workers
             const registrations = await navigator.serviceWorker.getRegistrations()
@@ -144,6 +237,14 @@ export class NotificationService {
 
   private isFirefoxAndroid(): boolean {
     return this.isFirefox() && navigator.userAgent.toLowerCase().includes('android')
+  }
+
+  private isChrome(): boolean {
+    return navigator.userAgent.toLowerCase().includes('chrome') && !navigator.userAgent.toLowerCase().includes('firefox')
+  }
+
+  private isChromeAndroid(): boolean {
+    return this.isChrome() && navigator.userAgent.toLowerCase().includes('android')
   }
 
   async requestPermission(): Promise<NotificationPermission> {
