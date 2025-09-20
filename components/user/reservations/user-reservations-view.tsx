@@ -144,20 +144,30 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
   }
 
   const handleCancelBooking = async (booking: Booking) => {
-    try {
-      const { error } = await supabase
-        .from('class_bookings')
-        .update({ 
-          status: 'cancelled',
-          cancelled_at: new Date().toISOString(),
-          cancellation_reason: 'Annulé par l\'utilisateur'
-        })
-        .eq('id', booking.id)
+    // Check if cancellation is allowed (same logic as calendar view)
+    const classStartTime = new Date(booking.class_schedules.start_datetime)
+    const now = new Date()
+    const timeDifferenceInHours = (classStartTime.getTime() - now.getTime()) / (1000 * 60 * 60)
 
-      if (error) throw error
+    if (timeDifferenceInHours <= 1) {
+      setError('Vous ne pouvez pas annuler cette réservation car elle commence dans moins d\'une heure.')
+      return
+    }
+
+    try {
+      // Use the BookingService to handle cancellation and credit refund (same as calendar view)
+      const result = await bookingService.cancelBooking(booking.id)
+
+      if (!result.success) {
+        setError(result.error || 'Une erreur inattendue s\'est produite')
+        return
+      }
 
       // Refresh data
       await fetchReservations()
+
+      // Clear any previous errors
+      setError('')
     } catch (err: any) {
       setError(err.message)
     }

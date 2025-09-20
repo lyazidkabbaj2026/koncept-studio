@@ -205,7 +205,7 @@ export default function HomePage() {
       </section>
 
       {/* Studio Presentation */}
-      <section className="py-16 lg:py-24">
+      <section className="py-16 lg:py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             {/* Image */}
@@ -287,7 +287,7 @@ export default function HomePage() {
       </section>
 
       {/* Coach Section */}
-      <section className="py-16 lg:py-24" id="presentation-coach">
+      <section className="py-12 lg:py-16" id="presentation-coach">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             {/* Content */}

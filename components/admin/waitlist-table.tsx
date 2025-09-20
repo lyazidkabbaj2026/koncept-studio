@@ -5,8 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/common/data-table'
 import { formatDateTime } from '@/lib/utils/date'
-import { IconUser, IconClock, IconCalendarEvent, IconCheck } from '@tabler/icons-react'
-import { promoteFromWaitlist } from '@/app/admin/waitlist/actions'
+import { IconUser, IconClock, IconCalendarEvent, IconCheck, IconUserPlus, IconAlertTriangle } from '@tabler/icons-react'
+import { promoteFromWaitlist, forcePromoteFromWaitlist } from '@/app/admin/waitlist/actions'
 import { toast } from 'sonner'
 import type { WaitlistWithDetails } from '@/types'
 
@@ -17,6 +17,7 @@ interface WaitlistTableProps {
 
 export function WaitlistTable({ waitlist, showActions = true }: WaitlistTableProps) {
   const [promotingId, setPromotingId] = useState<string | null>(null)
+  const [forcePromotingId, setForcePromotingId] = useState<string | null>(null)
 
   const handlePromote = async (entryId: string) => {
     setPromotingId(entryId)
@@ -34,6 +35,25 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
       toast.error('Une erreur inattendue s\'est produite')
     } finally {
       setPromotingId(null)
+    }
+  }
+
+  const handleForcePromote = async (entryId: string) => {
+    setForcePromotingId(entryId)
+    try {
+      const result = await forcePromoteFromWaitlist(entryId)
+      if (result.success) {
+        toast.success('Utilisateur promu avec surbooking !')
+        // Refresh the data - this should be handled by the parent component
+        window.location.reload()
+      } else {
+        toast.error(result.error || 'Erreur lors de la promotion forcée')
+      }
+    } catch (error) {
+      console.error('Error force promoting user:', error)
+      toast.error('Une erreur inattendue s\'est produite')
+    } finally {
+      setForcePromotingId(null)
     }
   }
   const columns = [
@@ -140,19 +160,36 @@ export function WaitlistTable({ waitlist, showActions = true }: WaitlistTablePro
     columns.push({
       key: 'actions' as const,
       header: 'Actions',
-      cell: (entry: WaitlistWithDetails) => (
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handlePromote(entry.id)}
-            disabled={promotingId === entry.id}
-            title="Promouvoir depuis la liste d'attente"
-          >
-            <IconCheck className="w-4 h-4" />
-          </Button>
-        </div>
-      )
+      cell: (entry: WaitlistWithDetails) => {
+        const current = entry.schedule?.current_bookings || 0
+        const max = entry.schedule?.class?.max_capacity || 0
+        const isFull = current >= max
+
+        return (
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handlePromote(entry.id)}
+              disabled={promotingId === entry.id || isFull}
+              title={isFull ? "Cours complet - utilisez la promotion forcée" : "Promouvoir depuis la liste d'attente"}
+            >
+              <IconCheck className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant={isFull ? "default" : "outline"}
+              onClick={() => handleForcePromote(entry.id)}
+              disabled={forcePromotingId === entry.id}
+              title="Promouvoir avec surbooking (ignorer la capacité)"
+              className={isFull ? "bg-orange-600 hover:bg-orange-700" : ""}
+            >
+              <IconUserPlus className="w-4 h-4" />
+              {isFull && <IconAlertTriangle className="w-3 h-3 ml-1" />}
+            </Button>
+          </div>
+        )
+      }
     })
   }
 
