@@ -138,6 +138,14 @@ export class NotificationService {
            window.location.search.includes('pwa=true')
   }
 
+  private isFirefox(): boolean {
+    return navigator.userAgent.toLowerCase().includes('firefox')
+  }
+
+  private isFirefoxAndroid(): boolean {
+    return this.isFirefox() && navigator.userAgent.toLowerCase().includes('android')
+  }
+
   async requestPermission(): Promise<NotificationPermission> {
     if (!('Notification' in window)) {
       throw new Error('Ce navigateur ne supporte pas les notifications')
@@ -196,8 +204,37 @@ export class NotificationService {
 
       console.log('📱 PWA Standalone mode:', isStandalone)
       console.log('🔒 Secure context:', isSecureContext)
+      console.log('🦊 Firefox Android:', this.isFirefoxAndroid())
 
-      // Force Service Worker notifications in PWA context
+      // Special handling for Firefox Android
+      if (this.isFirefoxAndroid()) {
+        console.log('🦊 Firefox Android detected - using basic notifications (Service Worker unreliable)')
+
+        if (this.getPermissionStatus() !== 'granted') {
+          throw new Error('Permission de notification non accordée')
+        }
+
+        try {
+          const notification = new Notification(options.title, notificationOptions)
+
+          notification.onclick = () => {
+            console.log('🖱️ Notification clicked (Firefox)')
+            if ('focus' in window) window.focus()
+          }
+
+          notification.onerror = (error) => {
+            console.error('❌ Firefox notification error:', error)
+          }
+
+          console.log('✅ Firefox Android notification sent successfully')
+          return
+        } catch (firefoxError) {
+          console.error('❌ Firefox Android notification failed:', firefoxError)
+          throw new Error(`Firefox notification failed: ${firefoxError.message}`)
+        }
+      }
+
+      // Force Service Worker notifications in PWA context (non-Firefox)
       if (isStandalone || this.registration) {
         console.log('🚀 PWA detected - ensuring Service Worker notification')
 
@@ -209,6 +246,18 @@ export class NotificationService {
             console.log('✅ Service Worker registration obtained')
           } catch (swError) {
             console.error('❌ Failed to get Service Worker registration:', swError)
+
+            // Firefox fallback to basic notifications
+            if (this.isFirefox()) {
+              console.log('🦊 Firefox Service Worker failed, falling back to basic notifications')
+              const notification = new Notification(options.title, notificationOptions)
+              notification.onclick = () => {
+                if ('focus' in window) window.focus()
+              }
+              console.log('✅ Firefox fallback notification sent')
+              return
+            }
+
             throw new Error('Service Worker requis pour les notifications PWA')
           }
         }
@@ -216,6 +265,18 @@ export class NotificationService {
         // Verify Service Worker is active
         if (!this.registration.active) {
           console.error('❌ Service Worker is not active')
+
+          // Firefox fallback
+          if (this.isFirefox()) {
+            console.log('🦊 Firefox Service Worker inactive, using basic notifications')
+            const notification = new Notification(options.title, notificationOptions)
+            notification.onclick = () => {
+              if ('focus' in window) window.focus()
+            }
+            console.log('✅ Firefox fallback notification sent')
+            return
+          }
+
           throw new Error('Service Worker n\'est pas actif')
         }
 
@@ -233,10 +294,34 @@ export class NotificationService {
             return
           } catch (notificationError) {
             console.error('❌ Service Worker showNotification failed:', notificationError)
+
+            // Firefox fallback
+            if (this.isFirefox()) {
+              console.log('🦊 Firefox Service Worker notification failed, using basic fallback')
+              const notification = new Notification(options.title, notificationOptions)
+              notification.onclick = () => {
+                if ('focus' in window) window.focus()
+              }
+              console.log('✅ Firefox fallback notification sent')
+              return
+            }
+
             throw new Error(`Échec de l'envoi de notification: ${notificationError.message}`)
           }
         } else {
           console.error('❌ Service Worker registration invalid or missing showNotification')
+
+          // Firefox fallback
+          if (this.isFirefox()) {
+            console.log('🦊 Firefox Service Worker invalid, using basic notifications')
+            const notification = new Notification(options.title, notificationOptions)
+            notification.onclick = () => {
+              if ('focus' in window) window.focus()
+            }
+            console.log('✅ Firefox fallback notification sent')
+            return
+          }
+
           throw new Error('Service Worker indisponible pour les notifications PWA')
         }
       }
