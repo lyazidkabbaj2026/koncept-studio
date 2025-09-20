@@ -14,8 +14,16 @@ export function NotificationTester() {
 
   useEffect(() => {
     const initializeNotifications = async () => {
-      await notificationService.init()
-      setPermission(notificationService.getPermissionStatus())
+      try {
+        console.log('🚀 Initializing notification service...')
+        await notificationService.init()
+        const currentPermission = notificationService.getPermissionStatus()
+        setPermission(currentPermission)
+        console.log('✅ Notification service initialized, permission:', currentPermission)
+      } catch (error) {
+        console.error('❌ Failed to initialize notification service:', error)
+        toast.error('Erreur d\'initialisation des notifications')
+      }
     }
 
     initializeNotifications()

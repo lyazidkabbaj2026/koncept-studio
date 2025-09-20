@@ -27,21 +27,58 @@ export class NotificationService {
   async init(): Promise<void> {
     if ('serviceWorker' in navigator) {
       try {
-        // Wait for service worker to be ready
-        this.registration = await navigator.serviceWorker.ready
-        console.log('✅ Service Worker ready for notifications')
-      } catch (error) {
-        console.error('❌ Service Worker registration failed:', error)
+        console.log('🔄 Initializing Service Worker...')
 
-        // For mobile PWA, try to register manually if needed
-        try {
-          const registration = await navigator.serviceWorker.register('/sw.js')
-          await navigator.serviceWorker.ready
-          this.registration = registration
-          console.log('✅ Service Worker manually registered')
-        } catch (manualError) {
-          console.error('❌ Manual Service Worker registration failed:', manualError)
+        // First, check if there's already a registration
+        const existingRegistration = await navigator.serviceWorker.getRegistration()
+
+        if (existingRegistration) {
+          console.log('✅ Found existing Service Worker registration')
+          this.registration = existingRegistration
+
+          // Ensure it's active
+          if (existingRegistration.active) {
+            console.log('✅ Service Worker is active and ready')
+          } else {
+            console.log('⏳ Waiting for Service Worker to become active...')
+            await new Promise((resolve) => {
+              if (existingRegistration.installing) {
+                existingRegistration.installing.addEventListener('statechange', (e) => {
+                  if ((e.target as ServiceWorker).state === 'activated') {
+                    resolve(void 0)
+                  }
+                })
+              } else if (existingRegistration.waiting) {
+                existingRegistration.waiting.addEventListener('statechange', (e) => {
+                  if ((e.target as ServiceWorker).state === 'activated') {
+                    resolve(void 0)
+                  }
+                })
+              } else {
+                resolve(void 0)
+              }
+            })
+          }
+        } else {
+          console.log('⚠️ No Service Worker registration found, waiting for next-pwa to register...')
+
+          // Wait for next-pwa to register the service worker
+          try {
+            this.registration = await navigator.serviceWorker.ready
+            console.log('✅ Service Worker ready via next-pwa')
+          } catch (readyError) {
+            console.error('❌ Service Worker ready failed:', readyError)
+          }
         }
+
+        if (this.registration) {
+          console.log('🎉 Service Worker successfully initialized for notifications')
+        } else {
+          console.warn('⚠️ No Service Worker registration available')
+        }
+
+      } catch (error) {
+        console.error('❌ Service Worker initialization failed:', error)
       }
     } else {
       console.warn('⚠️ Service Worker not supported in this browser')
@@ -123,13 +160,30 @@ export class NotificationService {
           }
         }
 
+        // Verify Service Worker is active
+        if (!this.registration.active) {
+          console.error('❌ Service Worker is not active')
+          throw new Error('Service Worker n\'est pas actif')
+        }
+
         if (this.registration && 'showNotification' in this.registration) {
           console.log('📢 Using Service Worker notification (PWA mode)')
-          await this.registration.showNotification(options.title, notificationOptions)
-          console.log('✅ Service Worker notification sent successfully')
-          return
+
+          // Verify we have notification permission
+          if (this.getPermissionStatus() !== 'granted') {
+            throw new Error('Permission de notification non accordée')
+          }
+
+          try {
+            await this.registration.showNotification(options.title, notificationOptions)
+            console.log('✅ Service Worker notification sent successfully')
+            return
+          } catch (notificationError) {
+            console.error('❌ Service Worker showNotification failed:', notificationError)
+            throw new Error(`Échec de l'envoi de notification: ${notificationError.message}`)
+          }
         } else {
-          console.error('❌ Service Worker registration invalid')
+          console.error('❌ Service Worker registration invalid or missing showNotification')
           throw new Error('Service Worker indisponible pour les notifications PWA')
         }
       }

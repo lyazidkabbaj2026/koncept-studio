@@ -42,9 +42,22 @@ export function MobileDebugInfo() {
       let serviceWorkerState = 'not-supported'
       if (serviceWorkerSupported) {
         try {
-          const registration = await navigator.serviceWorker.ready
-          serviceWorkerState = registration ? 'ready' : 'not-ready'
-        } catch {
+          const registration = await navigator.serviceWorker.getRegistration()
+          if (registration) {
+            if (registration.active) {
+              serviceWorkerState = 'active'
+            } else if (registration.installing) {
+              serviceWorkerState = 'installing'
+            } else if (registration.waiting) {
+              serviceWorkerState = 'waiting'
+            } else {
+              serviceWorkerState = 'inactive'
+            }
+          } else {
+            serviceWorkerState = 'not-registered'
+          }
+        } catch (error) {
+          console.error('Service Worker check error:', error)
           serviceWorkerState = 'error'
         }
       }
