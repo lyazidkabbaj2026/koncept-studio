@@ -315,6 +315,15 @@ export default function Navbar() {
                     </>
                   )}
 
+                  {/* Admin test features */}
+                  {profile.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/test-notifications" className="gap-2">
+                        🔔 Test Notifications
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <button onClick={handleLogout} className="w-full text-left">
