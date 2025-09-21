@@ -78,7 +78,7 @@ export default function PlanSelectionForm() {
     const descriptions: { [key: string]: string } = {
       'carnet': 'Formules flexibles avec un nombre défini de séances',
       'personal_training': 'Accompagnement personnalisé one-to-one',
-      'abonnement': 'Accès illimité avec limite de séances par semaine'
+      'abonnement': 'Abonnement annuel avec limite de séances par semaine'
     }
     return descriptions[type] || ''
   }
@@ -200,20 +200,12 @@ export default function PlanSelectionForm() {
                         <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{plan.description}</p>
                       )}
                       <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                        {/* For abonnement plans, show unlimited credits */}
-                        {planType.type === 'abonnement' ? (
+                        {/* For non-abonnement plans, show total séances */}
+                        {planType.type !== 'abonnement' && plan.credits && plan.credits > 0 && (
                           <Badge variant="secondary" className="text-xs px-2 py-1">
-                            <IconInfinity className="w-3 h-3 mr-1 flex-shrink-0" />
-                            <span className="truncate">Séances illimitées</span>
+                            <IconCheck className="w-3 h-3 mr-1 flex-shrink-0" />
+                            <span className="truncate">Total: {plan.credits} séances</span>
                           </Badge>
-                        ) : (
-                          /* For non-abonnement plans, show total séances */
-                          plan.credits && plan.credits > 0 && (
-                            <Badge variant="secondary" className="text-xs px-2 py-1">
-                              <IconCheck className="w-3 h-3 mr-1 flex-shrink-0" />
-                              <span className="truncate">Total: {plan.credits} séances</span>
-                            </Badge>
-                          )
                         )}
 
                         {/* For non-abonnement plans, show validity in months only */}
