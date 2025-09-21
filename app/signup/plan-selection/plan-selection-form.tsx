@@ -192,12 +192,7 @@ export default function PlanSelectionForm() {
                         />
                       </div>
                       <div className="text-xl sm:text-2xl font-bold text-primary">
-                        {plan.price_dhs} DH
-                        {plan.validity_months && planType.type !== 'abonnement' && (
-                          <span className="text-xs sm:text-sm text-muted-foreground ml-1 sm:ml-2">
-                            /{plan.validity_months} mois
-                          </span>
-                        )}
+                        {plan.price_dhs} DHS
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-2 sm:space-y-3">

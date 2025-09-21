@@ -17,7 +17,9 @@
       "Bash(sed:*)",
       "Bash(cat:*)",
       "Bash(find:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(dir publicimagesicons)",
+      "Bash(del \"scripts\\generate-icons.js\")"
     ],
     "deny": [],
     "ask": []

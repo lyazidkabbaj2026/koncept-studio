@@ -72,36 +72,36 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: '/images/logo.svg',
-        type: 'image/svg+xml',
-      },
-      {
-        url: '/images/logo.svg',
+        url: '/images/icons/icon-192x192.png',
         sizes: '192x192',
-        type: 'image/svg+xml',
+        type: 'image/png',
+      },
+      {
+        url: '/images/icons/icon-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
       },
       {
         url: '/images/logo.svg',
-        sizes: '512x512',
         type: 'image/svg+xml',
       }
     ],
-    shortcut: '/images/logo.svg',
+    shortcut: '/images/icons/icon-192x192.png',
     apple: [
       {
-        url: '/images/logo.svg',
+        url: '/images/icons/icon-152x152.png',
         sizes: '152x152',
-        type: 'image/svg+xml',
+        type: 'image/png',
       }
     ],
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: 'Koncept Studio',
     startupImage: [
       {
-        url: '/images/logo.svg',
+        url: '/images/icons/icon-512x512.png',
         media: '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)',
       }
     ],
@@ -118,7 +118,7 @@ export default async function RootLayout({
       <body className={`${ibmPlexSans.variable} font-sans`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
@@ -147,7 +147,7 @@ export default async function RootLayout({
               },
               className: 'toast-custom',
             }}
-            theme="system"
+            theme="dark"
           />
         </ThemeProvider>
         <BackToTop />

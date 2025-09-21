@@ -1,8 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { SplashScreen } from './splash-screen'
 
 export function PWAManager() {
+  const [showSplash, setShowSplash] = useState(false)
+  const [isPWA, setIsPWA] = useState(false)
+
   useEffect(() => {
     const initializePWA = async () => {
       try {
@@ -11,8 +15,13 @@ export function PWAManager() {
                             (window.navigator as any).standalone ||
                             window.location.search.includes('pwa=true')
 
+        setIsPWA(isStandalone)
+
         if (isStandalone) {
           console.log('🚀 PWA detected')
+
+          // Show splash screen for PWA users
+          setShowSplash(true)
 
           // Check if Service Worker is properly registered
           if ('serviceWorker' in navigator) {
@@ -34,6 +43,10 @@ export function PWAManager() {
     initializePWA()
   }, [])
 
-  // This component doesn't render anything visible
+  // Show splash screen only for PWA users
+  if (isPWA && showSplash) {
+    return <SplashScreen />
+  }
+
   return null
 }

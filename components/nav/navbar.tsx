@@ -97,7 +97,7 @@ export default function Navbar() {
     if (!isHomePage) return
 
     const handleScroll = () => {
-      const sections = ['presentation-studio', 'presentation-coach', 'faq', 'contact']
+      const sections = ['presentation-studio', 'presentation-coach', 'faq', 'contact', 'nous-trouver']
       const scrollPosition = window.scrollY + 100 // Offset for navbar height
 
       for (let i = sections.length - 1; i >= 0; i--) {
@@ -227,6 +227,16 @@ export default function Navbar() {
                 >
                   Contact
                 </Link>
+                <Link
+                  href="/#nous-trouver"
+                  className={`px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium rounded-lg transition-all ${
+                    activeSection === 'nous-trouver'
+                      ? 'text-primary bg-primary/5'
+                      : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                  }`}
+                >
+                  Nous trouver
+                </Link>
               </>
             )}
 
@@ -329,7 +339,7 @@ export default function Navbar() {
         {/* Mobile Navigation */}
         {isHomePage && !user && (
           <div className="md:hidden border-t border-border">
-            <div className="grid grid-cols-4 gap-1 py-2 px-2">
+            <div className="grid grid-cols-5 gap-1 py-2 px-2">
               <Link
                 href="/#presentation-studio"
                 className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
@@ -369,6 +379,16 @@ export default function Navbar() {
                 }`}
               >
                 Contact
+              </Link>
+              <Link
+                href="/#nous-trouver"
+                className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
+                  activeSection === 'nous-trouver'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                }`}
+              >
+                Adresse
               </Link>
             </div>
           </div>

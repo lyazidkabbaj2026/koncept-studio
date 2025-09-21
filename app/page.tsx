@@ -442,7 +442,15 @@ export default function HomePage() {
                       </div>
                       <div>
                         <h4 className="font-semibold mb-1">Adresse</h4>
-                        <p className="text-muted-foreground">{APP_CONFIG.CONTACT.ADDRESS}</p>
+                        <a
+                          href="https://maps.app.goo.gl/A1gGTxukPF1DwhH48"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-foreground hover:underline transition-colors cursor-pointer"
+                          aria-label="Ouvrir l'adresse de Koncept Studio dans Google Maps"
+                        >
+                          {APP_CONFIG.CONTACT.ADDRESS}
+                        </a>
                       </div>
                     </div>
 
@@ -597,6 +605,91 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Nous trouver Section */}
+      <section className="py-16 lg:py-24 bg-gradient-to-br from-primary/5 via-background to-accent/5" id="nous-trouver">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <Badge className="text-foreground bg-primary/10 mb-4">Localisation</Badge>
+              <h2 className="text-3xl lg:text-5xl font-bold mb-6">
+                Où nous
+                <span className="text-primary"> trouver</span>
+              </h2>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Map Section */}
+              <div className="relative">
+                <div className="aspect-video rounded-2xl overflow-hidden shadow-brutal border-2 border-border relative">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3307.2!2d-6.898567!3d33.938777!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xda76b862a6b8a1d%3A0x1234567890abcdef!2sKoncept%20Studio!5e0!3m2!1sen!2sus!4v1672531200000!5m2!1sen!2sus"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Koncept Studio - 155 Sect 02 Sahl El Hijaz Ryad Oulad Mtaa, Temara"
+                    className="w-full h-full"
+                  />
+
+                  {/* Custom Red Marker Overlay */}
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-full pointer-events-none z-10">
+                    <div className="relative">
+                      {/* Red Marker Pin */}
+                      <div className="w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-lg relative">
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-3 border-r-3 border-t-4 border-l-transparent border-r-transparent border-t-red-500"></div>
+                      </div>
+
+                      {/* Studio Label */}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 bg-red-500 text-white text-xs font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                        Koncept Studio
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Address Information */}
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-2xl font-bold mb-6">Notre adresse</h3>
+
+                  {/* Single Address Link */}
+                  <div className="bg-card rounded-xl p-6 border border-border hover:shadow-md transition-all">
+                    <a
+                      href="https://maps.app.goo.gl/A1gGTxukPF1DwhH48"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block group"
+                      aria-label="Ouvrir l'adresse de Koncept Studio dans Google Maps"
+                    >
+                      <div className="flex items-start space-x-4">
+                        <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                          <IconMapPin className="w-6 h-6 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold mb-1 group-hover:text-primary transition-colors">
+                            Koncept Studio
+                          </h4>
+                          <p className="text-muted-foreground group-hover:text-foreground transition-colors underline decoration-transparent group-hover:decoration-current">
+                            {APP_CONFIG.CONTACT.ADDRESS}
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-2 opacity-70">
+                            Cliquez pour ouvrir dans Google Maps
+                          </p>
+                        </div>
+                        <IconArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100" />
+                      </div>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-gradient-to-br from-muted/30 via-background to-muted/20 border-t border-border">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -676,7 +769,15 @@ export default function HomePage() {
                   <div className="flex items-start space-x-3">
                     <IconMapPin className="w-5 h-5 text-foreground mt-0.5 flex-shrink-0" />
                     <div className="text-muted-foreground">
-                      <p>{APP_CONFIG.CONTACT.ADDRESS}</p>
+                      <a
+                        href="https://maps.app.goo.gl/A1gGTxukPF1DwhH48"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-foreground hover:underline transition-colors cursor-pointer"
+                        aria-label="Ouvrir l'adresse de Koncept Studio dans Google Maps"
+                      >
+                        {APP_CONFIG.CONTACT.ADDRESS}
+                      </a>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">

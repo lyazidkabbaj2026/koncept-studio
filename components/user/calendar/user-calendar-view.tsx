@@ -77,6 +77,7 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
   const [showEventModal, setShowEventModal] = useState(false)
   const [subscription, setSubscription] = useState(initialSubscription)
   const [hasOnlyPersonalTraining, setHasOnlyPersonalTraining] = useState(false)
+  const [selectedMobileDate, setSelectedMobileDate] = useState<Date>(new Date())
 
   // Studio launch logic - 2025 dates
   // Get current effective date
@@ -239,6 +240,17 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
   useEffect(() => {
     const newWeekStart = getCalculatedWeekStart()
     setWeekStartDate(newWeekStart)
+
+    // Set mobile date to today if it's within the week, otherwise first day of week
+    const today = getCurrentDate()
+    const weekEnd = addDays(newWeekStart, 6)
+
+    if (today >= newWeekStart && today <= weekEnd) {
+      setSelectedMobileDate(today)
+    } else {
+      setSelectedMobileDate(newWeekStart)
+    }
+
     fetchEvents()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPhase])
@@ -906,13 +918,55 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
         </div>
 
         {/* Mobile/Tablet List View */}
-        <div className="lg:hidden space-y-6">
-          {weekDays.map(day => {
-            const dayEvents = getEventsForDate(day)
-            const isCurrentDay = isToday(day)
+        <div className="lg:hidden">
+          {/* Date Filter Tabs */}
+          <div className="mb-6">
+            <div className="flex overflow-x-auto pb-2 -mx-4 px-4 scrollbar-none">
+              <div className="flex space-x-2 min-w-max">
+                {weekDays.map(day => {
+                  const isCurrentDay = isToday(day)
+                  const isSelected = isSameDay(day, selectedMobileDate)
+                  const dayEvents = getEventsForDate(day)
+
+                  return (
+                    <button
+                      key={day.toISOString()}
+                      onClick={() => setSelectedMobileDate(day)}
+                      className={cn(
+                        "flex flex-col items-center p-3 rounded-lg min-w-[80px] transition-all",
+                        isSelected
+                          ? "bg-primary text-primary-foreground shadow-md"
+                          : "bg-card border border-border hover:bg-accent"
+                      )}
+                    >
+                      <div className="text-xs font-medium uppercase tracking-wide opacity-80">
+                        {format(day, 'EEE', { locale: fr })}
+                      </div>
+                      <div className="text-lg font-bold mt-1">
+                        {format(day, 'd')}
+                      </div>
+                      {isCurrentDay && !isSelected && (
+                        <div className="w-1 h-1 bg-primary rounded-full mt-1"></div>
+                      )}
+                      {dayEvents.length > 0 && (
+                        <div className="text-xs mt-1 opacity-70">
+                          {dayEvents.length} cours
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Selected Day Content */}
+          {(() => {
+            const selectedDayEvents = getEventsForDate(selectedMobileDate)
+            const isCurrentDay = isToday(selectedMobileDate)
 
             return (
-              <Card key={day.toISOString()} className={cn(
+              <Card className={cn(
                 "shadow-soft transition-all border-l-4",
                 isCurrentDay ? "border-l-foreground bg-accent/5" : "border-l-border"
               )}>
@@ -924,10 +978,10 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                         isCurrentDay && "bg-primary text-primary-foreground"
                       )}>
                         <div className="text-lg leading-none">
-                          {format(day, 'd')}
+                          {format(selectedMobileDate, 'd')}
                         </div>
                         <div className="text-xs leading-none mt-1 uppercase tracking-wide">
-                          {format(day, 'MMM', { locale: fr })}
+                          {format(selectedMobileDate, 'MMM', { locale: fr })}
                         </div>
                       </div>
                       <div>
@@ -935,10 +989,10 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                           "font-semibold capitalize",
                           isCurrentDay && "text-primary"
                         )}>
-                          {format(day, 'EEEE', { locale: fr })}
+                          {format(selectedMobileDate, 'EEEE', { locale: fr })}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {dayEvents.length} cours
+                          {selectedDayEvents.length} cours
                         </div>
                       </div>
                     </div>
@@ -948,14 +1002,14 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  {dayEvents.length === 0 ? (
+                  {selectedDayEvents.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <IconCalendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p>Aucun cours prévu</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {dayEvents.map(event => {
+                      {selectedDayEvents.map(event => {
                         const startTime = new Date(event.start_datetime)
                         const endTime = new Date(event.end_datetime)
 
@@ -1088,7 +1142,7 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                 </CardContent>
               </Card>
             )
-          })}
+          })()}
         </div>
 
         {/* Class Detail Modal */}

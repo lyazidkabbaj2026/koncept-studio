@@ -121,7 +121,7 @@ export function InstallPrompt() {
           </Button>
         </div>
         <CardDescription>
-          Installez Koncept Studio pour une expérience native et les notifications push
+          Installez Koncept Studio pour une expérience native
         </CardDescription>
       </CardHeader>
 
