@@ -5,11 +5,12 @@ import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, 
 import { fr } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { IconChevronLeft, IconChevronRight, IconCalendar, IconClock, IconUser, IconMapPin, IconAlertTriangle, IconCircleCheck, IconUsers, IconInfoCircle, IconStar, IconActivity } from '@tabler/icons-react'
+import { IconRocket, IconCalendar, IconClock, IconUser, IconMapPin, IconAlertTriangle, IconCircleCheck, IconUsers, IconInfoCircle, IconStar, IconActivity, IconCalendarX } from '@tabler/icons-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { BookingService } from '@/lib/services/booking.service'
@@ -76,6 +77,34 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
   const [showEventModal, setShowEventModal] = useState(false)
   const [subscription, setSubscription] = useState(initialSubscription)
   const [hasOnlyPersonalTraining, setHasOnlyPersonalTraining] = useState(false)
+
+  // Studio launch logic - 2025 dates
+  // Get current effective date
+  const getCurrentDate = () => new Date()
+
+  // Launch dates
+  const prelaunchStart = new Date(2025, 8, 21) // Sept 21, 2025
+  const launchMoment = new Date(2025, 8, 28, 18, 0, 0) // Sept 28, 2025 at 18:00
+  const planningWeekStart = new Date(2025, 8, 29) // Sept 29, 2025 (Monday)
+
+  // Determine current phase
+  const getCurrentPhase = () => {
+    const now = getCurrentDate()
+    if (now < launchMoment) {
+      return 'pre-launch'
+    }
+    return 'post-launch'
+  }
+
+  const currentPhase = getCurrentPhase()
+
+  // Helper function to check if event is past using simulated date
+  const isEventPast = (eventDateTime: string) => {
+    const eventDate = new Date(eventDateTime)
+    const currentDate = getCurrentDate()
+    return eventDate < currentDate
+  }
+
   const supabase = createClient()
   const bookingService = useMemo(() => new BookingService(), [])
 
@@ -171,66 +200,76 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
     checkPersonalTrainingStatus()
   }, [bookingService])
 
-  // Calculate 7 consecutive days starting from next available class
-  const [weekStartDate, setWeekStartDate] = useState<Date>(new Date())
-  
+  // Calculate week days based on phase
+  const getCalculatedWeekStart = () => {
+    if (currentPhase === 'pre-launch') {
+      return planningWeekStart // Fixed to Sept 29, 2025
+    }
+
+    // Post-launch: Calculate based on current week (starting Monday)
+    const today = getCurrentDate()
+    const mondayOfThisWeek = startOfWeek(today, { weekStartsOn: 1 })
+
+    // Check if it's past Sunday 18:00, then show next week
+    const now = getCurrentDate()
+    const sundayOfThisWeek = addDays(mondayOfThisWeek, 6)
+    const rolloverTime = new Date(sundayOfThisWeek)
+    rolloverTime.setHours(18, 0, 0, 0)
+
+    if (now >= rolloverTime) {
+      return addDays(mondayOfThisWeek, 7) // Next week
+    }
+
+    return mondayOfThisWeek // This week
+  }
+
+  const [weekStartDate, setWeekStartDate] = useState<Date>(getCalculatedWeekStart())
+
   const getWeekDays = (startDate: Date) => {
-    // Return 7 consecutive days starting from startDate
     const days = []
     for (let i = 0; i < 7; i++) {
       days.push(addDays(startDate, i))
     }
     return days
   }
-  
+
   const weekDays = getWeekDays(weekStartDate)
 
+  // Update week when phase changes
   useEffect(() => {
+    const newWeekStart = getCalculatedWeekStart()
+    setWeekStartDate(newWeekStart)
     fetchEvents()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [currentPhase])
 
   const fetchEvents = async () => {
     try {
       setLoading(true)
 
-      const now = new Date()
+      const now = getCurrentDate()
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+      // Calculate the week range for fetching
+      const calculatedWeekStart = getCalculatedWeekStart()
+      const weekEnd = addDays(calculatedWeekStart, 6)
 
       // Use optimized view instead of calendar_events
       const { data: eventsData, error: eventsError } = await supabase
         .from('calendar_events_optimized')
         .select('*')
-        .gte('start_datetime', now.toISOString())
+        .gte('start_datetime', calculatedWeekStart.toISOString())
+        .lte('start_datetime', weekEnd.toISOString())
         .order('start_datetime')
         .limit(50) // Limit results for performance
 
       if (eventsError) throw eventsError
 
-      // Set week start based on first available class or today
-      const firstEventDate = eventsData && eventsData.length > 0
-        ? new Date(eventsData[0].start_datetime)
-        : now
+      // Update the week start state to match what we calculated
+      setWeekStartDate(calculatedWeekStart)
 
-      const calculatedWeekStart = new Date(
-        firstEventDate.getFullYear(),
-        firstEventDate.getMonth(),
-        firstEventDate.getDate()
-      )
-
-      // Only show today if it has future classes, otherwise start from next available day
-      const finalWeekStart = isSameDay(calculatedWeekStart, today) || isAfter(calculatedWeekStart, today)
-        ? calculatedWeekStart
-        : today
-
-      setWeekStartDate(finalWeekStart)
-
-      // Filter events for the week
-      const weekEnd = addDays(finalWeekStart, 6)
-      const weekEvents = eventsData?.filter(event => {
-        const eventDate = new Date(event.start_datetime)
-        return eventDate >= finalWeekStart && eventDate <= weekEnd
-      }) || []
+      // All events are already filtered by the database query
+      const weekEvents = eventsData || []
 
       // Fetch user's bookings and waitlist in parallel
       const [bookingsResult, waitlistResult] = await Promise.all([
@@ -387,7 +426,7 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
     if (!event.user_booking) return false
 
     const classStartTime = new Date(event.start_datetime)
-    const now = new Date()
+    const now = getCurrentDate()
     const timeDifferenceInHours = (classStartTime.getTime() - now.getTime()) / (1000 * 60 * 60)
 
     return timeDifferenceInHours > 1
@@ -436,14 +475,9 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
   }
 
   const getEventsForDate = (date: Date) => {
-    const now = new Date()
     return events.filter(event => {
       const eventDate = new Date(event.start_datetime)
-      const eventStart = new Date(event.start_datetime)
-      
-      // For events on the same day, check if they haven't started yet
-      // For events on future days, show all of them
-      return isSameDay(eventDate, date) && isAfter(eventStart, now)
+      return isSameDay(eventDate, date)
     })
   }
 
@@ -462,14 +496,13 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
   const fetchEventsForWeek = async (weekStart: Date) => {
     try {
       setLoading(true)
-      const now = new Date()
+      const now = getCurrentDate()
       const weekEnd = addDays(weekStart, 6)
       
-      // Fetch events for the specified week, but only future classes
+      // Fetch events for the specified week
       const { data: eventsData, error: eventsError } = await supabase
         .from('calendar_events')
         .select('*')
-        .gte('start_datetime', now.toISOString()) // Only future classes
         .gte('start_datetime', weekStart.toISOString())
         .lte('start_datetime', weekEnd.toISOString())
         .order('start_datetime')
@@ -523,13 +556,18 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
   }
 
   const canUserBook = (event: ClassEvent) => {
+    // During pre-launch, booking is disabled
+    if (currentPhase === 'pre-launch') {
+      return false
+    }
+
     // User already booked
     if (event.user_booking) {
       return false
     }
 
-    // Class has started or passed
-    if (isPast(new Date(event.start_datetime))) {
+    // Class has started or passed (using simulated date)
+    if (isEventPast(event.start_datetime)) {
       return false
     }
 
@@ -558,11 +596,12 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
   }
 
   const canJoinWaitlist = (event: ClassEvent) => {
-    return !event.user_booking && 
-           !event.user_waitlist_position && 
+    return !event.user_booking &&
+           !event.user_waitlist_position &&
            event.current_bookings >= event.max_capacity &&
-           !isPast(new Date(event.start_datetime)) &&
-           subscription
+           !isEventPast(event.start_datetime) &&
+           subscription &&
+           currentPhase !== 'pre-launch'
   }
 
   const handleEventClick = (event: ClassEvent) => {
@@ -660,6 +699,21 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
             </div>
 
           </div>
+
+          {/* Pre-launch Banner */}
+          {currentPhase === 'pre-launch' && (
+            <Alert className="mb-6 border-primary bg-primary/5">
+              <IconRocket className="h-4 w-4" />
+              <AlertDescription>
+                <div className="font-medium mb-2">Lancement imminent du studio!</div>
+                <p className="text-sm">
+                  Les réservations seront ouvertes le{' '}
+                  <strong>{format(launchMoment, 'EEEE d MMMM yyyy à HH:mm', { locale: fr })}</strong>.
+                  Vous pouvez consulter le planning de la semaine du {format(planningWeekStart, 'd MMMM', { locale: fr })} au {format(addDays(planningWeekStart, 6), 'd MMMM yyyy', { locale: fr })}.
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
 
         </div>
 
@@ -782,7 +836,25 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                                         </Badge>
                                       ) : (
                                         <>
-                                          {canUserBook(event) ? (
+                                          {currentPhase === 'pre-launch' ? (
+                                            <TooltipProvider>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Button
+                                                    disabled
+                                                    size="sm"
+                                                    className="w-full text-xs h-6"
+                                                  >
+                                                    <IconCalendarX className="h-3 w-3 mr-1" />
+                                                    Bientôt
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>Réservations ouvertes le {format(launchMoment, 'd/MM à HH:mm')}</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </TooltipProvider>
+                                          ) : canUserBook(event) ? (
                                             <Button
                                               onClick={(e) => {
                                                 e.stopPropagation()
@@ -807,8 +879,11 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                                             >
                                               Rejoindre liste d'attente
                                             </Button>
-                                          ) : isPast(new Date(event.start_datetime)) ? (
-                                            <Badge variant="secondary" className="text-xs w-full justify-center">Commencé</Badge>
+                                          ) : isEventPast(event.start_datetime) ? (
+                                            <Badge variant="secondary" className="text-xs w-full justify-center">
+                                              <IconCalendarX className="h-3 w-3 mr-1" />
+                                              Expiré
+                                            </Badge>
                                           ) : (
                                             <Badge variant="secondary" className="text-xs w-full justify-center">Complet</Badge>
                                           )}
@@ -952,7 +1027,24 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                                     </Badge>
                                   ) : (
                                     <>
-                                      {canUserBook(event) ? (
+                                      {currentPhase === 'pre-launch' ? (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                disabled
+                                                className="flex-1"
+                                              >
+                                                <IconCalendarX className="h-4 w-4 mr-2" />
+                                                Bientôt disponible
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Réservations ouvertes le {format(launchMoment, 'd/MM à HH:mm')}</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      ) : canUserBook(event) ? (
                                         <Button
                                           onClick={(e) => {
                                             e.stopPropagation()
@@ -975,8 +1067,11 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                                         >
                                           Rejoindre la liste d'attente
                                         </Button>
-                                      ) : isPast(new Date(event.start_datetime)) ? (
-                                        <Badge variant="secondary" className="flex-1 justify-center">Commencé</Badge>
+                                      ) : isEventPast(event.start_datetime) ? (
+                                        <Badge variant="secondary" className="flex-1 justify-center">
+                                          <IconCalendarX className="h-3 w-3 mr-1" />
+                                          Expiré
+                                        </Badge>
                                       ) : (
                                         <Badge variant="secondary" className="flex-1 justify-center">Complet</Badge>
                                       )}
@@ -1051,7 +1146,12 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                       </Button>
                     ) : (
                       <>
-                        {canUserBook(selectedEvent) ? (
+                        {currentPhase === 'pre-launch' ? (
+                          <Button variant="outline" disabled>
+                            <IconCalendarX className="h-4 w-4 mr-2" />
+                            Réservations bientôt ouvertes
+                          </Button>
+                        ) : canUserBook(selectedEvent) ? (
                           <Button
                             onClick={() => {
                               handleBookClass(selectedEvent)
@@ -1072,9 +1172,10 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                           >
                             Rejoindre la liste d'attente
                           </Button>
-                        ) : isPast(new Date(selectedEvent.start_datetime)) ? (
+                        ) : isEventPast(selectedEvent.start_datetime) ? (
                           <Button variant="outline" disabled>
-                            Cours terminé
+                            <IconCalendarX className="h-4 w-4 mr-2" />
+                            Cours expiré
                           </Button>
                         ) : (
                           <Button variant="outline" disabled>
