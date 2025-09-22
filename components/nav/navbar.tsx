@@ -406,10 +406,10 @@ export default function Navbar() {
 
         {isEspacePage && (
           <div className="md:hidden border-t border-border">
-            <div className="flex gap-1 py-2 px-2 overflow-x-auto">
+            <div className="flex py-2 px-1 overflow-x-auto">
               <Link
                 href="/espace/planning"
-                className={`text-xs font-semibold transition-colors text-center py-3 px-3 rounded-md whitespace-nowrap flex-1 min-w-0 ${
+                className={`text-sm font-semibold transition-colors text-center py-3 px-4 rounded-lg whitespace-nowrap flex-shrink-0 ${
                   pathname === '/espace/planning'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
@@ -419,7 +419,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/espace/reservations"
-                className={`text-xs font-semibold transition-colors text-center py-3 px-2 rounded-md whitespace-nowrap flex-1 min-w-0 ${
+                className={`text-sm font-semibold transition-colors text-center py-3 px-4 rounded-lg whitespace-nowrap flex-shrink-0 ${
                   pathname === '/espace/reservations'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
@@ -429,7 +429,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/espace/abonnement"
-                className={`text-xs font-semibold transition-colors text-center py-3 px-2 rounded-md whitespace-nowrap flex-1 min-w-0 ${
+                className={`text-sm font-semibold transition-colors text-center py-3 px-4 rounded-lg whitespace-nowrap flex-shrink-0 ${
                   pathname === '/espace/abonnement'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
@@ -439,7 +439,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/espace/subscriptions"
-                className={`text-xs font-semibold transition-colors text-center py-3 px-3 rounded-md whitespace-nowrap flex-1 min-w-0 ${
+                className={`text-sm font-semibold transition-colors text-center py-3 px-4 rounded-lg whitespace-nowrap flex-shrink-0 ${
                   pathname === '/espace/subscriptions'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
