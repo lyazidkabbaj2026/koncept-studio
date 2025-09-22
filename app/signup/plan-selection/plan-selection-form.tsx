@@ -241,14 +241,25 @@ export default function PlanSelectionForm() {
             : `${selectedPlans.length} formule${selectedPlans.length > 1 ? 's' : ''} sélectionnée${selectedPlans.length > 1 ? 's' : ''}`
           }
         </div>
-        <Button
-          onClick={handleSubmit}
-          disabled={selectedPlans.length === 0 || submitting}
-          size="lg"
-          className="min-w-[200px] w-full sm:w-auto"
-        >
-          {submitting ? 'Enregistrement...' : 'Confirmer ma sélection'}
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <Button
+            variant="outline"
+            onClick={() => router.push('/espace?skip_plan_selection=true')}
+            disabled={submitting}
+            size="lg"
+            className="min-w-[200px] w-full sm:w-auto order-2 sm:order-1"
+          >
+            Choisir plus tard
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={selectedPlans.length === 0 || submitting}
+            size="lg"
+            className="min-w-[200px] w-full sm:w-auto order-1 sm:order-2"
+          >
+            {submitting ? 'Enregistrement...' : 'Confirmer ma sélection'}
+          </Button>
+        </div>
       </div>
     </div>
   )
