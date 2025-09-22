@@ -622,7 +622,7 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
   }
 
   // Show different content based on subscription status
-  if (!subscription) {
+  if (!subscription && user.subscription_status !== 'pending') {
     // Check if user has active status in profile but no subscription record
     if (user.subscription_status === 'active') {
       return (
@@ -646,9 +646,7 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
         </div>
       )
     }
-    
-    // Remove subscription request logic since we no longer use subscription_requests table
-    
+
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-4xl mx-auto">

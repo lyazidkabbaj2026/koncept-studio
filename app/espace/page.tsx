@@ -33,6 +33,17 @@ export default async function EspacePage() {
   // Check subscription status
   const subscriptionStatus = (profile?.subscription_status || 'pending') as 'pending' | 'active' | 'inactive'
 
+  // Check if user has selected plans
+  const hasSelectedPlans = profile?.desired_plan &&
+    profile.desired_plan !== '' &&
+    profile.desired_plan !== '[]' &&
+    JSON.parse(profile.desired_plan || '[]').length > 0
+
+  // Redirect pending users without plan selection back to plan selection
+  if (subscriptionStatus === 'pending' && !hasSelectedPlans) {
+    redirect('/signup/plan-selection')
+  }
+
   // Redirect active users directly to planning
   if (subscriptionStatus === 'active') {
     redirect('/espace/planning')
@@ -72,15 +83,20 @@ export default async function EspacePage() {
     )
   }
 
+  // Redirect pending users to planning as well
+  if (subscriptionStatus === 'pending') {
+    redirect('/espace/planning')
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Show subscription progress for pending users */}
-        <SubscriptionProgress 
+        {/* <SubscriptionProgress
           subscriptionStatus={subscriptionStatus}
           userEmail={profile?.email}
           userName={profile?.full_name}
-        />
+        /> */}
       </div>
     </div>
   )
