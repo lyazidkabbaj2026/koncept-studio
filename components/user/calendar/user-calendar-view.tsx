@@ -621,73 +621,34 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
     setShowEventModal(true)
   }
 
-  // Show different content based on subscription status
-  if (!subscription && user.subscription_status !== 'pending') {
-    // Check if user has active status in profile but no subscription record
-    if (user.subscription_status === 'active') {
-      return (
-        <div className="min-h-screen bg-background p-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-2">Planning des cours</h1>
-              <p className="text-muted-foreground">Consultez les cours disponibles</p>
-            </div>
-            <Alert className="mb-6">
-              <IconAlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="font-medium mb-2">Aucun abonnement actif</div>
-                <p className="text-sm">
-                  Vous n'avez actuellement aucun abonnement actif.
-                  Veuillez contacter l'administration pour renouveler votre abonnement ou en souscrire un nouveau.
-                </p>
-              </AlertDescription>
-            </Alert>
-          </div>
-        </div>
-      )
-    }
-
+  // Show suspended account message for inactive users
+  if (user.subscription_status === 'inactive') {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Planning des cours</h1>
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-bold text-foreground mb-2">Compte suspendu</h1>
             <p className="text-muted-foreground">
-              Consultez les cours disponibles et réservez votre place
+              Votre compte nécessite une attention particulière
             </p>
           </div>
-
-          <Alert className="mb-6">
+          <Alert variant="destructive" className="mb-6">
             <IconAlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              <div className="font-medium mb-2">
-                Compte en attente de validation
-              </div>
+              <div className="font-medium mb-2">Compte temporairement suspendu</div>
               <p className="text-sm">
-                Votre compte doit être validé par un administrateur après paiement pour pouvoir réserver des cours. Vous serez contacté sous peu.
+                Votre compte a été suspendu. Veuillez contacter le studio pour résoudre cette situation.
               </p>
+              <div className="mt-4 flex gap-2">
+                <Button variant="outline" onClick={() => window.open('tel:0663235797')}>
+                  Appeler le studio
+                </Button>
+                <Button variant="outline" onClick={() => window.open('https://wa.me/212663235797')}>
+                  WhatsApp
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
-
-          {/* Show limited calendar view */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Aperçu du planning</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-7 gap-1 mb-4">
-                {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(day => (
-                  <div key={day} className="text-center p-2 font-medium text-muted-foreground">
-                    {day}
-                  </div>
-                ))}
-              </div>
-              <div className="text-center py-8 text-muted-foreground">
-                <IconCalendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Le planning sera disponible après activation de votre abonnement</p>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     )

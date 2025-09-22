@@ -26,7 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { IconCalendar, IconUsers, IconSettings, IconLogout, IconBarbell, IconCalendarEvent, IconCreditCard, IconCalendarStats, IconX, IconClock, IconBrandWhatsapp, IconSun, IconMoon } from '@tabler/icons-react'
+import { IconCalendar, IconUsers, IconSettings, IconLogout, IconBarbell, IconCalendarEvent, IconCreditCard, IconCalendarStats, IconX, IconClock, IconBrandWhatsapp, IconSun, IconMoon, IconFileText } from '@tabler/icons-react'
 import { useTheme } from 'next-themes'
 import { Badge } from '@/components/ui/badge'
 
@@ -35,6 +35,11 @@ const navigation = [
     title: 'Utilisateurs',
     href: '/admin/users',
     icon: IconUsers,
+  },
+  {
+    title: 'Demandes',
+    href: '/admin/subscription-requests',
+    icon: IconFileText,
   },
   {
     title: 'Cours',
@@ -93,6 +98,7 @@ export function AdminSidebar() {
   const pathname = usePathname()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [pendingUsersCount, setPendingUsersCount] = useState<number>(0)
+  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0)
   const [mounted, setMounted] = useState(false)
   const { theme, setTheme } = useTheme()
   const supabase = createClient()
@@ -127,11 +133,22 @@ export function AdminSidebar() {
       setPendingUsersCount(count || 0)
     }
 
+    const getPendingRequestsCount = async () => {
+      const { count } = await supabase
+        .from('subscription_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending')
+        .eq('is_active', true)
+
+      setPendingRequestsCount(count || 0)
+    }
+
     getUser()
     getPendingUsersCount()
+    getPendingRequestsCount()
 
     // Set up real-time subscription for pending users count
-    const channel = supabase
+    const usersChannel = supabase
       .channel('pending-users-count')
       .on('postgres_changes',
         {
@@ -146,8 +163,25 @@ export function AdminSidebar() {
       )
       .subscribe()
 
+    // Set up real-time subscription for pending subscription requests count
+    const requestsChannel = supabase
+      .channel('pending-requests-count')
+      .on('postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'subscription_requests',
+          filter: 'status=eq.pending'
+        },
+        () => {
+          getPendingRequestsCount()
+        }
+      )
+      .subscribe()
+
     return () => {
-      supabase.removeChannel(channel)
+      supabase.removeChannel(usersChannel)
+      supabase.removeChannel(requestsChannel)
     }
   }, [supabase])
 
@@ -181,6 +215,11 @@ export function AdminSidebar() {
                     {item.title === 'Utilisateurs' && pendingUsersCount > 0 && (
                       <Badge variant="secondary" className="ml-auto text-xs">
                         {pendingUsersCount}
+                      </Badge>
+                    )}
+                    {item.title === 'Demandes' && pendingRequestsCount > 0 && (
+                      <Badge variant="secondary" className="ml-auto text-xs">
+                        {pendingRequestsCount}
                       </Badge>
                     )}
                   </Link>

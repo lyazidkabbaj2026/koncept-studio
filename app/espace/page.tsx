@@ -6,11 +6,7 @@ import { IconCalendar, IconClipboardList, IconCreditCard, IconArrowRight } from 
 import { SubscriptionProgress } from '@/components/user/progress/subscription-progress'
 import Link from 'next/link'
 
-interface PageProps {
-  searchParams: { [key: string]: string | string[] | undefined }
-}
-
-export default async function EspacePage({ searchParams }: PageProps) {
+export default async function EspacePage() {
   const supabase = await createClient()
 
   const {
@@ -20,9 +16,6 @@ export default async function EspacePage({ searchParams }: PageProps) {
   if (!user) {
     redirect('/login')
   }
-
-  // Check if user chose to skip plan selection
-  const skipPlanSelection = searchParams.skip_plan_selection === 'true'
 
   // Check if user is admin and redirect to admin page
   const isAdmin = await isUserAdmin(user.id)
@@ -39,18 +32,6 @@ export default async function EspacePage({ searchParams }: PageProps) {
 
   // Check subscription status
   const subscriptionStatus = (profile?.subscription_status || 'pending') as 'pending' | 'active' | 'inactive'
-
-  // Check if user has selected plans
-  const hasSelectedPlans = profile?.desired_plan &&
-    profile.desired_plan !== '' &&
-    profile.desired_plan !== '[]' &&
-    JSON.parse(profile.desired_plan || '[]').length > 0
-
-  // Redirect pending users without plan selection back to plan selection
-  // unless they explicitly chose to skip plan selection
-  if (subscriptionStatus === 'pending' && !hasSelectedPlans && !skipPlanSelection) {
-    redirect('/signup/plan-selection')
-  }
 
   // Redirect active users directly to planning
   if (subscriptionStatus === 'active') {

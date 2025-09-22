@@ -32,6 +32,7 @@ interface User {
   full_name: string
   phone?: string
   desired_plan?: string
+  has_subscription_request?: boolean
   subscription_status: 'pending' | 'active' | 'inactive' | 'expired'
   created_at: string
   active_subscription?: {
@@ -105,6 +106,7 @@ export default function UsersPage() {
   // Search and filtering state
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [planInformeFilter, setPlanInformeFilter] = useState('all')
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [allUsers, setAllUsers] = useState<User[]>([])
   const [displayUsers, setDisplayUsers] = useState<User[]>([])
@@ -131,6 +133,15 @@ export default function UsersPage() {
       filtered = filtered.filter(user => user.subscription_status === statusFilter)
     }
 
+    // Apply plan informé filter
+    if (planInformeFilter !== 'all') {
+      if (planInformeFilter === 'oui') {
+        filtered = filtered.filter(user => user.has_subscription_request === true)
+      } else if (planInformeFilter === 'non') {
+        filtered = filtered.filter(user => user.has_subscription_request === false)
+      }
+    }
+
     setFilteredUsers(filtered)
     setFilteredTotalCount(filtered.length)
 
@@ -147,20 +158,99 @@ export default function UsersPage() {
   const fetchUsers = async (page = 0) => {
     try {
       setLoading(true)
-      // Fetch all users for client-side filtering
-      const { data, error } = await supabase.rpc('get_admin_users_data', {
-        page_offset: 0,
-        page_limit: 1000 // Fetch a large number to get all users
+
+      // Fetch all users (excluding admins)
+      const { data: allUsersData, error: allUsersError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          email,
+          full_name,
+          phone,
+          desired_plan,
+          subscription_status,
+          created_at
+        `)
+        .eq('role', 'user')
+        .order('created_at', { ascending: false })
+
+      if (allUsersError) throw allUsersError
+
+      // Fetch active subscriptions
+      const { data: subscriptionsData, error: subscriptionsError } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          id,
+          user_id,
+          status,
+          credits_remaining,
+          credits_used,
+          weekly_credits_used,
+          start_date,
+          end_date,
+          subscription_plans (
+            name,
+            type,
+            price_dhs,
+            weekly_limit
+          )
+        `)
+        .eq('status', 'active')
+
+      if (subscriptionsError) throw subscriptionsError
+
+      // Create a map of active subscriptions by user_id
+      const subscriptionsMap = new Map()
+      subscriptionsData?.forEach(sub => {
+        subscriptionsMap.set(sub.user_id, sub)
       })
 
-      if (error) throw error
+      // Get subscription request information for all users
+      const allUserIds = (allUsersData || []).map(u => u.id)
 
-      if (data) {
-        setAllUsers(data.users || [])
-        setTotalCount(data.total_count || 0)
-        // Apply current filters
-        applyFilters(data.users || [], page)
-      }
+      const { data: requestsData, error: requestsError } = await supabase
+        .from('subscription_requests')
+        .select('user_id')
+        .in('user_id', allUserIds)
+        .eq('is_active', true)
+
+      if (requestsError) throw requestsError
+
+      const usersWithRequests = new Set((requestsData || []).map(r => r.user_id))
+
+      // Combine and format the data
+      const formattedUsers: User[] = (allUsersData || []).map((user: any) => {
+        const subscription = subscriptionsMap.get(user.id)
+
+        return {
+          id: user.id,
+          email: user.email,
+          full_name: user.full_name,
+          phone: user.phone,
+          desired_plan: user.desired_plan,
+          has_subscription_request: usersWithRequests.has(user.id),
+          subscription_status: user.subscription_status,
+          created_at: user.created_at,
+          active_subscription: subscription ? {
+            id: subscription.id,
+            status: subscription.status,
+            credits_remaining: subscription.credits_remaining,
+            credits_used: subscription.credits_used,
+            weekly_credits_used: subscription.weekly_credits_used,
+            start_date: subscription.start_date,
+            end_date: subscription.end_date,
+            plan_name: subscription.subscription_plans?.name || 'Plan inconnu',
+            plan_type: subscription.subscription_plans?.type,
+            plan_price: subscription.subscription_plans?.price_dhs,
+            weekly_limit: subscription.subscription_plans?.weekly_limit
+          } : null
+        }
+      })
+
+      setAllUsers(formattedUsers)
+      setTotalCount(formattedUsers.length)
+      // Apply current filters
+      applyFilters(formattedUsers, page)
     } catch (err: any) {
       console.error('Error fetching users:', err)
       setError(`Erreur lors du chargement des utilisateurs: ${err.message}`)
@@ -233,7 +323,7 @@ export default function UsersPage() {
       applyFilters(allUsers, 0)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, statusFilter])
+  }, [searchTerm, statusFilter, planInformeFilter])
 
   useEffect(() => {
     fetchUsers(0)
@@ -370,13 +460,18 @@ export default function UsersPage() {
   const getStats = () => {
     // Use filtered users for stats calculation
     const dataSource = filteredUsers.length > 0 ? filteredUsers : allUsers
-    const pendingCount = dataSource.filter(u => u.subscription_status === 'pending').length
+    const pendingUsers = dataSource.filter(u => u.subscription_status === 'pending')
+    const pendingCount = pendingUsers.length
+    const pendingWithRequests = pendingUsers.filter(u => u.has_subscription_request).length
+    const pendingWithoutRequests = pendingUsers.filter(u => !u.has_subscription_request).length
     const activeCount = dataSource.filter(u => u.subscription_status === 'active').length
     const expiredCount = dataSource.filter(u => u.subscription_status === 'expired').length
     const inactiveCount = dataSource.filter(u => u.subscription_status === 'inactive').length
 
     return {
       pending: pendingCount,
+      pendingWithRequests,
+      pendingWithoutRequests,
       active: activeCount,
       expired: expiredCount,
       inactive: inactiveCount,
@@ -397,6 +492,7 @@ export default function UsersPage() {
   const handleClearFilters = () => {
     setSearchTerm('')
     setStatusFilter('all')
+    setPlanInformeFilter('all')
   }
 
   if (loading && users.length === 0) {
@@ -437,6 +533,11 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.pending}</div>
+            {stats.pending > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {stats.pendingWithRequests} informés • {stats.pendingWithoutRequests} non informés
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -492,7 +593,7 @@ export default function UsersPage() {
               <div className="relative">
                 <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher par nom, email, téléphone ou plan désiré..."
+                  placeholder="Rechercher par nom, email, téléphone ou plan informé..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -515,8 +616,22 @@ export default function UsersPage() {
               </Select>
             </div>
 
+            {/* Plan Informé Filter */}
+            <div className="w-full sm:w-48">
+              <Select value={planInformeFilter} onValueChange={setPlanInformeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Plan informé" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous (Plan informé)</SelectItem>
+                  <SelectItem value="oui">Oui</SelectItem>
+                  <SelectItem value="non">Non</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Clear Filters */}
-            {(searchTerm || statusFilter !== 'all') && (
+            {(searchTerm || statusFilter !== 'all' || planInformeFilter !== 'all') && (
               <Button
                 variant="outline"
                 onClick={handleClearFilters}
@@ -529,12 +644,13 @@ export default function UsersPage() {
           </div>
 
           {/* Results Summary */}
-          {(searchTerm || statusFilter !== 'all') && (
+          {(searchTerm || statusFilter !== 'all' || planInformeFilter !== 'all') && (
             <div className="mt-4 p-3 bg-muted/50 rounded-lg">
               <p className="text-sm text-muted-foreground">
                 {filteredTotalCount} utilisateur{filteredTotalCount !== 1 ? 's' : ''} trouvé{filteredTotalCount !== 1 ? 's' : ''}
                 {searchTerm && ` pour "${searchTerm}"`}
                 {statusFilter !== 'all' && ` avec le statut "${statusFilter}"`}
+                {planInformeFilter !== 'all' && ` plan informé "${planInformeFilter}"`}
               </p>
             </div>
           )}
@@ -545,15 +661,15 @@ export default function UsersPage() {
         <Card>
           <CardContent className="text-center py-12">
             <h3 className="text-lg font-medium mb-2">
-              {(searchTerm || statusFilter !== 'all') ? 'Aucun résultat trouvé' : 'Aucun utilisateur trouvé'}
+              {(searchTerm || statusFilter !== 'all' || planInformeFilter !== 'all') ? 'Aucun résultat trouvé' : 'Aucun utilisateur trouvé'}
             </h3>
             <p className="text-muted-foreground">
-              {(searchTerm || statusFilter !== 'all')
+              {(searchTerm || statusFilter !== 'all' || planInformeFilter !== 'all')
                 ? 'Essayez de modifier vos critères de recherche ou de supprimer les filtres.'
                 : 'Les utilisateurs apparaîtront ici une fois qu\'ils se seront inscrits.'
               }
             </p>
-            {(searchTerm || statusFilter !== 'all') && (
+            {(searchTerm || statusFilter !== 'all' || planInformeFilter !== 'all') && (
               <Button
                 variant="outline"
                 onClick={handleClearFilters}
@@ -574,7 +690,7 @@ export default function UsersPage() {
                   <TableHead>Nom</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Téléphone</TableHead>
-                  <TableHead>Plan Désiré</TableHead>
+                  <TableHead>Plan Informé</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead>Date d'inscription</TableHead>
                   <TableHead>Actions</TableHead>
@@ -603,39 +719,10 @@ export default function UsersPage() {
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {parseDesiredPlans(user.desired_plan || null).length > 0 ? (
-                          <div className="space-y-1">
-                            {/* Desktop: Show all plans as badges */}
-                            <div className="hidden sm:block space-y-1">
-                              {parseDesiredPlans(user.desired_plan || null).map((plan, index) => (
-                                <div key={index} className="text-xs bg-muted/50 px-2 py-1 rounded">
-                                  {plan}
-                                </div>
-                              ))}
-                            </div>
-                            {/* Mobile: Show plan count with expandable list */}
-                            <div className="sm:hidden">
-                              <button
-                                className="text-xs bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded transition-colors"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  const details = e.currentTarget.nextElementSibling as HTMLElement
-                                  if (details) {
-                                    details.style.display = details.style.display === 'none' ? 'block' : 'none'
-                                  }
-                                }}
-                              >
-                                {parseDesiredPlans(user.desired_plan || null).length} formule{parseDesiredPlans(user.desired_plan || null).length > 1 ? 's' : ''}
-                              </button>
-                              <div className="hidden mt-1 p-2 bg-muted/30 rounded text-xs space-y-1">
-                                {parseDesiredPlans(user.desired_plan || null).map((plan, index) => (
-                                  <div key={index}>{plan}</div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
+                        {user.has_subscription_request ? (
+                          <Badge variant="secondary">Oui</Badge>
                         ) : (
-                          <span className="text-muted-foreground">Aucune formule</span>
+                          <Badge variant="secondary">Non</Badge>
                         )}
                       </div>
                     </TableCell>
@@ -672,12 +759,12 @@ export default function UsersPage() {
       )}
 
       {/* Pagination Controls */}
-      {(totalPages > 1 || (searchTerm || statusFilter !== 'all')) && filteredTotalCount > 0 && (
+      {(totalPages > 1 || (searchTerm || statusFilter !== 'all' || planInformeFilter !== 'all')) && filteredTotalCount > 0 && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="text-sm text-muted-foreground">
             Page {currentPage + 1} sur {totalPages} •
             Affichage de {Math.min(currentPage * pageSize + 1, filteredTotalCount)} à {Math.min((currentPage + 1) * pageSize, filteredTotalCount)} sur {filteredTotalCount} résultat{filteredTotalCount !== 1 ? 's' : ''}
-            {(searchTerm || statusFilter !== 'all') && ` filtrés (${totalCount} au total)`}
+            {(searchTerm || statusFilter !== 'all' || planInformeFilter !== 'all') && ` filtrés (${totalCount} au total)`}
           </div>
           <div className="flex items-center space-x-2">
             <Button

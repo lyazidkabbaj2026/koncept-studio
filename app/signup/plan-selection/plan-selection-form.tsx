@@ -244,7 +244,7 @@ export default function PlanSelectionForm() {
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Button
             variant="outline"
-            onClick={() => router.push('/espace?skip_plan_selection=true')}
+            onClick={() => router.push('/espace')}
             disabled={submitting}
             size="lg"
             className="min-w-[200px] w-full sm:w-auto order-2 sm:order-1"

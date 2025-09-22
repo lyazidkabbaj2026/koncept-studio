@@ -57,9 +57,10 @@ interface WaitlistEntry {
 
 interface UserReservationsViewProps {
   userId: string
+  userSubscriptionStatus?: string
 }
 
-export function UserReservationsView({ userId }: UserReservationsViewProps) {
+export function UserReservationsView({ userId, userSubscriptionStatus }: UserReservationsViewProps) {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -238,6 +239,39 @@ export function UserReservationsView({ userId }: UserReservationsViewProps) {
   const upcomingWaitlist = waitlist.filter(entry => 
     isFuture(new Date(entry.class_schedules.start_datetime))
   )
+
+  // Show suspended account message for inactive users
+  if (userSubscriptionStatus === 'inactive') {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-bold text-foreground mb-2">Compte suspendu</h1>
+            <p className="text-muted-foreground">
+              Votre compte nécessite une attention particulière
+            </p>
+          </div>
+          <Alert variant="destructive" className="mb-6">
+            <IconAlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="font-medium mb-2">Compte temporairement suspendu</div>
+              <p className="text-sm">
+                Votre compte a été suspendu. Veuillez contacter le studio pour résoudre cette situation.
+              </p>
+              <div className="mt-4 flex gap-2">
+                <Button variant="outline" onClick={() => window.open('tel:0663235797')}>
+                  Appeler le studio
+                </Button>
+                <Button variant="outline" onClick={() => window.open('https://wa.me/212663235797')}>
+                  WhatsApp
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    )
+  }
 
   if (loading) {
     return (

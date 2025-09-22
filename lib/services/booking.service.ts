@@ -816,8 +816,8 @@ export class BookingService {
         return false
       }
 
-      // If no subscriptions at all, return true (show offline message)
-      if (!allSubscriptions || allSubscriptions.length === 0) return true
+      // If no subscriptions at all, return false (show normal booking interface)
+      if (!allSubscriptions || allSubscriptions.length === 0) return false
 
       // Check if user has ever had any carnet or abonnement subscriptions
       const hasOnlineEligible = allSubscriptions.some(sub =>

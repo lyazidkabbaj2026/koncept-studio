@@ -87,7 +87,7 @@ export default function Navbar() {
     checkOnlineSubscriptions()
   }, [user, supabase])
 
-  // Check if we're on the home page (anonymous public page)
+  // Check if we're on the home page
   const isHomePage = pathname === '/'
   // Check if we're on espace pages
   const isEspacePage = pathname.startsWith('/espace')
@@ -124,8 +124,8 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [isHomePage])
 
-  // Show loading state while determining auth status or checking subscriptions
-  if (loading || (user && checkingSubscriptions)) {
+  // Show loading state while determining auth status
+  if (loading) {
     return (
       <nav className="bg-background/95 backdrop-blur-md border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-4">
@@ -185,7 +185,7 @@ export default function Navbar() {
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
-            {isHomePage && !user && (
+            {isHomePage && (
               <>
                 <Link
                   href="/#presentation-studio"
@@ -240,7 +240,7 @@ export default function Navbar() {
               </>
             )}
 
-            {user && hasAnyValidSubscription && isEspacePage && (
+            {isEspacePage && (
               <>
                 <Link
                   href="/espace/planning"
@@ -271,6 +271,16 @@ export default function Navbar() {
                   }`}
                 >
                   Mon abonnement
+                </Link>
+                <Link
+                  href="/espace/subscriptions"
+                  className={`px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium rounded-lg transition-all ${
+                    pathname === '/espace/subscriptions'
+                      ? 'text-primary bg-primary/5'
+                      : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                  }`}
+                >
+                  Mes demandes
                 </Link>
               </>
             )}
@@ -394,9 +404,9 @@ export default function Navbar() {
           </div>
         )}
 
-        {user && hasAnyValidSubscription && isEspacePage && (
+        {isEspacePage && (
           <div className="md:hidden border-t border-border">
-            <div className="grid grid-cols-3 gap-1 py-2 px-2">
+            <div className="grid grid-cols-4 gap-1 py-2 px-2">
               <Link
                 href="/espace/planning"
                 className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
@@ -426,6 +436,16 @@ export default function Navbar() {
                 }`}
               >
                 Abonnement
+              </Link>
+              <Link
+                href="/espace/subscriptions"
+                className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
+                  pathname === '/espace/subscriptions'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                }`}
+              >
+                Demandes
               </Link>
             </div>
           </div>

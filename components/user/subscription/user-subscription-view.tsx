@@ -91,6 +91,39 @@ export function UserSubscriptionView({
   subscriptionHistory,
   recentBookings
 }: UserSubscriptionViewProps) {
+
+  // Show suspended account message for inactive users
+  if (user.subscription_status === 'inactive') {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-bold text-foreground mb-2">Compte suspendu</h1>
+            <p className="text-muted-foreground">
+              Votre compte nécessite une attention particulière
+            </p>
+          </div>
+          <Alert variant="destructive" className="mb-6">
+            <IconAlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="font-medium mb-2">Compte temporairement suspendu</div>
+              <p className="text-sm">
+                Votre compte a été suspendu. Veuillez contacter le studio pour résoudre cette situation.
+              </p>
+              <div className="mt-4 flex gap-2">
+                <Button variant="outline" onClick={() => window.open('tel:0663235797')}>
+                  Appeler le studio
+                </Button>
+                <Button variant="outline" onClick={() => window.open('https://wa.me/212663235797')}>
+                  WhatsApp
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    )
+  }
   
   const getStatusColor = (status: string) => {
     // Use theme-aware colors for all statuses
@@ -249,9 +282,18 @@ export function UserSubscriptionView({
               <IconAlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 <div className="font-medium mb-2">Aucun abonnement actif</div>
-                <p className="text-sm">
-                  Vous n'avez pas d'abonnement actif actuellement. Contactez l'administration pour souscrire à un plan.
+                <p className="text-sm mb-3">
+                  Vous n'avez pas d'abonnement actif actuellement. Vous pouvez demander, gérer et suivre vos demandes d'abonnement dans la section "Mes demandes".
                 </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.location.href = '/espace/subscriptions'}
+                  className="gap-2"
+                >
+                  <IconCreditCard className="h-4 w-4" />
+                  Aller à Mes demandes
+                </Button>
               </AlertDescription>
             </Alert>
           </div>

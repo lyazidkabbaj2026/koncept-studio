@@ -74,6 +74,28 @@ export async function saveUserPlanSelection(planIds: string[]): Promise<{ succes
       return { success: false, error: 'Erreur lors de l\'enregistrement' }
     }
 
+    // Create subscription requests for each selected plan
+    const subscriptionRequests = planIds.map(planId => ({
+      user_id: user.id,
+      plan_id: planId,
+      request_type: 'new',
+      status: 'pending',
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+      requested_at: new Date().toISOString(),
+      is_active: true
+    }))
+
+    const { error: requestsError } = await supabase
+      .from('subscription_requests')
+      .insert(subscriptionRequests)
+
+    if (requestsError) {
+      console.error('Error creating subscription requests:', requestsError)
+      // Don't fail the entire process if subscription requests fail
+      // The profile update was successful, so the user can still proceed
+      console.warn('Profile updated but subscription requests failed to create')
+    }
+
     // Get user profile for WhatsApp notification
     const { data: profile } = await supabase
       .from('profiles')

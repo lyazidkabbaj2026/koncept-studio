@@ -15,16 +15,7 @@ export default async function PlanSelectionPage() {
     redirect('/login')
   }
 
-  // Check if user already has a plan selected (skip if already done)
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('desired_plan')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.desired_plan) {
-    redirect('/espace')
-  }
+  // Plan selection is always available - no automatic redirects
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-background via-muted/10 to-background p-4 relative">

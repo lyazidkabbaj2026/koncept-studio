@@ -20,5 +20,12 @@ export default async function UserReservationsPage() {
     redirect('/admin')
   }
 
-  return <UserReservationsView userId={user.id} />
+  // Get user profile for subscription status
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_status')
+    .eq('id', user.id)
+    .single()
+
+  return <UserReservationsView userId={user.id} userSubscriptionStatus={profile?.subscription_status} />
 }
