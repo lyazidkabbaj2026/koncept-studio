@@ -406,10 +406,10 @@ export default function Navbar() {
 
         {isEspacePage && (
           <div className="md:hidden border-t border-border">
-            <div className="grid grid-cols-4 gap-1 py-2 px-2">
+            <div className="grid grid-cols-2 gap-2 py-3 px-3">
               <Link
                 href="/espace/planning"
-                className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
+                className={`text-xs font-semibold transition-colors text-center py-3 px-1 rounded-md ${
                   pathname === '/espace/planning'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
@@ -419,7 +419,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/espace/reservations"
-                className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
+                className={`text-xs font-semibold transition-colors text-center py-3 px-1 rounded-md ${
                   pathname === '/espace/reservations'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
@@ -429,7 +429,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/espace/abonnement"
-                className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
+                className={`text-xs font-semibold transition-colors text-center py-3 px-1 rounded-md ${
                   pathname === '/espace/abonnement'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
@@ -439,7 +439,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/espace/subscriptions"
-                className={`text-sm font-semibold transition-colors text-center py-3 px-2 rounded-md ${
+                className={`text-xs font-semibold transition-colors text-center py-3 px-1 rounded-md ${
                   pathname === '/espace/subscriptions'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
