@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { IconCalendar, IconClock, IconUser, IconMapPin, IconCircleCheck, IconCircleX, IconAlertTriangle, IconInfoCircle } from '@tabler/icons-react'
+import { LoadingSpinner } from '@/components/ui/loading'
 import { BookingService } from '@/lib/services/booking.service'
 import { waitlistService } from '@/lib/services/waitlist.service'
 import { toast } from 'sonner'
@@ -275,10 +276,9 @@ export function UserReservationsView({ userId, userSubscriptionStatus }: UserRes
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-foreground mx-auto mb-4"></div>
-          <p>Chargement de vos réservations...</p>
+      <div className="min-h-screen bg-background p-4 sm:p-6">
+        <div className="max-w-4xl mx-auto">
+          <LoadingSpinner message="Chargement de vos réservations" />
         </div>
       </div>
     )

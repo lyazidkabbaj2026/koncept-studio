@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { IconRocket, IconCalendar, IconClock, IconUser, IconMapPin, IconAlertTriangle, IconCircleCheck, IconUsers, IconInfoCircle, IconStar, IconActivity, IconCalendarX } from '@tabler/icons-react'
+import { LoadingSpinner } from '@/components/ui/loading'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { BookingService } from '@/lib/services/booking.service'
@@ -619,6 +620,17 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
   const handleEventClick = (event: ClassEvent) => {
     setSelectedEvent(event)
     setShowEventModal(true)
+  }
+
+  // Show loading spinner on initial load
+  if (loading && events.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+          <LoadingSpinner message="Chargement de votre planning" />
+        </div>
+      </div>
+    )
   }
 
   // Show suspended account message for inactive users

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { format, differenceInDays, startOfWeek, endOfWeek } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,7 @@ import {
   IconTarget,
   IconClock as IconTimer
 } from '@tabler/icons-react'
+import { LoadingSpinner } from '@/components/ui/loading'
 
 interface UserProfile {
   id: string
@@ -91,6 +92,27 @@ export function UserSubscriptionView({
   subscriptionHistory,
   recentBookings
 }: UserSubscriptionViewProps) {
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Simulate loading state for visual consistency
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 800)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Show loading spinner
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-4xl mx-auto">
+          <LoadingSpinner message="Chargement de vos abonnements" />
+        </div>
+      </div>
+    )
+  }
 
   // Show suspended account message for inactive users
   if (user.subscription_status === 'inactive') {

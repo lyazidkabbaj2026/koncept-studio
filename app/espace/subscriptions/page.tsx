@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { LoadingSpinner } from '@/components/ui/loading'
 import {
   IconPlus,
   IconClockHour4,
@@ -139,10 +140,7 @@ export default function SubscriptionsPage() {
   if (isLoading) {
     return (
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
-        <div className="text-center py-8 sm:py-12">
-          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-foreground mx-auto"></div>
-          <p className="text-sm sm:text-base text-muted-foreground mt-4">Chargement de vos abonnements...</p>
-        </div>
+        <LoadingSpinner message="Chargement de vos demandes" />
       </div>
     )
   }
