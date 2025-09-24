@@ -23,7 +23,7 @@ export function getRequestStatusInfo(status: string) {
       description: 'Votre demande a été approuvée'
     },
     fulfilled: {
-      label: 'Réalisé',
+      label: 'Traité',
       color: 'bg-green-100 text-green-800',
       description: 'Votre abonnement a été activé'
     },

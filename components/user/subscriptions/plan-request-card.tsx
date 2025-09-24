@@ -80,17 +80,19 @@ export function PlanRequestCard({ request, onUpdate, compact = false }: PlanRequ
                 {request.plan.priceDhs} DHS • {format(new Date(request.createdAt), 'dd/MM/yyyy')}
               </p>
             </div>
-            <div className="flex gap-1 self-start sm:self-center">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleDelete}
-                disabled={isLoading}
-                className="border-foreground/20 text-foreground hover:bg-foreground hover:text-background"
-              >
-                <IconTrash className="h-3 w-3" />
-              </Button>
-            </div>
+            {request.status !== 'fulfilled' && (
+              <div className="flex gap-1 self-start sm:self-center">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleDelete}
+                  disabled={isLoading}
+                  className="border-foreground/20 text-foreground hover:bg-foreground hover:text-background"
+                >
+                  <IconTrash className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -121,17 +123,19 @@ export function PlanRequestCard({ request, onUpdate, compact = false }: PlanRequ
             </div>
           </div>
 
-          <div className="flex gap-2 self-start sm:self-center">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleDelete}
-              disabled={isLoading}
-              className="border-foreground/20 text-foreground hover:bg-foreground hover:text-background"
-            >
-              <IconTrash className="h-4 w-4" />
-            </Button>
-          </div>
+          {request.status !== 'fulfilled' && (
+            <div className="flex gap-2 self-start sm:self-center">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDelete}
+                disabled={isLoading}
+                className="border-foreground/20 text-foreground hover:bg-foreground hover:text-background"
+              >
+                <IconTrash className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </CardHeader>
 

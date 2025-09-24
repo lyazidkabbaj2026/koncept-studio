@@ -170,9 +170,6 @@ export default function SubscriptionsPage() {
               </Button>
             </DialogTrigger>
             <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto mx-auto">
-              <DialogHeader>
-                <DialogTitle className="text-lg sm:text-xl">Créer une nouvelle demande d'abonnement</DialogTitle>
-              </DialogHeader>
               <PlanRequestForm
                 onSuccess={handleRequestSuccess}
                 onCancel={() => setShowNewRequestForm(false)}
@@ -202,50 +199,6 @@ export default function SubscriptionsPage() {
         </Alert>
       )}
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        <Card className="border-foreground/20 bg-background hover:bg-muted/5 transition-colors">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-foreground/10 shrink-0">
-                <IconClockHour4 className="h-6 w-6 text-foreground" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-muted-foreground mt-1">Demandes actives</p>
-                <p className="text-2xl font-bold text-foreground mt-1">{activeRequests.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-foreground/20 bg-background hover:bg-muted/5 transition-colors">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-foreground/10 shrink-0">
-                <IconCheck className="h-6 w-6 text-foreground" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-muted-foreground mt-1">Abonnements actifs</p>
-                <p className="text-2xl font-bold text-foreground mt-1">{data?.activeSubscriptions.length || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-foreground/20 bg-background hover:bg-muted/5 transition-colors sm:col-span-2 lg:col-span-1">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-foreground/10 shrink-0">
-                <IconActivity className="h-6 w-6 text-foreground" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-muted-foreground mt-1">Total demandes</p>
-                <p className="text-2xl font-bold text-foreground mt-1">{data?.requests.length || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Active Subscriptions */}
       {data?.activeSubscriptions && data.activeSubscriptions.length > 0 && (
@@ -253,6 +206,7 @@ export default function SubscriptionsPage() {
           <div className="flex items-center gap-2">
             <IconCheck className="h-5 w-5 text-foreground" />
             <h2 className="text-lg sm:text-xl font-semibold text-foreground">Abonnements Actifs</h2>
+            <Badge className="bg-foreground text-background text-xs">{data?.activeSubscriptions.length || 0}</Badge>
           </div>
           <div className="grid gap-3 sm:gap-4">
             {data.activeSubscriptions.map((subscription: any) => (
@@ -270,11 +224,20 @@ export default function SubscriptionsPage() {
                         <IconCoins className="h-3 w-3 sm:h-4 sm:w-4 text-foreground" />
                         <span>{subscription.subscription_plans?.price_dhs} DHS</span>
                       </div>
-                      {subscription.subscription_plans?.credits && (
-                        <div className="flex items-center gap-1">
-                          <IconActivity className="h-3 w-3 sm:h-4 sm:w-4 text-foreground" />
-                          <span className="truncate">{subscription.remaining_credits || subscription.subscription_plans.credits} séances</span>
-                        </div>
+                      {subscription.subscription_plans?.type === 'abonnement' ? (
+                        subscription.subscription_plans?.weekly_limit && (
+                          <div className="flex items-center gap-1">
+                            <IconUsers className="h-3 w-3 sm:h-4 sm:w-4 text-foreground" />
+                            <span className="truncate">{subscription.subscription_plans.weekly_limit} séances/sem</span>
+                          </div>
+                        )
+                      ) : (
+                        subscription.subscription_plans?.credits && (
+                          <div className="flex items-center gap-1">
+                            <IconActivity className="h-3 w-3 sm:h-4 sm:w-4 text-foreground" />
+                            <span className="truncate">{subscription.remaining_credits || subscription.subscription_plans.credits} séances</span>
+                          </div>
+                        )
                       )}
                       <div className="flex items-center gap-1">
                         <IconCalendar className="h-3 w-3 sm:h-4 sm:w-4 text-foreground" />
