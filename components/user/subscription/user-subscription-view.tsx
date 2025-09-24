@@ -98,7 +98,7 @@ export function UserSubscriptionView({
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false)
-    }, 800)
+    }, 300)
 
     return () => clearTimeout(timer)
   }, [])

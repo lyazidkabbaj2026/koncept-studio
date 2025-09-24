@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/hooks/use-auth'
 import { useSubscription } from '@/hooks/use-subscription'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -16,7 +16,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -29,6 +28,7 @@ export default function Navbar() {
   const [hasAnyValidSubscription, setHasAnyValidSubscription] = useState(false)
   const [checkingSubscriptions, setCheckingSubscriptions] = useState(true)
   const [activeSection, setActiveSection] = useState('')
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null)
   const supabase = createClient()
 
   // Check if user has any online-eligible subscriptions (abonnement or carnet)
@@ -86,6 +86,18 @@ export default function Navbar() {
 
     checkOnlineSubscriptions()
   }, [user, supabase])
+
+  // Reset navigatingTo when pathname changes (navigation completed)
+  useEffect(() => {
+    setNavigatingTo(null)
+  }, [pathname])
+
+  // Handle navigation with immediate visual feedback
+  const handleNavigation = (href: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    setNavigatingTo(href)
+    router.push(href)
+  }
 
   // Check if we're on the home page
   const isHomePage = pathname === '/'
@@ -244,8 +256,9 @@ export default function Navbar() {
               <>
                 <Link
                   href="/espace/planning"
+                  onClick={(e) => handleNavigation('/espace/planning', e)}
                   className={`px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium rounded-lg transition-all ${
-                    pathname === '/espace/planning'
+                    pathname === '/espace/planning' || navigatingTo === '/espace/planning'
                       ? 'text-primary bg-primary/5'
                       : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
                   }`}
@@ -254,8 +267,9 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/espace/reservations"
+                  onClick={(e) => handleNavigation('/espace/reservations', e)}
                   className={`px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium rounded-lg transition-all ${
-                    pathname === '/espace/reservations'
+                    pathname === '/espace/reservations' || navigatingTo === '/espace/reservations'
                       ? 'text-primary bg-primary/5'
                       : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
                   }`}
@@ -264,8 +278,9 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/espace/abonnement"
+                  onClick={(e) => handleNavigation('/espace/abonnement', e)}
                   className={`px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium rounded-lg transition-all ${
-                    pathname === '/espace/abonnement'
+                    pathname === '/espace/abonnement' || navigatingTo === '/espace/abonnement'
                       ? 'text-primary bg-primary/5'
                       : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
                   }`}
@@ -274,8 +289,9 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/espace/subscriptions"
+                  onClick={(e) => handleNavigation('/espace/subscriptions', e)}
                   className={`px-4 py-3 lg:px-6 lg:py-3 text-base lg:text-lg font-medium rounded-lg transition-all ${
-                    pathname === '/espace/subscriptions'
+                    pathname === '/espace/subscriptions' || navigatingTo === '/espace/subscriptions'
                       ? 'text-primary bg-primary/5'
                       : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
                   }`}
@@ -409,8 +425,9 @@ export default function Navbar() {
             <div className="flex py-2 px-1 overflow-x-auto">
               <Link
                 href="/espace/planning"
+                onClick={(e) => handleNavigation('/espace/planning', e)}
                 className={`text-sm font-semibold transition-colors text-center py-3 px-4 rounded-lg whitespace-nowrap flex-shrink-0 ${
-                  pathname === '/espace/planning'
+                  pathname === '/espace/planning' || navigatingTo === '/espace/planning'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
                 }`}
@@ -419,8 +436,9 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/espace/reservations"
+                onClick={(e) => handleNavigation('/espace/reservations', e)}
                 className={`text-sm font-semibold transition-colors text-center py-3 px-4 rounded-lg whitespace-nowrap flex-shrink-0 ${
-                  pathname === '/espace/reservations'
+                  pathname === '/espace/reservations' || navigatingTo === '/espace/reservations'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
                 }`}
@@ -429,8 +447,9 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/espace/abonnement"
+                onClick={(e) => handleNavigation('/espace/abonnement', e)}
                 className={`text-sm font-semibold transition-colors text-center py-3 px-4 rounded-lg whitespace-nowrap flex-shrink-0 ${
-                  pathname === '/espace/abonnement'
+                  pathname === '/espace/abonnement' || navigatingTo === '/espace/abonnement'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
                 }`}
@@ -439,8 +458,9 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/espace/subscriptions"
+                onClick={(e) => handleNavigation('/espace/subscriptions', e)}
                 className={`text-sm font-semibold transition-colors text-center py-3 px-4 rounded-lg whitespace-nowrap flex-shrink-0 ${
-                  pathname === '/espace/subscriptions'
+                  pathname === '/espace/subscriptions' || navigatingTo === '/espace/subscriptions'
                     ? 'text-primary bg-primary/10'
                     : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
                 }`}
