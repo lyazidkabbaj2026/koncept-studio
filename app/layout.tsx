@@ -99,12 +99,6 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Koncept Studio',
-    startupImage: [
-      {
-        url: '/images/icons/icon-512x512.png',
-        media: '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)',
-      }
-    ],
   },
 };
 
