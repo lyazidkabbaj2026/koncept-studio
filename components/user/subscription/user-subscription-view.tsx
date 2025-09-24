@@ -103,6 +103,16 @@ export function UserSubscriptionView({
     return () => clearTimeout(timer)
   }, [])
 
+  // Sort subscriptions by type priority: Abonnement -> Carnet -> Personal training
+  const getSortedSubscriptions = (subscriptions: Subscription[]) => {
+    const typeOrder = { 'abonnement': 1, 'carnet': 2, 'personal_training': 3 }
+    return [...subscriptions].sort((a, b) => {
+      const orderA = typeOrder[a.subscription_plans.type] || 999
+      const orderB = typeOrder[b.subscription_plans.type] || 999
+      return orderA - orderB
+    })
+  }
+
   // Show loading spinner
   if (isLoading) {
     return (
@@ -215,7 +225,7 @@ export function UserSubscriptionView({
               <Badge variant="secondary">{currentSubscriptions.length} abonnement{currentSubscriptions.length > 1 ? 's' : ''}</Badge>
             </div>
 
-            {currentSubscriptions.map(currentSubscription => (
+            {getSortedSubscriptions(currentSubscriptions).map(currentSubscription => (
               <Card key={currentSubscription.id} className="glass-effect border-l-4 border-l-foreground shadow-soft">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
