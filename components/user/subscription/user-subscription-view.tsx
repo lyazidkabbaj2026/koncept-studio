@@ -276,24 +276,63 @@ export function UserSubscriptionView({
                       </>
                     )}
 
-                    <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground">Période</div>
-                      <div className="font-medium">
-                        {format(new Date(currentSubscription.start_date), 'dd/MM/yyyy', { locale: fr })}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        au {format(new Date(currentSubscription.end_date), 'dd/MM/yyyy', { locale: fr })}
-                      </div>
-                    </div>
+                    {/* Période and Temps restant - combined for mobile, separate for desktop */}
+                    {currentSubscription.subscription_plans.type !== 'personal_training' ? (
+                      <>
+                        {/* Mobile layout - side by side */}
+                        <div className="md:hidden">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <div className="text-sm text-muted-foreground">Période</div>
+                              <div className="font-medium">
+                                {format(new Date(currentSubscription.start_date), 'dd/MM/yyyy', { locale: fr })}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                au {format(new Date(currentSubscription.end_date), 'dd/MM/yyyy', { locale: fr })}
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="text-sm text-muted-foreground">Temps restant</div>
+                              <div className="font-medium">
+                                {differenceInDays(new Date(currentSubscription.end_date), new Date())} jours
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {currentSubscription.subscription_plans.price_dhs} DHS
+                              </div>
+                            </div>
+                          </div>
+                        </div>
 
-                    {currentSubscription.subscription_plans.type !== 'personal_training' && (
+                        {/* Desktop layout - separate grid cells */}
+                        <div className="hidden md:block space-y-2">
+                          <div className="text-sm text-muted-foreground">Période</div>
+                          <div className="font-medium">
+                            {format(new Date(currentSubscription.start_date), 'dd/MM/yyyy', { locale: fr })}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            au {format(new Date(currentSubscription.end_date), 'dd/MM/yyyy', { locale: fr })}
+                          </div>
+                        </div>
+
+                        <div className="hidden md:block space-y-2">
+                          <div className="text-sm text-muted-foreground">Temps restant</div>
+                          <div className="font-medium">
+                            {differenceInDays(new Date(currentSubscription.end_date), new Date())} jours
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {currentSubscription.subscription_plans.price_dhs} DHS
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      // Personal training only shows période
                       <div className="space-y-2">
-                        <div className="text-sm text-muted-foreground">Temps restant</div>
+                        <div className="text-sm text-muted-foreground">Période</div>
                         <div className="font-medium">
-                          {differenceInDays(new Date(currentSubscription.end_date), new Date())} jours
+                          {format(new Date(currentSubscription.start_date), 'dd/MM/yyyy', { locale: fr })}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {currentSubscription.subscription_plans.price_dhs} DHS
+                          au {format(new Date(currentSubscription.end_date), 'dd/MM/yyyy', { locale: fr })}
                         </div>
                       </div>
                     )}
