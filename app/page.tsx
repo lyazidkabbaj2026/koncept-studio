@@ -633,16 +633,16 @@ export default function HomePage() {
                     className="w-full h-full"
                   />
 
-                  {/* Custom Red Marker Overlay */}
+                  {/* Custom Black Marker Overlay */}
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-full pointer-events-none z-10">
                     <div className="relative">
-                      {/* Red Marker Pin */}
-                      <div className="w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-lg relative">
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-3 border-r-3 border-t-4 border-l-transparent border-r-transparent border-t-red-500"></div>
+                      {/* Black Marker Pin */}
+                      <div className="w-6 h-6 bg-black rounded-full border-2 border-white shadow-lg relative">
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-3 border-r-3 border-t-4 border-l-transparent border-r-transparent border-t-black"></div>
                       </div>
 
                       {/* Studio Label */}
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 bg-red-500 text-white text-xs font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 bg-black text-white text-xs font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
                         Koncept Studio
                       </div>
                     </div>
