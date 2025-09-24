@@ -120,7 +120,7 @@ export default function PlanSelectionForm() {
       }
 
       toast.success('Vos préférences ont été enregistrées !')
-      router.push('/espace')
+      router.push('/espace/planning')
     } catch (error) {
       console.error('Error saving plan selection:', error)
       toast.error('Erreur lors de l\'enregistrement')
@@ -244,7 +244,7 @@ export default function PlanSelectionForm() {
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Button
             variant="outline"
-            onClick={() => router.push('/espace')}
+            onClick={() => router.push('/espace/planning')}
             disabled={submitting}
             size="lg"
             className="min-w-[200px] w-full sm:w-auto order-2 sm:order-1"

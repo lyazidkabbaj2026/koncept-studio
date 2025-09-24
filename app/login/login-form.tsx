@@ -52,7 +52,7 @@ export default function LoginForm() {
         if (isAdmin) {
           router.push('/admin')
         } else {
-          router.push('/espace')
+          router.push('/espace/planning')
         }
         router.refresh()
       }

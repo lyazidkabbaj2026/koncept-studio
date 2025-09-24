@@ -66,7 +66,7 @@ export default function ResetPasswordForm() {
       toast.success('Mot de passe mis à jour avec succès !')
 
       // Redirect to login or dashboard
-      router.push('/espace')
+      router.push('/espace/planning')
       router.refresh()
 
     } catch (error) {
