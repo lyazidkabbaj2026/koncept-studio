@@ -3,7 +3,11 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 
-export function SplashScreen() {
+interface SplashScreenProps {
+  onComplete?: () => void
+}
+
+export function SplashScreen({ onComplete }: SplashScreenProps) {
   const [isVisible, setIsVisible] = useState(true)
   const [isAnimating, setIsAnimating] = useState(true)
 
@@ -11,11 +15,14 @@ export function SplashScreen() {
     // Hide splash screen after animation completes
     const timer = setTimeout(() => {
       setIsAnimating(false)
-      setTimeout(() => setIsVisible(false), 300) // Fade out duration
+      setTimeout(() => {
+        setIsVisible(false)
+        onComplete?.()
+      }, 300) // Fade out duration
     }, 2000) // Show splash for 2 seconds
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [onComplete])
 
   if (!isVisible) return null
 

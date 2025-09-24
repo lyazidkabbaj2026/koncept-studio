@@ -8,7 +8,7 @@ import { Toaster } from "sonner";
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { BackToTop } from "@/components/ui/back-to-top";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
-import { PWAManager } from "@/components/pwa/pwa-manager";
+import { PWAWrapper } from "@/components/pwa/pwa-wrapper";
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -122,37 +122,38 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ErrorBoundary>
-            <ConditionalNavbar />
-            {children}
-          </ErrorBoundary>
-          <Toaster
-            position="top-center"
-            expand={true}
-            richColors={true}
-            closeButton={true}
-            toastOptions={{
-              style: {
-                background: 'hsl(var(--background))',
-                color: 'hsl(var(--foreground))',
-                border: '1px solid hsl(var(--border))',
-                fontSize: '16px',
-                padding: '16px 20px',
-                minHeight: '60px',
-                maxWidth: '500px',
-                borderRadius: '8px',
-                boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                backdropFilter: 'none',
-                opacity: '1',
-              },
-              className: 'toast-custom',
-            }}
-            theme="dark"
-          />
+          <PWAWrapper>
+            <ErrorBoundary>
+              <ConditionalNavbar />
+              {children}
+            </ErrorBoundary>
+            <Toaster
+              position="top-center"
+              expand={true}
+              richColors={true}
+              closeButton={true}
+              toastOptions={{
+                style: {
+                  background: 'hsl(var(--background))',
+                  color: 'hsl(var(--foreground))',
+                  border: '1px solid hsl(var(--border))',
+                  fontSize: '16px',
+                  padding: '16px 20px',
+                  minHeight: '60px',
+                  maxWidth: '500px',
+                  borderRadius: '8px',
+                  boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                  backdropFilter: 'none',
+                  opacity: '1',
+                },
+                className: 'toast-custom',
+              }}
+              theme="dark"
+            />
+            <BackToTop />
+            <InstallPrompt />
+          </PWAWrapper>
         </ThemeProvider>
-        <BackToTop />
-        <InstallPrompt />
-        <PWAManager />
         <SpeedInsights />
       </body>
     </html>

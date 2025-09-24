@@ -3,9 +3,12 @@
 import { useEffect, useState } from 'react'
 import { SplashScreen } from './splash-screen'
 
+const SPLASH_SHOWN_KEY = 'koncept-studio-splash-shown'
+
 export function PWAManager() {
   const [showSplash, setShowSplash] = useState(false)
   const [isPWA, setIsPWA] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
     const initializePWA = async () => {
@@ -20,8 +23,14 @@ export function PWAManager() {
         if (isStandalone) {
           console.log('🚀 PWA detected')
 
-          // Show splash screen for PWA users
-          setShowSplash(true)
+          // Check if splash was already shown in this session
+          const splashShown = sessionStorage.getItem(SPLASH_SHOWN_KEY)
+
+          if (!splashShown) {
+            // Show splash screen only on first PWA load
+            setShowSplash(true)
+            sessionStorage.setItem(SPLASH_SHOWN_KEY, 'true')
+          }
 
           // Check if Service Worker is properly registered
           if ('serviceWorker' in navigator) {
@@ -36,6 +45,8 @@ export function PWAManager() {
         }
       } catch (error) {
         console.error('❌ PWA initialization failed:', error)
+      } finally {
+        setIsInitialized(true)
       }
     }
 
@@ -43,9 +54,13 @@ export function PWAManager() {
     initializePWA()
   }, [])
 
-  // Show splash screen only for PWA users
+  const handleSplashComplete = () => {
+    setShowSplash(false)
+  }
+
+  // Show splash screen only for PWA users on first load
   if (isPWA && showSplash) {
-    return <SplashScreen />
+    return <SplashScreen onComplete={handleSplashComplete} />
   }
 
   return null
