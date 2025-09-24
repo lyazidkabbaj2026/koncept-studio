@@ -1,31 +1,75 @@
-import { createClient } from '@/lib/supabase/server'
-import { isUserAdmin } from '@/lib/supabase/admin'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { UserReservationsView } from '@/components/user/reservations/user-reservations-view'
+import { LoadingSpinner } from '@/components/ui/loading'
 
-export default async function UserReservationsPage() {
-  const supabase = await createClient()
-  
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+export default function UserReservationsPage() {
+  const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
+  const supabase = createClient()
 
-  if (!user) {
-    redirect('/login')
+  useEffect(() => {
+    const initializePage = async () => {
+      try {
+        setIsLoading(true)
+
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+          router.push('/login')
+          return
+        }
+
+        // Check if user is admin and redirect to admin area
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+
+        if (userProfile?.role === 'admin') {
+          router.push('/admin')
+          return
+        }
+
+        // Get user profile for subscription status
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subscription_status')
+          .eq('id', user.id)
+          .single()
+
+        setUser(user)
+        setProfile(profile)
+      } catch (error) {
+        console.error('Error initializing page:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    initializePage()
+  }, [router, supabase])
+
+  if (isLoading || !user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <LoadingSpinner message="Chargement de vos réservations" />
+        </div>
+      </div>
+    )
   }
 
-  // Check if user is admin and redirect to admin area
-  const isAdmin = await isUserAdmin(user.id)
-  if (isAdmin) {
-    redirect('/admin')
-  }
-
-  // Get user profile for subscription status
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('subscription_status')
-    .eq('id', user.id)
-    .single()
-
-  return <UserReservationsView userId={user.id} userSubscriptionStatus={profile?.subscription_status} />
+  return (
+    <UserReservationsView
+      userId={user.id}
+      userSubscriptionStatus={profile?.subscription_status}
+    />
+  )
 }
