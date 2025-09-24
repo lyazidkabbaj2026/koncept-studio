@@ -994,16 +994,16 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                           onClick={() => handleEventClick(event)}>
                             <CardContent className="p-4">
                               <div className="space-y-3">
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <h3 className="font-semibold mb-1">{event.title}</h3>
-                                    {event.description && (
-                                      <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
-                                    )}
+                                <div className="space-y-2">
+                                  <div className="flex items-start justify-between">
+                                    <h3 className="font-semibold leading-tight">{event.title}</h3>
+                                    <Badge variant="outline" className="ml-2 shrink-0">
+                                      {getDifficultyLabel(event.difficulty_level)}
+                                    </Badge>
                                   </div>
-                                  <Badge variant="outline" className="ml-2">
-                                    {getDifficultyLabel(event.difficulty_level)}
-                                  </Badge>
+                                  {event.description && (
+                                    <p className="text-sm text-muted-foreground leading-relaxed">{event.description}</p>
+                                  )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4 text-sm">
