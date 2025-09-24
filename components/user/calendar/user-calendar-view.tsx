@@ -1011,7 +1011,7 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                                     <IconClock className="h-4 w-4 text-muted-foreground" />
                                     <span>{format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}</span>
                                   </div>
-                                  <div className="flex items-center gap-2 ml-4">
+                                  <div className="flex items-center gap-2 ml-8">
                                     <IconUser className="h-4 w-4 text-muted-foreground" />
                                     <span>{event.coach}</span>
                                   </div>
@@ -1019,7 +1019,7 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                                     <IconMapPin className="h-4 w-4 text-muted-foreground" />
                                     <span>{event.location}</span>
                                   </div>
-                                  <div className="flex items-center gap-2 ml-4">
+                                  <div className="flex items-center gap-2 ml-8">
                                     <IconUsers className="h-4 w-4 text-muted-foreground" />
                                     <span>{event.current_bookings}/{event.max_capacity}</span>
                                   </div>

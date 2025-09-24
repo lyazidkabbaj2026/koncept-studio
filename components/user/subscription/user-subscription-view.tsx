@@ -291,7 +291,7 @@ export function UserSubscriptionView({
                                 au {format(new Date(currentSubscription.end_date), 'dd/MM/yyyy', { locale: fr })}
                               </div>
                             </div>
-                            <div className="space-y-2 ml-4">
+                            <div className="space-y-2 ml-8">
                               <div className="text-sm text-muted-foreground">Temps restant</div>
                               <div className="font-medium">
                                 {differenceInDays(new Date(currentSubscription.end_date), new Date())} jours
@@ -314,7 +314,7 @@ export function UserSubscriptionView({
                           </div>
                         </div>
 
-                        <div className="hidden md:block space-y-2 ml-4">
+                        <div className="hidden md:block space-y-2 ml-8">
                           <div className="text-sm text-muted-foreground">Temps restant</div>
                           <div className="font-medium">
                             {differenceInDays(new Date(currentSubscription.end_date), new Date())} jours
