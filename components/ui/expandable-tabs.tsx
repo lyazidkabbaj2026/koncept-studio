@@ -50,22 +50,18 @@ const spanVariants = {
     width: "auto",
     opacity: 1,
     scale: 1,
-    transition: {
-      width: { type: "spring", stiffness: 600, damping: 30 },
-      opacity: { duration: 0.15 },
-      scale: { type: "spring", stiffness: 600, damping: 25 },
-    }
   },
   exit: {
     width: 0,
     opacity: 0,
     scale: 0.8,
-    transition: {
-      width: { type: "spring", stiffness: 600, damping: 30 },
-      opacity: { duration: 0.1 },
-      scale: { type: "spring", stiffness: 600, damping: 25 },
-    }
   },
+};
+
+const spanTransition = {
+  width: { type: "spring" as const, stiffness: 600, damping: 30 },
+  opacity: { duration: 0.15 },
+  scale: { type: "spring" as const, stiffness: 600, damping: 25 },
 };
 
 const transition = {
@@ -152,6 +148,7 @@ export function ExpandableTabs({
                   initial="initial"
                   animate="animate"
                   exit="exit"
+                  transition={spanTransition}
                   className="ml-2 whitespace-nowrap text-sm font-medium"
                 >
                   {tabItem.title}
