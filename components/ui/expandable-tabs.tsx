@@ -31,44 +31,44 @@ interface ExpandableTabsProps {
 
 const buttonVariants = {
   initial: {
-    paddingLeft: "12px",
-    paddingRight: "12px",
+    paddingLeft: "8px",
+    paddingRight: "8px",
   },
   animate: (isSelected: boolean) => ({
-    paddingLeft: isSelected ? "20px" : "12px",
-    paddingRight: isSelected ? "20px" : "12px",
+    paddingLeft: isSelected ? "12px" : "8px",
+    paddingRight: isSelected ? "12px" : "8px",
   }),
 };
 
 const spanVariants = {
   initial: {
-    width: 0,
     opacity: 0,
-    scale: 0.8,
+    scale: 0.9,
+    x: -10,
   },
   animate: {
-    width: "auto",
     opacity: 1,
     scale: 1,
+    x: 0,
   },
   exit: {
-    width: 0,
     opacity: 0,
-    scale: 0.8,
+    scale: 0.9,
+    x: 10,
   },
 };
 
 const spanTransition = {
-  width: { type: "spring" as const, stiffness: 600, damping: 30 },
-  opacity: { duration: 0.15 },
-  scale: { type: "spring" as const, stiffness: 600, damping: 25 },
+  opacity: { duration: 0.2 },
+  scale: { type: "spring" as const, stiffness: 400, damping: 25 },
+  x: { type: "spring" as const, stiffness: 400, damping: 25 },
 };
 
 const transition = {
   type: "spring" as const,
-  stiffness: 500,
-  damping: 30,
-  mass: 1,
+  stiffness: 400,
+  damping: 25,
+  mass: 0.8,
 };
 
 export function ExpandableTabs({
@@ -110,7 +110,7 @@ export function ExpandableTabs({
     <div
       ref={outsideClickRef}
       className={cn(
-        "flex items-center w-full gap-0.5 rounded-2xl bg-background/80 backdrop-blur-xl p-1.5 shadow-sm border border-border/50 overflow-visible",
+        "flex items-center w-full gap-1 rounded-xl bg-background/90 backdrop-blur-xl p-1 shadow-sm border border-border/40",
         className
       )}
     >
@@ -131,16 +131,16 @@ export function ExpandableTabs({
             onClick={() => handleSelect(index)}
             transition={transition}
             className={cn(
-              "relative flex items-center justify-center rounded-xl py-2.5 text-sm font-medium min-w-0 flex-1 overflow-visible",
+              "relative flex items-center justify-center rounded-lg py-2 text-sm font-medium flex-1 min-w-0",
               selected === index
-                ? cn("bg-background text-foreground shadow-md ring-1 ring-black/5 dark:ring-white/10", activeColor)
-                : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                ? cn("bg-background text-foreground shadow-sm", activeColor)
+                : "text-muted-foreground hover:text-foreground hover:bg-background/30"
             )}
             style={{
-              transition: "color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease"
+              transition: "all 0.2s ease"
             }}
           >
-            <Icon size={20} className="flex-shrink-0" />
+            <Icon size={18} className="flex-shrink-0" />
             <AnimatePresence initial={false}>
               {selected === index && (
                 <motion.span
@@ -149,7 +149,7 @@ export function ExpandableTabs({
                   animate="animate"
                   exit="exit"
                   transition={spanTransition}
-                  className="ml-2 whitespace-nowrap text-sm font-medium"
+                  className="ml-1.5 whitespace-nowrap text-sm font-medium"
                 >
                   {tabItem.title}
                 </motion.span>
