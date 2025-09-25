@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { NavbarThemeToggle } from './navbar-client'
+import { EspaceMobileNav } from './espace-mobile-nav'
 import Image from 'next/image'
 import {
   DropdownMenu,
@@ -420,56 +421,7 @@ export default function Navbar() {
           </div>
         )}
 
-        {isEspacePage && (
-          <div className="md:hidden border-t border-border">
-            <div className="flex py-2 px-1 overflow-x-auto">
-              <Link
-                href="/espace/planning"
-                onClick={(e) => handleNavigation('/espace/planning', e)}
-                className={`text-sm font-semibold transition-colors text-center py-3 px-4 rounded-lg whitespace-nowrap flex-shrink-0 ${
-                  pathname === '/espace/planning' || navigatingTo === '/espace/planning'
-                    ? 'text-primary bg-primary/10'
-                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
-                }`}
-              >
-                Planning
-              </Link>
-              <Link
-                href="/espace/reservations"
-                onClick={(e) => handleNavigation('/espace/reservations', e)}
-                className={`text-sm font-semibold transition-colors text-center py-3 px-4 rounded-lg whitespace-nowrap flex-shrink-0 ${
-                  pathname === '/espace/reservations' || navigatingTo === '/espace/reservations'
-                    ? 'text-primary bg-primary/10'
-                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
-                }`}
-              >
-                Réservations
-              </Link>
-              <Link
-                href="/espace/abonnement"
-                onClick={(e) => handleNavigation('/espace/abonnement', e)}
-                className={`text-sm font-semibold transition-colors text-center py-3 px-4 rounded-lg whitespace-nowrap flex-shrink-0 ${
-                  pathname === '/espace/abonnement' || navigatingTo === '/espace/abonnement'
-                    ? 'text-primary bg-primary/10'
-                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
-                }`}
-              >
-                Abonnement
-              </Link>
-              <Link
-                href="/espace/subscriptions"
-                onClick={(e) => handleNavigation('/espace/subscriptions', e)}
-                className={`text-sm font-semibold transition-colors text-center py-3 px-4 rounded-lg whitespace-nowrap flex-shrink-0 ${
-                  pathname === '/espace/subscriptions' || navigatingTo === '/espace/subscriptions'
-                    ? 'text-primary bg-primary/10'
-                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
-                }`}
-              >
-                Demandes
-              </Link>
-            </div>
-          </div>
-        )}
+        {isEspacePage && <EspaceMobileNav />}
       </div>
     </nav>
   )
