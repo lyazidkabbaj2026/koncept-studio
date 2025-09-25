@@ -1,8 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { useOnClickOutside } from "usehooks-ts";
 import { cn } from "@/lib/utils";
 import type { Icon as TablerIcon } from '@tabler/icons-react';
 
@@ -29,48 +27,6 @@ interface ExpandableTabsProps {
   onChange?: (index: number | null, tab?: Tab) => void;
 }
 
-const buttonVariants = {
-  initial: {
-    paddingLeft: "10px",
-    paddingRight: "10px",
-  },
-  animate: (isSelected: boolean) => ({
-    paddingLeft: isSelected ? "16px" : "10px",
-    paddingRight: isSelected ? "16px" : "10px",
-  }),
-};
-
-const spanVariants = {
-  initial: {
-    opacity: 0,
-    scale: 0.9,
-    x: -10,
-  },
-  animate: {
-    opacity: 1,
-    scale: 1,
-    x: 0,
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.9,
-    x: 10,
-  },
-};
-
-const spanTransition = {
-  opacity: { duration: 0.15 },
-  scale: { type: "spring" as const, stiffness: 300, damping: 30 },
-  x: { type: "spring" as const, stiffness: 300, damping: 30 },
-};
-
-const transition = {
-  type: "spring" as const,
-  stiffness: 300,
-  damping: 30,
-  mass: 1,
-};
-
 export function ExpandableTabs({
   tabs,
   className,
@@ -79,20 +35,11 @@ export function ExpandableTabs({
   onChange,
 }: ExpandableTabsProps) {
   const [selected, setSelected] = React.useState<number | null>(activeIndex ?? null);
-  const outsideClickRef = React.useRef(null);
 
   // Update selected when activeIndex changes
   React.useEffect(() => {
     setSelected(activeIndex ?? null);
   }, [activeIndex]);
-
-  useOnClickOutside(outsideClickRef, () => {
-    // Don't reset selection if activeIndex is provided (route-controlled)
-    if (activeIndex === undefined) {
-      setSelected(null);
-      onChange?.(null);
-    }
-  });
 
   const handleSelect = (index: number) => {
     const tab = tabs[index];
@@ -108,9 +55,8 @@ export function ExpandableTabs({
 
   return (
     <div
-      ref={outsideClickRef}
       className={cn(
-        "flex items-center w-full gap-2 rounded-2xl bg-background/90 backdrop-blur-xl p-2 shadow-sm border border-border/40",
+        "flex items-center w-full gap-1 rounded-2xl bg-background/90 backdrop-blur-xl p-1 shadow-sm border border-border/40",
         className
       )}
     >
@@ -122,40 +68,21 @@ export function ExpandableTabs({
         const tabItem = tab as Tab;
         const Icon = tabItem.icon;
         return (
-          <motion.button
+          <button
             key={tabItem.title}
-            variants={buttonVariants}
-            initial="initial"
-            animate="animate"
-            custom={selected === index}
             onClick={() => handleSelect(index)}
-            transition={transition}
             className={cn(
-              "relative flex items-center justify-center rounded-xl py-2.5 text-sm font-medium flex-1 min-w-0",
+              "relative flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium flex-1 min-w-0 transition-colors",
               selected === index
-                ? cn("bg-background text-foreground shadow-md ring-1 ring-black/5 dark:ring-white/5", activeColor)
+                ? cn("bg-background text-foreground shadow-sm ring-1 ring-black/5 dark:ring-white/5", activeColor)
                 : "text-muted-foreground hover:text-foreground hover:bg-background/40"
             )}
-            style={{
-              transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
-            }}
           >
             <Icon size={18} className="flex-shrink-0" />
-            <AnimatePresence initial={false}>
-              {selected === index && (
-                <motion.span
-                  variants={spanVariants}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  transition={spanTransition}
-                  className="ml-2 whitespace-nowrap text-sm font-medium"
-                >
-                  {tabItem.title}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </motion.button>
+            <span className="whitespace-nowrap text-sm font-medium">
+              {tabItem.title}
+            </span>
+          </button>
         );
       })}
     </div>

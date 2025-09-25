@@ -19,7 +19,16 @@
       "Bash(find:*)",
       "Bash(tree:*)",
       "Bash(dir publicimagesicons)",
-      "Bash(del \"scripts\\generate-icons.js\")"
+      "Bash(del \"scripts\\generate-icons.js\")",
+      "WebFetch(domain:21st.dev)",
+      "Bash(npm install:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_press_key",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_wait_for"
     ],
     "deny": [],
     "ask": []
