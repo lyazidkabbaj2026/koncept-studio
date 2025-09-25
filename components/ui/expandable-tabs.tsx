@@ -56,7 +56,7 @@ export function ExpandableTabs({
   return (
     <div
       className={cn(
-        "flex items-center w-full gap-1 rounded-2xl bg-background/90 backdrop-blur-xl p-1 shadow-sm border border-border/40",
+        "flex items-center w-full gap-0.5 rounded-2xl bg-background/90 backdrop-blur-xl p-1 shadow-sm border border-border/40 overflow-hidden",
         className
       )}
     >
@@ -72,14 +72,14 @@ export function ExpandableTabs({
             key={tabItem.title}
             onClick={() => handleSelect(index)}
             className={cn(
-              "relative flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium flex-1 min-w-0 transition-colors",
+              "relative flex items-center justify-center gap-1 rounded-xl px-1 py-2 text-xs font-medium flex-1 min-w-0 transition-colors",
               selected === index
                 ? cn("bg-background text-foreground shadow-sm ring-1 ring-black/5 dark:ring-white/5", activeColor)
                 : "text-muted-foreground hover:text-foreground hover:bg-background/40"
             )}
           >
-            <Icon size={18} className="flex-shrink-0" />
-            <span className="whitespace-nowrap text-sm font-medium">
+            <Icon size={14} className="flex-shrink-0" />
+            <span className="truncate text-xs font-medium max-w-[4rem]">
               {tabItem.title}
             </span>
           </button>
