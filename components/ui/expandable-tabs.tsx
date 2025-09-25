@@ -57,7 +57,7 @@ export function ExpandableTabs({
   return (
     <div
       className={cn(
-        "flex items-center gap-1 w-full",
+        "flex items-center gap-2 w-full",
         className
       )}
     >
@@ -94,7 +94,10 @@ export function ExpandableTabs({
             }}
           >
             <motion.div
-              className="flex items-center justify-center h-[44px] w-full px-3"
+              className={cn(
+                "flex items-center justify-center h-[44px] w-full",
+                isActive ? "px-2" : "px-3"
+              )}
               layout
             >
               <Icon className="flex-shrink-0 w-5 h-5" />

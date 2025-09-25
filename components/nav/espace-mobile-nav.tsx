@@ -44,7 +44,7 @@ export function EspaceMobileNav() {
   }
 
   return (
-    <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-md p-2">
+    <div className="md:hidden border-t border-border/50 bg-background/80 backdrop-blur-xl shadow-sm p-2">
       <ExpandableTabsWithRoute
         tabs={espaceTabs}
         currentPath={pathname}
