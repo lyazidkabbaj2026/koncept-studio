@@ -31,12 +31,12 @@ interface ExpandableTabsProps {
 
 const buttonVariants = {
   initial: {
-    paddingLeft: "8px",
-    paddingRight: "8px",
+    paddingLeft: "10px",
+    paddingRight: "10px",
   },
   animate: (isSelected: boolean) => ({
-    paddingLeft: isSelected ? "12px" : "8px",
-    paddingRight: isSelected ? "12px" : "8px",
+    paddingLeft: isSelected ? "16px" : "10px",
+    paddingRight: isSelected ? "16px" : "10px",
   }),
 };
 
@@ -59,16 +59,16 @@ const spanVariants = {
 };
 
 const spanTransition = {
-  opacity: { duration: 0.2 },
-  scale: { type: "spring" as const, stiffness: 400, damping: 25 },
-  x: { type: "spring" as const, stiffness: 400, damping: 25 },
+  opacity: { duration: 0.15 },
+  scale: { type: "spring" as const, stiffness: 300, damping: 30 },
+  x: { type: "spring" as const, stiffness: 300, damping: 30 },
 };
 
 const transition = {
   type: "spring" as const,
-  stiffness: 400,
-  damping: 25,
-  mass: 0.8,
+  stiffness: 300,
+  damping: 30,
+  mass: 1,
 };
 
 export function ExpandableTabs({
@@ -110,7 +110,7 @@ export function ExpandableTabs({
     <div
       ref={outsideClickRef}
       className={cn(
-        "flex items-center w-full gap-1 rounded-xl bg-background/90 backdrop-blur-xl p-1 shadow-sm border border-border/40",
+        "flex items-center w-full gap-2 rounded-2xl bg-background/90 backdrop-blur-xl p-2 shadow-sm border border-border/40",
         className
       )}
     >
@@ -131,13 +131,13 @@ export function ExpandableTabs({
             onClick={() => handleSelect(index)}
             transition={transition}
             className={cn(
-              "relative flex items-center justify-center rounded-lg py-2 text-sm font-medium flex-1 min-w-0",
+              "relative flex items-center justify-center rounded-xl py-2.5 text-sm font-medium flex-1 min-w-0",
               selected === index
-                ? cn("bg-background text-foreground shadow-sm", activeColor)
-                : "text-muted-foreground hover:text-foreground hover:bg-background/30"
+                ? cn("bg-background text-foreground shadow-md ring-1 ring-black/5 dark:ring-white/5", activeColor)
+                : "text-muted-foreground hover:text-foreground hover:bg-background/40"
             )}
             style={{
-              transition: "all 0.2s ease"
+              transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
             }}
           >
             <Icon size={18} className="flex-shrink-0" />
@@ -149,7 +149,7 @@ export function ExpandableTabs({
                   animate="animate"
                   exit="exit"
                   transition={spanTransition}
-                  className="ml-1.5 whitespace-nowrap text-sm font-medium"
+                  className="ml-2 whitespace-nowrap text-sm font-medium"
                 >
                   {tabItem.title}
                 </motion.span>
