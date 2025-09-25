@@ -1,6 +1,7 @@
 "use client";
 
-import * as React from "react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { Icon as TablerIcon } from '@tabler/icons-react';
 
@@ -34,10 +35,10 @@ export function ExpandableTabs({
   activeIndex,
   onChange,
 }: ExpandableTabsProps) {
-  const [selected, setSelected] = React.useState<number | null>(activeIndex ?? null);
+  const [selected, setSelected] = useState<number | null>(activeIndex ?? null);
 
   // Update selected when activeIndex changes
-  React.useEffect(() => {
+  useEffect(() => {
     setSelected(activeIndex ?? null);
   }, [activeIndex]);
 
@@ -56,7 +57,7 @@ export function ExpandableTabs({
   return (
     <div
       className={cn(
-        "flex items-center w-full gap-0.5 rounded-2xl bg-background/90 backdrop-blur-xl p-1 shadow-sm border border-border/40 overflow-hidden",
+        "flex items-center gap-2 p-2 rounded-2xl bg-background/90 backdrop-blur-xl shadow-sm border border-border/40",
         className
       )}
     >
@@ -67,22 +68,55 @@ export function ExpandableTabs({
 
         const tabItem = tab as Tab;
         const Icon = tabItem.icon;
+        const isActive = selected === index;
+
         return (
-          <button
+          <motion.div
             key={tabItem.title}
-            onClick={() => handleSelect(index)}
+            layout
             className={cn(
-              "relative flex items-center justify-center gap-1 rounded-xl px-1 py-2 text-xs font-medium flex-1 min-w-0 transition-colors",
-              selected === index
-                ? cn("bg-background text-foreground shadow-sm ring-1 ring-black/5 dark:ring-white/5", activeColor)
-                : "text-muted-foreground hover:text-foreground hover:bg-background/40"
+              "flex items-center justify-center rounded-xl cursor-pointer overflow-hidden h-[44px]",
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground",
+              isActive ? "flex-1" : "flex-none"
             )}
+            onClick={() => handleSelect(index)}
+            initial={false}
+            animate={{
+              width: isActive ? "auto" : 44,
+              minWidth: isActive ? 120 : 44,
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 400,
+              damping: 30,
+            }}
           >
-            <Icon size={14} className="flex-shrink-0" />
-            <span className="truncate text-xs font-medium max-w-[4rem]">
-              {tabItem.title}
-            </span>
-          </button>
+            <motion.div
+              className="flex items-center justify-center h-[44px] px-3"
+              initial={{ filter: "blur(10px)" }}
+              animate={{ filter: "blur(0px)" }}
+              exit={{ filter: "blur(10px)" }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+              <Icon className="flex-shrink-0 w-5 h-5" />
+              <AnimatePresence initial={false}>
+                {isActive && (
+                  <motion.span
+                    className="ml-2 font-medium text-sm whitespace-nowrap"
+                    initial={{ opacity: 0, scaleX: 0.8 }}
+                    animate={{ opacity: 1, scaleX: 1 }}
+                    exit={{ opacity: 0, scaleX: 0.8 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    style={{ originX: 0 }}
+                  >
+                    {tabItem.title}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          </motion.div>
         );
       })}
     </div>
