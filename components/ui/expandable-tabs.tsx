@@ -57,7 +57,7 @@ export function ExpandableTabs({
   return (
     <div
       className={cn(
-        "flex items-center gap-2 p-2 rounded-2xl bg-background/90 backdrop-blur-xl shadow-sm border border-border/40",
+        "flex items-center gap-1 w-full",
         className
       )}
     >
@@ -72,44 +72,44 @@ export function ExpandableTabs({
 
         return (
           <motion.div
-            key={tabItem.title}
+            key={`tab-${index}-${tabItem.title}`}
             layout
             className={cn(
-              "flex items-center justify-center rounded-xl cursor-pointer overflow-hidden h-[44px]",
+              "flex items-center justify-center rounded-xl cursor-pointer overflow-hidden h-[44px] relative",
               isActive
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground",
-              isActive ? "flex-1" : "flex-none"
+                ? "bg-primary text-primary-foreground shadow-md"
+                : "bg-muted/60 hover:bg-muted/80 text-muted-foreground hover:text-foreground"
             )}
             onClick={() => handleSelect(index)}
             initial={false}
             animate={{
+              flex: isActive ? "1 1 auto" : "0 0 44px",
               width: isActive ? "auto" : 44,
-              minWidth: isActive ? 120 : 44,
             }}
             transition={{
               type: "spring",
-              stiffness: 400,
-              damping: 30,
+              stiffness: 500,
+              damping: 35,
+              mass: 0.8,
             }}
           >
             <motion.div
-              className="flex items-center justify-center h-[44px] px-3"
-              initial={{ filter: "blur(10px)" }}
-              animate={{ filter: "blur(0px)" }}
-              exit={{ filter: "blur(10px)" }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="flex items-center justify-center h-[44px] w-full px-3"
+              layout
             >
               <Icon className="flex-shrink-0 w-5 h-5" />
-              <AnimatePresence initial={false}>
+              <AnimatePresence mode="wait">
                 {isActive && (
                   <motion.span
-                    className="ml-2 font-medium text-sm whitespace-nowrap"
-                    initial={{ opacity: 0, scaleX: 0.8 }}
-                    animate={{ opacity: 1, scaleX: 1 }}
-                    exit={{ opacity: 0, scaleX: 0.8 }}
-                    transition={{ duration: 0.25, ease: "easeOut" }}
-                    style={{ originX: 0 }}
+                    className="ml-2 font-medium text-sm whitespace-nowrap overflow-hidden"
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: "auto" }}
+                    exit={{ opacity: 0, width: 0 }}
+                    transition={{
+                      duration: 0.3,
+                      ease: "easeOut",
+                      width: { type: "spring", stiffness: 300, damping: 25 }
+                    }}
                   >
                     {tabItem.title}
                   </motion.span>
