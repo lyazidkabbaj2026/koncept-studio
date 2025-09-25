@@ -28,7 +28,10 @@
       "mcp__playwright__browser_press_key",
       "mcp__playwright__browser_resize",
       "mcp__playwright__browser_take_screenshot",
-      "mcp__playwright__browser_wait_for"
+      "mcp__playwright__browser_wait_for",
+      "Bash(npm run lint)",
+      "Bash(grep:*)",
+      "Bash(sort:*)"
     ],
     "deny": [],
     "ask": []

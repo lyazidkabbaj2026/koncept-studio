@@ -52,7 +52,6 @@ export class SubscriptionService {
       throw error
     }
 
-    console.log('Fetched subscription plans:', data)
     return data || []
   }
 

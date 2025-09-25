@@ -151,17 +151,10 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
   // Function to refresh subscription data
   const refreshSubscriptionData = async () => {
     if (!subscription) {
-      console.log('🟡 No subscription to refresh')
       return
     }
 
     try {
-      console.log('🟡 Refreshing subscription data for ID:', subscription.id)
-      console.log('🟡 Current subscription before refresh:', {
-        weekly_credits_used: subscription.weekly_credits_used,
-        credits_remaining: subscription.credits_remaining,
-        credits_used: subscription.credits_used
-      })
 
       const { data: updatedSubscription, error } = await supabase
         .from('user_subscriptions')
@@ -172,14 +165,8 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
         .eq('id', subscription.id)
         .single()
 
-      console.log('🟡 Subscription refresh result:', { error, data: updatedSubscription })
 
       if (!error && updatedSubscription) {
-        console.log('🟡 Updated subscription data:', {
-          weekly_credits_used: updatedSubscription.weekly_credits_used,
-          credits_remaining: updatedSubscription.credits_remaining,
-          credits_used: updatedSubscription.credits_used
-        })
         setSubscription(updatedSubscription)
       } else {
         console.error('Error refreshing subscription:', error)

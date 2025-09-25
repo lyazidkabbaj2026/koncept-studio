@@ -26,7 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { IconCalendar, IconUsers, IconSettings, IconLogout, IconBarbell, IconCalendarEvent, IconCreditCard, IconCalendarStats, IconX, IconClock, IconBrandWhatsapp, IconSun, IconMoon, IconFileText } from '@tabler/icons-react'
+import { IconCalendar, IconUsers, IconSettings, IconLogout, IconBarbell, IconCalendarEvent, IconCreditCard, IconCalendarStats, IconX, IconClock, IconBrandWhatsapp, IconSun, IconMoon, IconFileText, IconUserCheck } from '@tabler/icons-react'
 import { useTheme } from 'next-themes'
 import { Badge } from '@/components/ui/badge'
 
@@ -42,19 +42,14 @@ const navigation = [
     icon: IconFileText,
   },
   {
-    title: 'Cours',
-    href: '/admin/classes',
-    icon: IconBarbell,
+    title: 'Clients',
+    href: '/admin/clients',
+    icon: IconUserCheck,
   },
   {
     title: 'Planning',
     href: '/admin/calendar',
     icon: IconCalendarEvent,
-  },
-  {
-    title: 'Forfaits',
-    href: '/admin/subscription-plans',
-    icon: IconCreditCard,
   },
   {
     title: 'Réservations',
@@ -72,14 +67,19 @@ const navigation = [
     icon: IconClock,
   },
   {
+    title: 'Cours',
+    href: '/admin/classes',
+    icon: IconBarbell,
+  },
+  {
+    title: 'Forfaits',
+    href: '/admin/subscription-plans',
+    icon: IconCreditCard,
+  },
+  {
     title: 'WhatsApp Logs',
     href: '/admin/whatsapp-logs',
     icon: IconBrandWhatsapp,
-  },
-  {
-    title: 'Paramètres',
-    href: '/admin/settings',
-    icon: IconSettings,
   },
 ]
 

@@ -60,41 +60,10 @@ export default function WaitlistPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const checkAdminAccess = useCallback(async () => {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user!.id)
-        .single()
-
-      if (profile?.role !== 'admin') {
-        router.push('/')
-        return
-      }
-
-      await Promise.all([fetchWaitlist(), fetchStats()])
-    } catch (err) {
-      console.error('Error checking admin access:', err)
-      router.push('/')
-    }
-  }, [user, router, supabase])
-
-  useEffect(() => {
-    if (authLoading) return
-
-    if (!user) {
-      router.push('/login')
-      return
-    }
-
-    checkAdminAccess()
-  }, [user, authLoading, router, checkAdminAccess])
-
-  const fetchWaitlist = async () => {
+  const fetchWaitlist = useCallback(async () => {
     try {
       const { data, error } = await supabase
-        .from('class_waitlist')
+        .from('waitlist_entries')
         .select(`
           id,
           position,
@@ -126,7 +95,6 @@ export default function WaitlistPage() {
             )
           )
         `)
-        .order('schedule(start_datetime)', { ascending: true })
         .order('position', { ascending: true })
 
       if (error) throw error
@@ -135,48 +103,73 @@ export default function WaitlistPage() {
       console.error('Error fetching waitlist:', err)
       setError('Erreur lors du chargement de la liste d\'attente')
     }
-  }
+  }, [supabase])
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const today = new Date()
       const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
 
       const [
-        { count: totalWaiting },
-        { count: todayWaiting },
-        { count: tomorrowWaiting },
-        { count: notifiedWaiting }
+        { count: totalEntries },
+        { count: todayEntries },
+        { count: tomorrowEntries },
+        { count: notifiedEntries }
       ] = await Promise.all([
-        supabase.from('class_waitlist').select('*', { count: 'exact', head: true }),
-        supabase.from('class_waitlist').select(`
-          *,
-          schedule:class_schedules!schedule_id (start_datetime)
-        `, { count: 'exact', head: true })
+        supabase.from('waitlist_entries').select('*', { count: 'exact', head: true }),
+        supabase.from('waitlist_entries').select(`*, schedule:class_schedules!schedule_id(start_datetime)`, { count: 'exact', head: true })
           .gte('schedule.start_datetime', today.toISOString().split('T')[0])
           .lt('schedule.start_datetime', tomorrow.toISOString().split('T')[0]),
-        supabase.from('class_waitlist').select(`
-          *,
-          schedule:class_schedules!schedule_id (start_datetime)
-        `, { count: 'exact', head: true })
+        supabase.from('waitlist_entries').select(`*, schedule:class_schedules!schedule_id(start_datetime)`, { count: 'exact', head: true })
           .gte('schedule.start_datetime', tomorrow.toISOString().split('T')[0])
           .lt('schedule.start_datetime', new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
-        supabase.from('class_waitlist').select('*', { count: 'exact', head: true })
+        supabase.from('waitlist_entries').select('*', { count: 'exact', head: true })
           .not('notified_at', 'is', null)
       ])
 
       setStats({
-        total: totalWaiting || 0,
-        today: todayWaiting || 0,
-        tomorrow: tomorrowWaiting || 0,
-        notified: notifiedWaiting || 0
+        total: totalEntries || 0,
+        today: todayEntries || 0,
+        tomorrow: tomorrowEntries || 0,
+        notified: notifiedEntries || 0
       })
     } catch (err) {
       console.error('Error fetching stats:', err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  const checkAdminAccess = useCallback(async () => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user!.id)
+        .single()
+
+      if (profile?.role !== 'admin') {
+        router.push('/')
+        return
+      }
+
+      await Promise.all([fetchWaitlist(), fetchStats()])
+    } catch (err) {
+      console.error('Error checking admin access:', err)
+      router.push('/')
+    }
+  }, [user, router, supabase, fetchWaitlist, fetchStats])
+
+  useEffect(() => {
+    if (authLoading) return
+
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    checkAdminAccess()
+  }, [user, authLoading, router, checkAdminAccess])
 
   // Group waitlist by class schedule
   const groupedWaitlist = waitlist.reduce((acc: any, item: any) => {

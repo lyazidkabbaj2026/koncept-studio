@@ -58,38 +58,7 @@ export default function CancellationsPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const checkAdminAccess = useCallback(async () => {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user!.id)
-        .single()
-
-      if (profile?.role !== 'admin') {
-        router.push('/')
-        return
-      }
-
-      await Promise.all([fetchCancellations(), fetchStats(), fetchReasons()])
-    } catch (err) {
-      console.error('Error checking admin access:', err)
-      router.push('/')
-    }
-  }, [user, router, supabase])
-
-  useEffect(() => {
-    if (authLoading) return
-
-    if (!user) {
-      router.push('/login')
-      return
-    }
-
-    checkAdminAccess()
-  }, [user, authLoading, router, checkAdminAccess])
-
-  const fetchCancellations = async () => {
+  const fetchCancellations = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('class_bookings')
@@ -131,9 +100,9 @@ export default function CancellationsPage() {
       console.error('Error fetching cancellations:', err)
       setError('Erreur lors du chargement des annulations')
     }
-  }
+  }, [supabase])
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const today = new Date()
       const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -166,11 +135,11 @@ export default function CancellationsPage() {
     } catch (err) {
       console.error('Error fetching stats:', err)
     }
-  }
+  }, [supabase])
 
-  const fetchReasons = async () => {
+  const fetchReasons = useCallback(async () => {
     try {
-      const { data: reasons, error } = await supabase
+      const { data, error } = await supabase
         .from('class_bookings')
         .select('cancellation_reason')
         .eq('status', 'cancelled')
@@ -178,16 +147,15 @@ export default function CancellationsPage() {
 
       if (error) throw error
 
-      const reasonCounts: Record<string, number> = {}
-      reasons?.forEach(item => {
-        if (item.cancellation_reason) {
-          reasonCounts[item.cancellation_reason] = (reasonCounts[item.cancellation_reason] || 0) + 1
-        }
-      })
+      const reasons = (data || []).map(item => item.cancellation_reason).filter(Boolean)
+      const reasonCounts = reasons.reduce((acc, reason) => {
+        acc[reason] = (acc[reason] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
 
       const sortedReasons = Object.entries(reasonCounts)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+        .slice(0, 5) as [string, number][]
 
       setTopReasons(sortedReasons)
     } catch (err) {
@@ -195,7 +163,38 @@ export default function CancellationsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  const checkAdminAccess = useCallback(async () => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user!.id)
+        .single()
+
+      if (profile?.role !== 'admin') {
+        router.push('/')
+        return
+      }
+
+      await Promise.all([fetchCancellations(), fetchStats(), fetchReasons()])
+    } catch (err) {
+      console.error('Error checking admin access:', err)
+      router.push('/')
+    }
+  }, [user, router, supabase, fetchCancellations, fetchStats, fetchReasons])
+
+  useEffect(() => {
+    if (authLoading) return
+
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    checkAdminAccess()
+  }, [user, authLoading, router, checkAdminAccess])
 
   if (authLoading || loading) {
     return (

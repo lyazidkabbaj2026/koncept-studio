@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -26,12 +27,18 @@ import {
   IconEye,
   IconUsers,
   IconActivity,
-  IconFileText
+  IconFileText,
+  IconDownload,
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronDown,
+  IconTags
 } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { getAdminSubscriptionRequests, updateSubscriptionRequest, assignSubscriptionToUser, type AdminSubscriptionRequest, type RequestStats } from './actions'
+import * as XLSX from 'xlsx'
 
 export default function AdminSubscriptionRequestsPage() {
   const [requests, setRequests] = useState<AdminSubscriptionRequest[]>([])
@@ -41,15 +48,58 @@ export default function AdminSubscriptionRequestsPage() {
   const [selectedRequest, setSelectedRequest] = useState<AdminSubscriptionRequest | null>(null)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [showAssignModal, setShowAssignModal] = useState(false)
+  const [showSubscriptionTypeFilter, setShowSubscriptionTypeFilter] = useState(false)
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+  const [subscriptionTypeFilter, setSubscriptionTypeFilter] = useState<string[]>([])
+
+  // Get unique subscription types from requests
+  const availableSubscriptionTypes = Array.from(
+    new Set(requests.map(req => req.planName))
+  ).sort()
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 300) // 300ms delay
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 10
 
   // Assign form data
   const [assignData, setAssignData] = useState({
     startDate: new Date().toISOString().split('T')[0] // Today's date in YYYY-MM-DD format
   })
+
+  const filterRequests = useCallback(() => {
+    // Start by showing only pending requests
+    let filtered = requests.filter(req => req.status === 'pending')
+
+    if (debouncedSearchTerm) {
+      const searchTermLower = debouncedSearchTerm.toLowerCase()
+      filtered = filtered.filter(req =>
+        req.userName.toLowerCase().includes(searchTermLower) ||
+        req.userEmail.toLowerCase().includes(searchTermLower) ||
+        (req.userPhone && req.userPhone.toLowerCase().includes(searchTermLower)) ||
+        req.planName.toLowerCase().includes(searchTermLower)
+      )
+    }
+
+    if (subscriptionTypeFilter.length > 0) {
+      filtered = filtered.filter(req =>
+        subscriptionTypeFilter.includes(req.planName)
+      )
+    }
+
+    setFilteredRequests(filtered)
+  }, [requests, debouncedSearchTerm, subscriptionTypeFilter])
 
   useEffect(() => {
     loadRequests()
@@ -57,7 +107,60 @@ export default function AdminSubscriptionRequestsPage() {
 
   useEffect(() => {
     filterRequests()
-  }, [requests, searchTerm, statusFilter])
+    setCurrentPage(1) // Reset to first page when filters change
+  }, [filterRequests])
+
+  // Calculate pagination values
+  const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const endIndex = startIndex + ITEMS_PER_PAGE
+  const paginatedRequests = filteredRequests.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handleExport = () => {
+    try {
+      const dataToExport = filteredRequests.map(request => ({
+        'Nom': request.userName,
+        'Email': request.userEmail,
+        'Plan': request.planName,
+        'Type': getTypeInfo(request.requestType).label,
+        'Prix': `${request.planPrice} DHS`,
+        'Statut': getStatusInfo(request.status).label,
+        'Date de création': format(new Date(request.createdAt), 'dd/MM/yyyy HH:mm', { locale: fr }),
+        'Date d\'expiration': format(new Date(request.expiresAt), 'dd/MM/yyyy HH:mm', { locale: fr }),
+        'Notes admin': request.adminNotes || ''
+      }))
+
+      const ws = XLSX.utils.json_to_sheet(dataToExport)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Demandes d\'abonnement')
+
+      // Auto-adjust column widths
+      const colWidths = [
+        { wch: 20 }, // Nom
+        { wch: 25 }, // Email
+        { wch: 15 }, // Plan
+        { wch: 15 }, // Type
+        { wch: 10 }, // Prix
+        { wch: 12 }, // Statut
+        { wch: 18 }, // Date de création
+        { wch: 18 }, // Date d'expiration
+        { wch: 30 }  // Notes admin
+      ]
+      ws['!cols'] = colWidths
+
+      const fileName = `demandes-abonnement-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.xlsx`
+      XLSX.writeFile(wb, fileName)
+
+      toast.success(`Export réalisé: ${fileName}`)
+    } catch (error) {
+      console.error('Error exporting:', error)
+      toast.error('Erreur lors de l\'export')
+    }
+  }
 
   const loadRequests = async () => {
     try {
@@ -78,22 +181,12 @@ export default function AdminSubscriptionRequestsPage() {
     }
   }
 
-  const filterRequests = () => {
-    let filtered = requests
-
-    if (searchTerm) {
-      filtered = filtered.filter(req =>
-        req.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        req.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        req.planName.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(req => req.status === statusFilter)
-    }
-
-    setFilteredRequests(filtered)
+  const handleSubscriptionTypeToggle = (subscriptionType: string) => {
+    setSubscriptionTypeFilter(prev =>
+      prev.includes(subscriptionType)
+        ? prev.filter(type => type !== subscriptionType)
+        : [...prev, subscriptionType]
+    )
   }
 
   const getStatusInfo = (status: string) => {
@@ -179,17 +272,28 @@ export default function AdminSubscriptionRequestsPage() {
   return (
     <div className="container mx-auto px-6 py-8 space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Demandes d'Abonnement</h1>
           <p className="text-muted-foreground">
-            Gérez et suivez toutes les demandes d'abonnement des utilisateurs
+            Gérez et suivez les demandes d'abonnement en attente
           </p>
         </div>
-        <Button onClick={loadRequests} variant="outline" className="gap-2">
-          <IconRefresh className="h-4 w-4" />
-          Actualiser
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleExport}
+            variant="outline"
+            className="gap-2"
+            disabled={filteredRequests.length === 0}
+          >
+            <IconDownload className="h-4 w-4" />
+            Exporter
+          </Button>
+          <Button onClick={loadRequests} variant="outline" className="gap-2">
+            <IconRefresh className="h-4 w-4" />
+            Actualiser
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -252,29 +356,78 @@ export default function AdminSubscriptionRequestsPage() {
             <div className="relative">
               <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Rechercher..."
+                placeholder="Rechercher par nom, email, téléphone ou plan..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
-                <SelectItem value="pending">En attente</SelectItem>
-                <SelectItem value="fulfilled">Traité</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Subscription Type Filter */}
+            <Dialog open={showSubscriptionTypeFilter} onOpenChange={setShowSubscriptionTypeFilter}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="justify-between"
+                  disabled={availableSubscriptionTypes.length === 0}
+                >
+                  <div className="flex items-center gap-2">
+                    <IconTags className="h-4 w-4" />
+                    {subscriptionTypeFilter.length === 0
+                      ? "Types d'abonnement"
+                      : `${subscriptionTypeFilter.length} sélectionné${subscriptionTypeFilter.length > 1 ? 's' : ''}`
+                    }
+                  </div>
+                  <IconChevronDown className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Types d'abonnement</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {availableSubscriptionTypes.map(type => (
+                      <div key={type} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={type}
+                          checked={subscriptionTypeFilter.includes(type)}
+                          onCheckedChange={() => handleSubscriptionTypeToggle(type)}
+                        />
+                        <Label htmlFor={type} className="text-sm font-normal cursor-pointer flex-1">
+                          {type}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    {subscriptionTypeFilter.length > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSubscriptionTypeFilter([])}
+                        className="flex-1"
+                      >
+                        Tout désélectionner
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => setShowSubscriptionTypeFilter(false)}
+                      className="flex-1"
+                    >
+                      Fermer
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             <Button
               variant="outline"
               onClick={() => {
                 setSearchTerm('')
-                setStatusFilter('all')
+                setDebouncedSearchTerm('')
+                setSubscriptionTypeFilter([])
               }}
               className="gap-2"
             >
@@ -288,11 +441,11 @@ export default function AdminSubscriptionRequestsPage() {
       {/* Requests Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Demandes ({filteredRequests.length})</CardTitle>
+          <CardTitle>Demandes en attente ({filteredRequests.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {filteredRequests.map((request) => {
+            {paginatedRequests.map((request) => {
               const statusInfo = getStatusInfo(request.status)
               const typeInfo = getTypeInfo(request.requestType)
               const expiringSoon = isExpiringSoon(request.expiresAt)
@@ -329,15 +482,26 @@ export default function AdminSubscriptionRequestsPage() {
                           </div>
                           <div>
                             <span className="text-muted-foreground">Email:</span>
-                            <div className="font-medium">{request.userEmail}</div>
+                            <div className="font-medium text-xs break-all">{request.userEmail}</div>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">Créé le:</span>
+                            <span className="text-muted-foreground">
+                              {request.userPhone ? 'Téléphone:' : 'Créé le:'}
+                            </span>
                             <div className="font-medium">
-                              {format(new Date(request.createdAt), 'dd/MM/yyyy', { locale: fr })}
+                              {request.userPhone || format(new Date(request.createdAt), 'dd/MM/yyyy', { locale: fr })}
                             </div>
                           </div>
                         </div>
+
+                        {request.userPhone && (
+                          <div className="text-sm pt-2 border-t border-muted">
+                            <span className="text-muted-foreground">Créé le:</span>
+                            <span className="font-medium ml-2">
+                              {format(new Date(request.createdAt), 'dd/MM/yyyy', { locale: fr })}
+                            </span>
+                          </div>
+                        )}
 
                       </div>
 
@@ -373,11 +537,49 @@ export default function AdminSubscriptionRequestsPage() {
                 <IconFileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">Aucune demande trouvée</h3>
                 <p className="text-muted-foreground">
-                  Aucune demande ne correspond aux filtres sélectionnés.
+                  {debouncedSearchTerm || subscriptionTypeFilter.length > 0
+                    ? "Aucune demande en attente ne correspond aux filtres sélectionnés."
+                    : "Aucune demande d'abonnement en attente pour le moment."
+                  }
                 </p>
               </div>
             )}
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6 pt-6 border-t">
+              <div className="text-sm text-muted-foreground">
+                Page {currentPage} sur {totalPages} •
+                Affichage de {startIndex + 1}-{Math.min(endIndex, filteredRequests.length)} sur {filteredRequests.length} résultat{filteredRequests.length !== 1 ? 's' : ''}
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="gap-2"
+                >
+                  <IconChevronLeft className="h-4 w-4" />
+                  Précédent
+                </Button>
+                <span className="text-sm text-muted-foreground px-2">
+                  {currentPage}/{totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                  className="gap-2"
+                >
+                  Suivant
+                  <IconChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -396,11 +598,21 @@ export default function AdminSubscriptionRequestsPage() {
                 </div>
                 <div>
                   <Label>Email</Label>
-                  <p className="font-medium">{selectedRequest.userEmail}</p>
+                  <p className="font-medium text-sm break-all">{selectedRequest.userEmail}</p>
                 </div>
+                {selectedRequest.userPhone && (
+                  <div>
+                    <Label>Téléphone</Label>
+                    <p className="font-medium">{selectedRequest.userPhone}</p>
+                  </div>
+                )}
                 <div>
                   <Label>Plan</Label>
                   <p className="font-medium">{selectedRequest.planName}</p>
+                </div>
+                <div>
+                  <Label>Type</Label>
+                  <p className="font-medium">{selectedRequest.planType}</p>
                 </div>
                 <div>
                   <Label>Prix</Label>

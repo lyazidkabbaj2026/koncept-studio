@@ -55,40 +55,7 @@ export default function BookingsPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const checkAdminAccess = useCallback(async () => {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user!.id)
-        .single()
-
-      if (profile?.role !== 'admin') {
-        router.push('/')
-        return
-      }
-
-      // User is admin, fetch data
-      await Promise.all([fetchBookings(), fetchStats()])
-    } catch (err) {
-      console.error('Error checking admin access:', err)
-      router.push('/')
-    }
-  }, [user, router, supabase])
-
-  useEffect(() => {
-    if (authLoading) return
-
-    if (!user) {
-      router.push('/login')
-      return
-    }
-
-    // Check if user is admin
-    checkAdminAccess()
-  }, [user, authLoading, router, checkAdminAccess])
-
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('class_bookings')
@@ -129,9 +96,9 @@ export default function BookingsPage() {
       console.error('Error fetching bookings:', err)
       setError('Erreur lors du chargement des réservations')
     }
-  }
+  }, [supabase])
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const [
         { count: totalBookings },
@@ -157,7 +124,41 @@ export default function BookingsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  const checkAdminAccess = useCallback(async () => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user!.id)
+        .single()
+
+      if (profile?.role !== 'admin') {
+        router.push('/')
+        return
+      }
+
+      // User is admin, fetch data
+      await Promise.all([fetchBookings(), fetchStats()])
+    } catch (err) {
+      console.error('Error checking admin access:', err)
+      router.push('/')
+    }
+  }, [user, router, supabase, fetchBookings, fetchStats])
+
+  useEffect(() => {
+    if (authLoading) return
+
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    // Check if user is admin
+    checkAdminAccess()
+  }, [user, authLoading, router, checkAdminAccess])
+
 
   if (authLoading || loading) {
     return (

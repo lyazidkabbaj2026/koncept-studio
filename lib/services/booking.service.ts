@@ -109,14 +109,8 @@ export class BookingService {
 
         if (!weeklyLimit || creditsUsed < weeklyLimit) {
           selectedSubscription = abonnementSub
-          console.log('🔵 Selected abonnement subscription:', {
-            id: selectedSubscription.id,
-            weekly_credits_used: creditsUsed,
-            weekly_limit: weeklyLimit
-          })
         } else {
           rejectionReason = 'Abonnement weekly limit reached'
-          console.log('🟡 Abonnement limit reached, trying carnet fallback')
         }
       }
 
@@ -128,10 +122,6 @@ export class BookingService {
 
           if (creditsRemaining > 0) {
             selectedSubscription = carnetSub
-            console.log('🔵 Selected carnet subscription:', {
-              id: selectedSubscription.id,
-              credits_remaining: creditsRemaining
-            })
           } else {
             rejectionReason = 'Carnet has no credits remaining'
           }
@@ -205,8 +195,6 @@ export class BookingService {
         return { success: false, error: 'Type d\'abonnement invalide' }
       }
 
-      console.log('🔵 Updating credits using database function for subscription:', selectedSubscription.id)
-      console.log('🔵 Subscription type:', subscriptionType)
 
       const { data: creditResult, error: creditError } = await this.supabase.rpc('update_booking_credits', {
         user_uuid: user.id,
@@ -214,7 +202,6 @@ export class BookingService {
         subscription_type: subscriptionType
       })
 
-      console.log('🔵 Credit update function result:', { error: creditError, data: creditResult })
 
       if (creditError) {
         return { success: false, error: 'Échec de la mise à jour des crédits: ' + creditError.message }
@@ -308,8 +295,6 @@ export class BookingService {
         return { success: false, error: 'Type d\'abonnement invalide pour le remboursement' }
       }
 
-      console.log('🔴 Refunding credits using database function for subscription:', subscription.id)
-      console.log('🔴 Subscription type:', subscriptionType)
 
       const { data: refundResult, error: refundError } = await this.supabase.rpc('refund_booking_credits', {
         user_uuid: user.id,
@@ -317,7 +302,6 @@ export class BookingService {
         subscription_type: subscriptionType
       })
 
-      console.log('🔴 Credit refund function result:', { error: refundError, data: refundResult })
 
       if (refundError) {
         return { success: false, error: 'Échec du remboursement des crédits: ' + refundError.message }
@@ -466,12 +450,6 @@ export class BookingService {
       const nextPosition = (maxPosition && maxPosition.length > 0 ? maxPosition[0].position : 0) + 1
 
       // 7. Add to waitlist
-      console.log('🟡 Adding to waitlist:', {
-        user_id: user.id,
-        schedule_id: scheduleId,
-        subscription_id: selectedSubscription.id,
-        position: nextPosition
-      })
 
       const { data: waitlistEntry, error: waitlistError } = await this.supabase
         .from('class_waitlist')
@@ -485,11 +463,9 @@ export class BookingService {
         .single()
 
       if (waitlistError) {
-        console.log('🔴 Failed to add to waitlist:', waitlistError)
         return { success: false, error: waitlistError.message }
       }
 
-      console.log('🟢 Successfully added to waitlist:', waitlistEntry)
 
       // 8. Deduct credit using database function to bypass RLS issues
       const subscriptionType = selectedSubscription.subscription_plans?.type
@@ -701,7 +677,6 @@ export class BookingService {
   // New method to promote users from waitlist when spots become available
   private async promoteFromWaitlist(scheduleId: string): Promise<void> {
     try {
-      console.log('🟡 Checking for waitlist promotion for schedule:', scheduleId)
 
       // Call the database function we just created
       const { data: promotionResult, error: promotionError } = await this.supabase
@@ -709,16 +684,9 @@ export class BookingService {
           schedule_uuid: scheduleId
         })
 
-      console.log('🟡 Promotion function result:', promotionResult)
 
       if (promotionError) {
-        console.log('🔴 Promotion function error:', promotionError)
       } else if (promotionResult?.success && promotionResult?.promoted_user_id) {
-        console.log('🟢 Successfully promoted user from waitlist!', {
-          promotedUserId: promotionResult.promoted_user_id,
-          newBookingId: promotionResult.new_booking_id,
-          waitlistPosition: promotionResult.waitlist_position
-        })
 
         // Send WhatsApp notification for the promoted user
         try {
@@ -726,7 +694,6 @@ export class BookingService {
           const notificationResult = await sendWaitlistPromotionNotification(promotionResult.promoted_user_id)
 
           if (notificationResult.success) {
-            console.log('🟢 WhatsApp auto-promotion notification sent successfully')
           } else {
             console.error('🔴 Failed to send WhatsApp auto-promotion notification:', notificationResult.error)
           }
@@ -734,7 +701,6 @@ export class BookingService {
           console.error('🔴 Error importing or calling sendWaitlistPromotionNotification:', error)
         }
       } else {
-        console.log('🟡 No promotion needed:', promotionResult?.message)
       }
 
     } catch (error) {
@@ -754,7 +720,6 @@ export class BookingService {
         return { success: false, message: error.message }
       }
 
-      console.log('🟢 Subscription expiration completed:', result)
       return {
         success: result.success,
         message: result.message,
@@ -780,7 +745,6 @@ export class BookingService {
         return { success: false, message: error.message }
       }
 
-      console.log('🟢 Expired waitlist cleanup completed:', result)
       return {
         success: result.success,
         message: result.message,

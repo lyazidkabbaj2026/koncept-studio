@@ -1,8 +1,6 @@
 export * from './booking'
 export * from './class'
 export * from './subscription'
-export type { BookingWithDetails, WaitlistWithDetails } from './booking'
-export type { CalendarEvent } from './class'
 
 // Common types
 export interface User {

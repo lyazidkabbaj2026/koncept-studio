@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -19,12 +20,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { IconUserCheck, IconMessage, IconCreditCard, IconUsers, IconUserPlus, IconPhone, IconUserMinus, IconChevronLeft, IconChevronRight, IconSearch, IconX, IconSettings, IconPlus, IconTrash, IconEye, IconUserX } from '@tabler/icons-react'
+import { IconUserCheck, IconMessage, IconCreditCard, IconUsers, IconUserPlus, IconPhone, IconUserMinus, IconChevronLeft, IconChevronRight, IconSearch, IconX, IconSettings, IconPlus, IconTrash, IconEye, IconUserX, IconDownload, IconRefresh, IconEdit } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { formatDesiredPlansDisplay, parseDesiredPlans } from '@/lib/utils/plan-utils'
 import { assignSubscriptionToUser } from './actions'
+import * as XLSX from 'xlsx'
 
 interface User {
   id: string
@@ -65,6 +67,12 @@ interface SubscriptionFormData {
   start_date: string
 }
 
+interface ModifySubscriptionFormData {
+  plan_id: string
+  start_date: string
+  end_date: string
+}
+
 interface UserSubscription {
   id: string
   plan_id: string
@@ -93,6 +101,15 @@ export default function UsersPage() {
   const [showSubscriptionManagementDialog, setShowSubscriptionManagementDialog] = useState(false)
   const [userSubscriptions, setUserSubscriptions] = useState<UserSubscription[]>([])
   const [loadingSubscriptions, setLoadingSubscriptions] = useState(false)
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
+  const [subscriptionToDelete, setSubscriptionToDelete] = useState<{id: string, planName: string} | null>(null)
+  const [showModifySubscriptionDialog, setShowModifySubscriptionDialog] = useState(false)
+  const [subscriptionToModify, setSubscriptionToModify] = useState<UserSubscription | null>(null)
+  const [modifySubscriptionForm, setModifySubscriptionForm] = useState<ModifySubscriptionFormData>({
+    plan_id: '',
+    start_date: '',
+    end_date: ''
+  })
   const [subscriptionForm, setSubscriptionForm] = useState<SubscriptionFormData>({
     plan_id: '',
     start_date: format(new Date(), 'yyyy-MM-dd')
@@ -331,6 +348,63 @@ export default function UsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const handleRefresh = async () => {
+    setSearchTerm('')
+    setStatusFilter('all')
+    setPlanInformeFilter('all')
+    setCurrentPage(0)
+    await fetchUsers(0)
+    await fetchPlans()
+    toast.success('Données actualisées')
+  }
+
+  const handleExport = () => {
+    try {
+      const dataToExport = filteredUsers.map(user => ({
+        'Nom': user.full_name || '',
+        'Email': user.email || '',
+        'Téléphone': user.phone || '',
+        'Plan Informé': user.has_subscription_request ? 'Oui' : 'Non',
+        'Plan Souhaité': formatDesiredPlansDisplay(user.desired_plan || null) || '',
+        'Statut Abonnement': user.subscription_status === 'pending' ? 'En attente' :
+                            user.subscription_status === 'active' ? 'Actif' :
+                            user.subscription_status === 'inactive' ? 'Inactif' : 'Expiré',
+        'Date d\'inscription': format(new Date(user.created_at), 'dd/MM/yyyy HH:mm', { locale: fr }),
+        'Abonnement Actuel': user.active_subscription?.plan_name || 'Aucun',
+        'Crédits Restants': user.active_subscription?.credits_remaining || '',
+        'Date Fin Abonnement': user.active_subscription?.end_date ?
+          format(new Date(user.active_subscription.end_date), 'dd/MM/yyyy', { locale: fr }) : ''
+      }))
+
+      const ws = XLSX.utils.json_to_sheet(dataToExport)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Utilisateurs')
+
+      // Auto-adjust column widths
+      const colWidths = [
+        { wch: 20 }, // Nom
+        { wch: 25 }, // Email
+        { wch: 15 }, // Téléphone
+        { wch: 12 }, // Plan Informé
+        { wch: 20 }, // Plan Souhaité
+        { wch: 18 }, // Statut Abonnement
+        { wch: 18 }, // Date d'inscription
+        { wch: 20 }, // Abonnement Actuel
+        { wch: 15 }, // Crédits Restants
+        { wch: 18 }  // Date Fin Abonnement
+      ]
+      ws['!cols'] = colWidths
+
+      const fileName = `utilisateurs-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.xlsx`
+      XLSX.writeFile(wb, fileName)
+
+      toast.success(`Export réalisé: ${fileName}`)
+    } catch (error) {
+      console.error('Error exporting:', error)
+      toast.error('Erreur lors de l\'export')
+    }
+  }
+
 
   const handleAssignSubscription = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -389,24 +463,172 @@ export default function UsersPage() {
     }
   }
 
-  const handleCancelSubscription = async (subscriptionId: string) => {
+  const handleShowDeleteConfirmation = (subscriptionId: string, planName: string) => {
+    setSubscriptionToDelete({ id: subscriptionId, planName })
+    setShowDeleteConfirmation(true)
+  }
+
+  const handleShowModifySubscription = (subscription: UserSubscription) => {
+    setSubscriptionToModify(subscription)
+    // Pre-fill form with current subscription data
+    setModifySubscriptionForm({
+      plan_id: subscription.plan_id,
+      start_date: subscription.start_date,
+      end_date: subscription.end_date
+    })
+    setShowModifySubscriptionDialog(true)
+  }
+
+  // Helper function to calculate end date based on plan and start date
+  const calculateEndDate = (planId: string, startDate: string): string => {
+    if (!planId || !startDate) return ''
+
+    const selectedPlan = plans.find(p => p.id === planId)
+    if (!selectedPlan || !selectedPlan.validity_months) return ''
+
+    const start = new Date(startDate)
+    const end = new Date(start)
+    end.setMonth(end.getMonth() + selectedPlan.validity_months)
+
+    return format(end, 'yyyy-MM-dd')
+  }
+
+  const handleDeleteSubscription = async () => {
+    if (!subscriptionToDelete) return
+
     try {
-      const { error } = await supabase
+      console.log('Attempting to delete subscription with ID:', subscriptionToDelete.id)
+
+      // First, check if the subscription exists
+      const { data: existingSubscription, error: checkError } = await supabase
         .from('user_subscriptions')
-        .update({ status: 'cancelled' })
-        .eq('id', subscriptionId)
+        .select('id, status')
+        .eq('id', subscriptionToDelete.id)
+        .single()
 
-      if (error) throw error
+      if (checkError) {
+        console.error('Error checking subscription existence:', checkError)
+        throw new Error(`Erreur lors de la vérification: ${checkError.message}`)
+      }
 
+      if (!existingSubscription) {
+        throw new Error('Abonnement introuvable')
+      }
+
+      console.log('Found subscription to delete:', existingSubscription)
+
+      // Delete related records first to avoid foreign key constraint violations
+
+      // Delete all bookings that reference this subscription
+      const { error: bookingsDeleteError } = await supabase
+        .from('class_bookings')
+        .delete()
+        .eq('subscription_id', subscriptionToDelete.id)
+
+      if (bookingsDeleteError) {
+        console.error('Error deleting related bookings:', bookingsDeleteError)
+        throw new Error(`Erreur lors de la suppression des réservations: ${bookingsDeleteError.message}`)
+      }
+
+      // Delete all waitlist entries that reference this subscription
+      const { error: waitlistDeleteError } = await supabase
+        .from('class_waitlist')
+        .delete()
+        .eq('subscription_id', subscriptionToDelete.id)
+
+      if (waitlistDeleteError) {
+        console.error('Error deleting related waitlist entries:', waitlistDeleteError)
+        throw new Error(`Erreur lors de la suppression des entrées de liste d'attente: ${waitlistDeleteError.message}`)
+      }
+
+      // Delete any subscription requests that reference this subscription
+      const { error: subscriptionRequestsDeleteError } = await supabase
+        .from('subscription_requests')
+        .update({ resulting_subscription_id: null })
+        .eq('resulting_subscription_id', subscriptionToDelete.id)
+
+      if (subscriptionRequestsDeleteError) {
+        console.error('Error updating related subscription requests:', subscriptionRequestsDeleteError)
+        throw new Error(`Erreur lors de la mise à jour des demandes d'abonnement: ${subscriptionRequestsDeleteError.message}`)
+      }
+
+      console.log('Successfully deleted/updated related records')
+
+      // Now delete the subscription record
+      const { error: deleteError } = await supabase
+        .from('user_subscriptions')
+        .delete()
+        .eq('id', subscriptionToDelete.id)
+
+      if (deleteError) {
+        console.error('Supabase delete error details:', deleteError)
+        throw new Error(`Erreur de suppression: ${deleteError.message || deleteError.details || 'Erreur inconnue'}`)
+      }
+
+      console.log('Successfully deleted subscription')
+
+      // Refresh data
       if (selectedUser) {
         await fetchUserSubscriptions(selectedUser.id)
         await fetchUsers(0)
       }
 
-      toast.success('Abonnement annulé avec succès')
+      // Close confirmation dialog
+      setShowDeleteConfirmation(false)
+      setSubscriptionToDelete(null)
+
+      toast.success('Abonnement supprimé définitivement')
     } catch (err: any) {
-      console.error('Error cancelling subscription:', err)
-      toast.error('Erreur lors de l\'annulation de l\'abonnement')
+      console.error('Error deleting subscription:', err)
+      const errorMessage = err?.message || err?.details || 'Erreur inconnue lors de la suppression'
+      toast.error(`Erreur: ${errorMessage}`)
+    }
+  }
+
+  const handleModifySubscription = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!subscriptionToModify || !selectedUser) return
+
+    try {
+      // Validation
+      if (new Date(modifySubscriptionForm.start_date) >= new Date(modifySubscriptionForm.end_date)) {
+        throw new Error('La date de fin doit être postérieure à la date de début')
+      }
+
+      console.log('Modifying subscription with data:', modifySubscriptionForm)
+
+      // Update subscription in database
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .update({
+          plan_id: modifySubscriptionForm.plan_id,
+          start_date: modifySubscriptionForm.start_date,
+          end_date: modifySubscriptionForm.end_date,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', subscriptionToModify.id)
+
+      if (error) throw error
+
+
+      // Refresh data
+      await fetchUserSubscriptions(selectedUser.id)
+      await fetchUsers(0)
+
+      // Close dialog and reset form
+      setShowModifySubscriptionDialog(false)
+      setSubscriptionToModify(null)
+      setModifySubscriptionForm({
+        plan_id: '',
+        start_date: '',
+        end_date: ''
+      })
+
+      toast.success('Abonnement modifié avec succès')
+    } catch (err: any) {
+      console.error('Error modifying subscription:', err)
+      const errorMessage = err?.message || 'Erreur lors de la modification de l\'abonnement'
+      toast.error(errorMessage)
     }
   }
 
@@ -498,12 +720,22 @@ export default function UsersPage() {
   if (loading && users.length === 0) {
     return (
       <div className="flex-1 space-y-8 p-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold">Utilisateurs</h1>
             <p className="text-muted-foreground mt-2">
               Gérer tous les utilisateurs inscrits
             </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="gap-2" disabled>
+              <IconDownload className="h-4 w-4" />
+              Exporter
+            </Button>
+            <Button variant="outline" className="gap-2" disabled>
+              <IconRefresh className="h-4 w-4" />
+              Actualiser
+            </Button>
           </div>
         </div>
         <div className="text-center py-12">
@@ -515,12 +747,27 @@ export default function UsersPage() {
 
   return (
     <div className="flex-1 space-y-8 p-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Utilisateurs</h1>
           <p className="text-muted-foreground mt-2">
             Gérer tous les utilisateurs inscrits
           </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleExport}
+            variant="outline"
+            className="gap-2"
+            disabled={filteredUsers.length === 0}
+          >
+            <IconDownload className="h-4 w-4" />
+            Exporter
+          </Button>
+          <Button onClick={handleRefresh} variant="outline" className="gap-2">
+            <IconRefresh className="h-4 w-4" />
+            Actualiser
+          </Button>
         </div>
       </div>
 
@@ -1153,11 +1400,20 @@ export default function UsersPage() {
 
                             {/* Actions */}
                             {subscription.status === 'active' && (
-                              <div className="flex justify-end pt-4 border-t border-border">
+                              <div className="flex justify-end gap-2 pt-4 border-t border-border">
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleCancelSubscription(subscription.id)}
+                                  onClick={() => handleShowModifySubscription(subscription)}
+                                  className="text-muted-foreground hover:text-foreground hover:bg-muted/10"
+                                >
+                                  <IconEdit className="h-4 w-4 mr-2" />
+                                  Modifier
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleShowDeleteConfirmation(subscription.id, subscription.plan_name)}
                                   className="text-muted-foreground hover:text-foreground hover:bg-muted/10"
                                 >
                                   <IconTrash className="h-4 w-4 mr-2" />
@@ -1274,6 +1530,164 @@ export default function UsersPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modify Subscription Dialog */}
+      <Dialog open={showModifySubscriptionDialog} onOpenChange={setShowModifySubscriptionDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <IconEdit className="h-5 w-5" />
+              Modifier l'abonnement
+            </DialogTitle>
+          </DialogHeader>
+
+          {subscriptionToModify && (
+            <div className="space-y-6">
+              {/* Current Subscription Info */}
+              <Card className="border-muted-foreground/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold">{subscriptionToModify.plan_name}</h3>
+                      <p className="text-sm text-muted-foreground capitalize">{subscriptionToModify.plan_type}</p>
+                    </div>
+                    <Badge variant={subscriptionToModify.status === 'active' ? 'default' : 'secondary'}>
+                      {subscriptionToModify.status === 'active' ? 'Actif' :
+                       subscriptionToModify.status === 'expired' ? 'Expiré' : 'Annulé'}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Modify Form */}
+              <form onSubmit={handleModifySubscription} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Plan Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="modify_plan_id">Plan d'abonnement</Label>
+                    <Select
+                      value={modifySubscriptionForm.plan_id}
+                      onValueChange={(value) => {
+                        const newEndDate = calculateEndDate(value, modifySubscriptionForm.start_date)
+                        setModifySubscriptionForm(prev => ({
+                          ...prev,
+                          plan_id: value,
+                          end_date: newEndDate || prev.end_date
+                        }))
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un plan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {plans.map((plan) => (
+                          <SelectItem key={plan.id} value={plan.id}>
+                            <div className="flex items-center justify-between w-full">
+                              <span className="font-medium">{plan.name}</span>
+                              <span className="ml-3 text-sm text-muted-foreground">
+                                {plan.price_dhs} DH
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Start Date */}
+                  <div className="space-y-2">
+                    <Label htmlFor="modify_start_date">Date de début</Label>
+                    <Input
+                      id="modify_start_date"
+                      type="date"
+                      value={modifySubscriptionForm.start_date}
+                      onChange={(e) => {
+                        const newEndDate = calculateEndDate(modifySubscriptionForm.plan_id, e.target.value)
+                        setModifySubscriptionForm(prev => ({
+                          ...prev,
+                          start_date: e.target.value,
+                          end_date: newEndDate || prev.end_date
+                        }))
+                      }}
+                      required
+                    />
+                  </div>
+
+                  {/* End Date */}
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="modify_end_date">Date de fin</Label>
+                    <Input
+                      id="modify_end_date"
+                      type="date"
+                      value={modifySubscriptionForm.end_date}
+                      onChange={(e) => setModifySubscriptionForm(prev => ({ ...prev, end_date: e.target.value }))}
+                      required
+                    />
+                    {modifySubscriptionForm.plan_id && (
+                      <p className="text-xs text-muted-foreground">
+                        Calculée automatiquement selon la durée du plan (
+                        {plans.find(p => p.id === modifySubscriptionForm.plan_id)?.validity_months} mois)
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Form Actions */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowModifySubscriptionDialog(false)}
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={!modifySubscriptionForm.plan_id}
+                  >
+                    <IconEdit className="h-4 w-4 mr-2" />
+                    Enregistrer les modifications
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Subscription Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer définitivement l'abonnement "{subscriptionToDelete?.planName}" ?
+            </AlertDialogDescription>
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground font-medium">
+                <strong>Attention :</strong> Cette action est irréversible et supprimera :
+              </p>
+              <ul className="list-disc list-inside mt-2 space-y-1 text-sm text-muted-foreground">
+                <li>L'abonnement et toutes ses données</li>
+                <li>Toutes les réservations associées</li>
+                <li>Toutes les entrées de liste d'attente associées</li>
+                <li>Les références dans les demandes d'abonnement</li>
+              </ul>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDeleteConfirmation(false)}>
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSubscription}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer définitivement
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

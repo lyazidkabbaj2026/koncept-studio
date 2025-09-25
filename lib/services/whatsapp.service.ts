@@ -64,7 +64,6 @@ export class WhatsAppService {
     // Remove all non-digits
     let cleaned = phoneNumber.replace(/\D/g, '')
 
-    console.log('Normalizing phone number:', { original: phoneNumber, cleaned })
 
     // If it starts with 0 and appears to be Moroccan (9-10 digits after removing 0)
     if (cleaned.startsWith('0') && (cleaned.length === 9 || cleaned.length === 10)) {
@@ -88,7 +87,6 @@ export class WhatsAppService {
       cleaned = '+' + cleaned
     }
 
-    console.log('Normalized phone number:', cleaned)
     return cleaned
   }
 
@@ -156,11 +154,6 @@ export class WhatsAppService {
         Body: message
       })
 
-      console.log('Sending WhatsApp message:', {
-        to: `whatsapp:${to}`,
-        from: `whatsapp:${this.twilioWhatsAppNumber}`,
-        messagePreview: message.substring(0, 100) + '...'
-      })
 
       const response = await fetch(url, {
         method: 'POST',
@@ -188,7 +181,6 @@ export class WhatsAppService {
         throw new Error(responseData.message || `Twilio API error: ${response.status}`)
       }
 
-      console.log('WhatsApp message sent successfully:', responseData.sid)
       return responseData
     } catch (error) {
       console.error('Error sending Twilio WhatsApp message:', error)
