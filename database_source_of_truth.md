@@ -171,7 +171,8 @@
     message_content text NOT NULL,
     status text NOT NULL DEFAULT 'pending'::text,
     error_message text,
-    twilio_message_sid text,
+    wasender_message_id text,
+    api_response text,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now()
 );                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |

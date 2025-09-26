@@ -1,45 +1,39 @@
-# WhatsApp Setup Guide for Twilio Trial Account
+# WhatsApp Setup Guide for Wasender API
 
-## Current Issue
-The error "Twilio could not find a Channel with the specified From address" occurs because the WhatsApp number `+16365567005` is not properly configured for WhatsApp messaging.
+## Overview
+This application uses Wasender API for WhatsApp messaging instead of Twilio. Wasender provides a simpler, more reliable WhatsApp API integration.
 
-## Solution: Use Twilio WhatsApp Sandbox
+## Setup Requirements
 
-For trial accounts, you must use the **Twilio WhatsApp Sandbox**.
+### Step 1: Get Wasender Account
+1. Go to [Wasender API](https://wasenderapi.com/)
+2. Create an account and purchase a subscription
+3. Connect your WhatsApp number to create a session
 
-### Step 1: Get Sandbox Number
-1. Go to [Twilio Console](https://console.twilio.com/)
-2. Navigate to **Messaging** > **Try it out** > **Send a WhatsApp message**
-3. You'll see a sandbox number (usually `+14155238886`)
+### Step 2: Get API Credentials
+1. In your Wasender dashboard, get your **API Key** (Personal Access Token)
+2. Note your **Base URL**: `https://wasenderapi.com/api`
 
-### Step 2: Update Environment Variables
-Replace your current `.env.local` with:
+### Step 3: Update Environment Variables
+Add to your `.env.local`:
 
 ```env
-TWILIO_ACCOUNT_SID=AC18a7609f08d723ad8dff5b0c48b004fe
-TWILIO_AUTH_TOKEN=707cbe71e0edc82df3251bf7500a8497
-TWILIO_WHATSAPP_NUMBER=+14155238886
+# Wasender API Configuration for WhatsApp notifications
+WASENDER_API_KEY=your_wasender_api_key_here
+WASENDER_BASE_URL=https://wasenderapi.com/api
 ```
 
-### Step 3: Join WhatsApp Sandbox (IMPORTANT)
-**Before any WhatsApp messages can be sent to a number, that number must join the sandbox:**
+### Step 4: Test the Integration
+1. Make sure your environment variables are configured
+2. Restart your development server (`npm run dev`)
+3. Test by creating a new user account and completing signup
+4. Check `/admin/whatsapp-logs` for message delivery status
 
-1. From your WhatsApp (the number `+21270604217`), send a message to `+14155238886`
-2. The message should be: `join <your-sandbox-keyword>`
-   - Your sandbox keyword is shown in the Twilio Console
-   - Example: `join daughter-harbor` (replace with your actual keyword)
-
-### Step 4: Test the Flow
-1. Make sure the sandbox number is configured in `.env.local`
-2. Ensure `+21270604217` has joined the sandbox by sending the join message
-3. Create a new user account with phone number `070604217`
-4. Complete the signup flow with plan selection
-
-## Alternative: Production WhatsApp API
-For production use (not trial), you need:
-1. WhatsApp Business API approval from Meta
-2. A verified WhatsApp Business phone number
-3. Additional Twilio configuration
+## Production Setup
+For production deployment:
+1. Ensure your Wasender subscription supports production volume
+2. Update `.env.production` with your production API key
+3. Monitor the `/admin/whatsapp-logs` page for delivery status
 
 ## Troubleshooting
 
@@ -73,12 +67,45 @@ CREATE POLICY "Admins can modify WhatsApp logs" ON whatsapp_logs
     );
 ```
 
-### Phone Number Formatting
+### Database Schema Update
+If you're migrating from Twilio, update your `whatsapp_logs` table:
+
+```sql
+-- Add new Wasender columns
+ALTER TABLE whatsapp_logs
+ADD COLUMN IF NOT EXISTS wasender_message_id TEXT,
+ADD COLUMN IF NOT EXISTS api_response TEXT;
+
+-- Optional: Remove old Twilio column
+-- ALTER TABLE whatsapp_logs DROP COLUMN IF EXISTS twilio_message_sid;
+```
+
+### Common Issues
+
+#### API Key Invalid
+- Verify your `WASENDER_API_KEY` is correct
+- Check that your Wasender subscription is active
+- Ensure the API key has proper permissions
+
+#### Phone Number Formatting
 - Moroccan numbers like `070604217` are automatically formatted to `+21270604217`
-- Ensure the number is in the database exactly as entered by the user
+- International format is required for WhatsApp delivery
+
+#### Network Issues
+- Verify the base URL: `https://wasenderapi.com/api`
+- Check that your server can reach external APIs
+- Monitor network connectivity
 
 ### Verification Steps
-1. Check Twilio Console for sandbox configuration
-2. Verify the phone number has joined the sandbox
-3. Check `/admin/whatsapp-logs` for message attempts
-4. Look for console logs with debugging information
+1. Check Wasender dashboard for active sessions
+2. Verify API key is working with a test call
+3. Check `/admin/whatsapp-logs` for message delivery status
+4. Monitor console logs for debugging information
+5. Use the "Renvoyer" button to retry failed messages
+
+### Resend Failed Messages
+The admin panel now includes a resend feature:
+1. Go to `/admin/whatsapp-logs`
+2. Find failed messages (marked with red status)
+3. Click "Renvoyer" to retry sending
+4. Monitor the updated status

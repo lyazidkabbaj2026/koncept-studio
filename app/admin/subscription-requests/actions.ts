@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { type ActionResult } from '@/lib/types/subscription-requests'
+import { whatsappServerService } from '@/lib/services/server'
+import { generateActivationMessage } from '@/lib/utils/whatsapp-messages'
 
 // Admin subscription request interface (simplified)
 export interface AdminSubscriptionRequest {
@@ -412,6 +414,29 @@ export async function assignSubscriptionToUser(
         updated_at: new Date().toISOString()
       })
       .eq('id', request.user_id)
+
+    // Send WhatsApp activation notification
+    try {
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('full_name, email, phone')
+        .eq('id', request.user_id)
+        .single()
+
+      if (userProfile?.phone) {
+        const message = generateActivationMessage(userProfile)
+        await whatsappServerService.sendMessage({
+          phoneNumber: userProfile.phone,
+          message,
+          eventType: 'activation',
+          userId: request.user_id
+        })
+        console.log('WhatsApp activation notification sent successfully')
+      }
+    } catch (error) {
+      console.error('Error sending WhatsApp activation notification:', error)
+      // Don't fail the process if WhatsApp fails
+    }
 
     // Revalidate pages
     revalidatePath('/admin/subscription-requests')

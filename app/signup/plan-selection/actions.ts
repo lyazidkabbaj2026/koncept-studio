@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { whatsappServerService } from '@/lib/services/server'
-import { generateSignupMessage } from '@/lib/utils/whatsapp-messages'
+import { generateSignupMessage, generateSubscriptionRequestMessage } from '@/lib/utils/whatsapp-messages'
 import type { SubscriptionPlan } from '@/types'
 
 export async function getSubscriptionPlansByType(): Promise<{ [key: string]: SubscriptionPlan[] }> {
@@ -103,19 +103,28 @@ export async function saveUserPlanSelection(planIds: string[]): Promise<{ succes
       .eq('id', user.id)
       .single()
 
-    // Send WhatsApp notification if user has phone number
+    // Send WhatsApp subscription request notifications if user has phone number
     if (profile?.phone) {
       try {
-        const message = generateSignupMessage(profile, planNames)
-        await whatsappServerService.sendMessage({
-          phoneNumber: profile.phone,
-          message,
-          eventType: 'signup',
-          userId: user.id
-        })
-        console.log('WhatsApp signup notification sent successfully')
+        // Send subscription request confirmations for each selected plan
+        // Note: Welcome signup message is already sent during initial signup
+        for (const planName of planNames) {
+          try {
+            const requestMessage = generateSubscriptionRequestMessage(profile, planName)
+            await whatsappServerService.sendMessage({
+              phoneNumber: profile.phone,
+              message: requestMessage,
+              eventType: 'subscription_request',
+              userId: user.id
+            })
+            console.log(`WhatsApp subscription request notification sent for plan: ${planName}`)
+          } catch (error) {
+            console.error(`Error sending WhatsApp subscription request notification for plan ${planName}:`, error)
+            // Continue with other plans if one fails
+          }
+        }
       } catch (error) {
-        console.error('Error sending WhatsApp signup notification:', error)
+        console.error('Error sending WhatsApp subscription request notifications:', error)
         // Don't fail the signup process if WhatsApp fails
       }
     }

@@ -437,24 +437,26 @@ export type Database = {
         Row: {
           id: string
           user_id: string | null
-          event_type: 'signup' | 'activation' | 'waitlist_promotion' | 'class_cancellation'
+          event_type: 'signup' | 'activation' | 'waitlist_promotion' | 'class_cancellation' | 'subscription_request'
           phone_number: string
           message_content: string
           status: 'pending' | 'success' | 'failed'
           error_message: string | null
-          twilio_message_sid: string | null
+          wasender_message_id: string | null
+          api_response: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
           user_id?: string | null
-          event_type: 'signup' | 'activation' | 'waitlist_promotion' | 'class_cancellation'
+          event_type: 'signup' | 'activation' | 'waitlist_promotion' | 'class_cancellation' | 'subscription_request'
           phone_number: string
           message_content: string
           status?: 'pending' | 'success' | 'failed'
           error_message?: string | null
-          twilio_message_sid?: string | null
+          wasender_message_id?: string | null
+          api_response?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -466,7 +468,8 @@ export type Database = {
           message_content?: string
           status?: 'pending' | 'success' | 'failed'
           error_message?: string | null
-          twilio_message_sid?: string | null
+          wasender_message_id?: string | null
+          api_response?: string | null
           created_at?: string
           updated_at?: string
         }

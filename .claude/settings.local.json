@@ -31,7 +31,8 @@
       "mcp__playwright__browser_wait_for",
       "Bash(npm run lint)",
       "Bash(grep:*)",
-      "Bash(sort:*)"
+      "Bash(sort:*)",
+      "WebFetch(domain:wasenderapi.com)"
     ],
     "deny": [],
     "ask": []

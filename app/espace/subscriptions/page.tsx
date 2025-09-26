@@ -170,6 +170,9 @@ export default function SubscriptionsPage() {
               </Button>
             </DialogTrigger>
             <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto mx-auto">
+              <DialogHeader>
+                <DialogTitle>Nouvelle demande d'abonnement</DialogTitle>
+              </DialogHeader>
               <PlanRequestForm
                 onSuccess={handleRequestSuccess}
                 onCancel={() => setShowNewRequestForm(false)}

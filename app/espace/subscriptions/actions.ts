@@ -9,6 +9,8 @@ import {
   type ActionResult
 } from '@/lib/schemas/subscription-requests'
 import { type SubscriptionRequestWithPlan } from '@/lib/types/subscription-requests'
+import { whatsappServerService } from '@/lib/services/server'
+import { generateSubscriptionRequestMessage } from '@/lib/utils/whatsapp-messages'
 
 // =====================================================
 // User-Facing Actions
@@ -176,6 +178,36 @@ export async function createSubscriptionRequest(data: CreateRequestData): Promis
         success: false,
         error: error.message || 'Failed to create subscription request'
       }
+    }
+
+    // Send WhatsApp subscription request notification
+    try {
+      // Get user profile and plan details
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, email, phone')
+        .eq('id', user.id)
+        .single()
+
+      const { data: plan } = await supabase
+        .from('subscription_plans')
+        .select('name')
+        .eq('id', validatedData.planId)
+        .single()
+
+      if (profile?.phone && plan?.name) {
+        const message = generateSubscriptionRequestMessage(profile, plan.name)
+        await whatsappServerService.sendMessage({
+          phoneNumber: profile.phone,
+          message,
+          eventType: 'subscription_request',
+          userId: user.id
+        })
+        console.log('WhatsApp subscription request notification sent successfully')
+      }
+    } catch (error) {
+      console.error('Error sending WhatsApp subscription request notification:', error)
+      // Don't fail the process if WhatsApp fails
     }
 
     // Revalidate the subscriptions page

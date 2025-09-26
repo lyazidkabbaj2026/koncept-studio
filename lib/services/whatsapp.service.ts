@@ -4,47 +4,45 @@ import { Database } from '@/lib/database.types'
 type WhatsAppLogInsert = Database['public']['Tables']['whatsapp_logs']['Insert']
 type WhatsAppLogRow = Database['public']['Tables']['whatsapp_logs']['Row']
 
-interface TwilioWhatsAppMessage {
-  To: string
-  From: string
-  Body: string
+interface WasenderMessage {
+  session: string
+  to: string
+  text: string
 }
 
-interface TwilioResponse {
-  sid: string
-  status: string
-  error_code?: string
-  error_message?: string
+interface WasenderResponse {
+  status: boolean
+  message: string
+  messageId?: string
+  error?: string
 }
 
 interface SendWhatsAppMessageParams {
   phoneNumber: string
   message: string
-  eventType: 'signup' | 'activation' | 'waitlist_promotion' | 'class_cancellation'
+  eventType: 'signup' | 'activation' | 'waitlist_promotion' | 'class_cancellation' | 'subscription_request'
   userId?: string | null
 }
 
 interface SendWhatsAppMessageResult {
   success: boolean
-  messageSid?: string
+  messageId?: string
   error?: string
 }
 
 export class WhatsAppService {
-  private twilioAccountSid: string
-  private twilioAuthToken: string
-  private twilioWhatsAppNumber: string
+  private wasenderApiKey: string
+  private wasenderBaseUrl: string
   private useServerClient: boolean
 
   constructor(useServerClient: boolean = false) {
     // Ensure required environment variables are present
-    this.twilioAccountSid = process.env.TWILIO_ACCOUNT_SID || ''
-    this.twilioAuthToken = process.env.TWILIO_AUTH_TOKEN || ''
-    this.twilioWhatsAppNumber = process.env.TWILIO_WHATSAPP_NUMBER || ''
+    this.wasenderApiKey = process.env.WASENDER_API_KEY || ''
+    this.wasenderBaseUrl = process.env.WASENDER_BASE_URL || 'https://wasenderapi.com/api'
     this.useServerClient = useServerClient
 
-    if (!this.twilioAccountSid || !this.twilioAuthToken || !this.twilioWhatsAppNumber) {
-      console.error('Missing required Twilio environment variables')
+    if (!this.wasenderApiKey) {
+      console.error('Missing required Wasender environment variables')
     }
   }
 
@@ -94,7 +92,7 @@ export class WhatsAppService {
    * Validate if the service is properly configured
    */
   private isConfigured(): boolean {
-    return !!(this.twilioAccountSid && this.twilioAuthToken && this.twilioWhatsAppNumber)
+    return !!this.wasenderApiKey
   }
 
   /**
@@ -107,7 +105,8 @@ export class WhatsAppService {
     messageContent: string
     status: 'pending' | 'success' | 'failed'
     errorMessage?: string | null
-    twilioMessageSid?: string | null
+    wasenderMessageId?: string | null
+    apiResponse?: string | null
   }): Promise<WhatsAppLogRow | null> {
     try {
       const supabase = await this.getSupabase()
@@ -120,7 +119,7 @@ export class WhatsAppService {
           message_content: params.messageContent,
           status: params.status,
           error_message: params.errorMessage,
-          twilio_message_sid: params.twilioMessageSid
+          twilio_message_sid: params.wasenderMessageId
         })
         .select()
         .single()
@@ -138,52 +137,53 @@ export class WhatsAppService {
   }
 
   /**
-   * Send WhatsApp message via Twilio API
+   * Send WhatsApp message via Wasender API
    */
-  private async sendTwilioMessage(to: string, message: string): Promise<TwilioResponse | null> {
+  private async sendWasenderMessage(to: string, message: string): Promise<WasenderResponse | null> {
     if (!this.isConfigured()) {
-      throw new Error('Twilio WhatsApp service is not properly configured')
+      throw new Error('Wasender WhatsApp service is not properly configured')
     }
 
     try {
-      const url = `https://api.twilio.com/2010-04-01/Accounts/${this.twilioAccountSid}/Messages.json`
+      const url = `${this.wasenderBaseUrl}/send-message`
 
-      const formData = new URLSearchParams({
-        To: `whatsapp:${to}`,
-        From: `whatsapp:${this.twilioWhatsAppNumber}`,
-        Body: message
-      })
+      const payload = {
+        to: to,
+        text: message
+      }
 
+      console.log('DEBUG: Sending Wasender API request:', { url, payload })
 
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Authorization': 'Basic ' + Buffer.from(`${this.twilioAccountSid}:${this.twilioAuthToken}`).toString('base64'),
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Authorization': `Bearer ${this.wasenderApiKey}`,
+          'Content-Type': 'application/json'
         },
-        body: formData
+        body: JSON.stringify(payload)
       })
 
+      console.log('DEBUG: Wasender API HTTP response status:', response.status, response.statusText)
+
       const responseData = await response.json()
+      console.log('DEBUG: Wasender API response data:', JSON.stringify(responseData, null, 2))
 
       if (!response.ok) {
-        console.error('Twilio API error response:', responseData)
-
-        // Provide more helpful error messages for common issues
-        if (responseData.code === 63007) {
-          throw new Error('WhatsApp number not configured properly. For trial accounts, use the WhatsApp Sandbox number (+14155238886) and ensure the recipient has joined the sandbox.')
-        } else if (responseData.code === 21211) {
-          throw new Error('Invalid To phone number. Ensure the number is in international format.')
-        } else if (responseData.message?.includes('Channel')) {
-          throw new Error('WhatsApp channel not found. For trial accounts, use the Twilio WhatsApp Sandbox number: +14155238886')
-        }
-
-        throw new Error(responseData.message || `Twilio API error: ${response.status}`)
+        console.error('Wasender API error response:', responseData)
+        throw new Error(responseData.message || `Wasender API error: ${response.status}`)
       }
 
-      return responseData
+      const result = {
+        status: responseData.status || true,
+        message: responseData.message || 'Message sent successfully',
+        messageId: responseData.messageId || responseData.id
+      }
+
+      console.log('DEBUG: Processed Wasender response:', JSON.stringify(result, null, 2))
+
+      return result
     } catch (error) {
-      console.error('Error sending Twilio WhatsApp message:', error)
+      console.error('Error sending Wasender WhatsApp message:', error)
       throw error
     }
   }
@@ -209,7 +209,7 @@ export class WhatsAppService {
     })
 
     if (!this.isConfigured()) {
-      const error = 'Twilio WhatsApp service is not properly configured'
+      const error = 'Wasender WhatsApp service is not properly configured'
 
       // Update log with error
       if (logEntry) {
@@ -228,27 +228,38 @@ export class WhatsAppService {
 
     try {
       // Send the message
-      const response = await this.sendTwilioMessage(normalizedPhone, message)
+      const response = await this.sendWasenderMessage(normalizedPhone, message)
 
       if (response) {
-        // Update log with success
+        console.log('DEBUG: Updating log entry to success for log ID:', logEntry?.id)
+
+        // Update log with success - if we got here without throwing, the API call was successful
         if (logEntry) {
           const supabase = await this.getSupabase()
-        await supabase
+          const { data: updateResult, error: updateError } = await supabase
             .from('whatsapp_logs')
             .update({
               status: 'success',
-              twilio_message_sid: response.sid
+              twilio_message_sid: response.messageId
             })
             .eq('id', logEntry.id)
+            .select()
+
+          console.log('DEBUG: Database update result:', { updateResult, updateError })
+
+          if (updateError) {
+            console.error('ERROR: Failed to update WhatsApp log status:', updateError)
+          } else {
+            console.log('DEBUG: Successfully updated log status to success')
+          }
         }
 
         return {
           success: true,
-          messageSid: response.sid
+          messageId: response.messageId
         }
       } else {
-        throw new Error('No response from Twilio')
+        throw new Error('No response from Wasender API')
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
@@ -269,6 +280,39 @@ export class WhatsAppService {
         success: false,
         error: errorMessage
       }
+    }
+  }
+
+  /**
+   * Resend a failed WhatsApp message
+   */
+  async resendMessage(logId: string): Promise<SendWhatsAppMessageResult> {
+    try {
+      const supabase = await this.getSupabase()
+
+      // Get the original log entry
+      const { data: logEntry, error } = await supabase
+        .from('whatsapp_logs')
+        .select('*')
+        .eq('id', logId)
+        .single()
+
+      if (error || !logEntry) {
+        return { success: false, error: 'Log entry not found' }
+      }
+
+      // Resend the message
+      const result = await this.sendMessage({
+        phoneNumber: logEntry.phone_number,
+        message: logEntry.message_content,
+        eventType: logEntry.event_type as any,
+        userId: logEntry.user_id
+      })
+
+      return result
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      return { success: false, error: errorMessage }
     }
   }
 

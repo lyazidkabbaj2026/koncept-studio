@@ -71,6 +71,26 @@ export default function SignupForm() {
 
       if (user) {
         toast.success('Compte créé avec succès !')
+
+        // Send welcome WhatsApp message via API route after a delay
+        setTimeout(async () => {
+          try {
+            const response = await fetch('/api/whatsapp/signup', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ userId: user.id }),
+            })
+
+            const result = await response.json()
+            console.log('WhatsApp signup API response:', result)
+          } catch (error) {
+            console.error('WhatsApp welcome message failed:', error)
+            // Don't show error to user - this is background functionality
+          }
+        }, 2000) // Wait 2 seconds before sending
+
         router.push('/signup/plan-selection')
         router.refresh()
       }
