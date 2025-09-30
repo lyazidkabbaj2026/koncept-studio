@@ -63,7 +63,7 @@ export default function WaitlistPage() {
   const fetchWaitlist = useCallback(async () => {
     try {
       const { data, error } = await supabase
-        .from('waitlist_entries')
+        .from('class_waitlist')
         .select(`
           id,
           position,
@@ -116,14 +116,14 @@ export default function WaitlistPage() {
         { count: tomorrowEntries },
         { count: notifiedEntries }
       ] = await Promise.all([
-        supabase.from('waitlist_entries').select('*', { count: 'exact', head: true }),
-        supabase.from('waitlist_entries').select(`*, schedule:class_schedules!schedule_id(start_datetime)`, { count: 'exact', head: true })
+        supabase.from('class_waitlist').select('*', { count: 'exact', head: true }),
+        supabase.from('class_waitlist').select(`*, schedule:class_schedules!schedule_id(start_datetime)`, { count: 'exact', head: true })
           .gte('schedule.start_datetime', today.toISOString().split('T')[0])
           .lt('schedule.start_datetime', tomorrow.toISOString().split('T')[0]),
-        supabase.from('waitlist_entries').select(`*, schedule:class_schedules!schedule_id(start_datetime)`, { count: 'exact', head: true })
+        supabase.from('class_waitlist').select(`*, schedule:class_schedules!schedule_id(start_datetime)`, { count: 'exact', head: true })
           .gte('schedule.start_datetime', tomorrow.toISOString().split('T')[0])
           .lt('schedule.start_datetime', new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
-        supabase.from('waitlist_entries').select('*', { count: 'exact', head: true })
+        supabase.from('class_waitlist').select('*', { count: 'exact', head: true })
           .not('notified_at', 'is', null)
       ])
 
