@@ -5,9 +5,26 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { BookingsTable } from '@/components/admin/bookings-table'
-import { IconCalendarStats, IconClock, IconX } from '@tabler/icons-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import {
+  IconCalendarStats,
+  IconClock,
+  IconX,
+  IconRefresh,
+  IconDownload,
+  IconSearch,
+  IconCheck,
+  IconUser,
+  IconCalendar
+} from '@tabler/icons-react'
 import { useAuth } from '@/hooks/use-auth'
+import { format, parseISO, startOfDay, endOfDay, isWithinInterval } from 'date-fns'
+import { fr } from 'date-fns/locale'
+import { toast } from 'sonner'
+import * as XLSX from 'xlsx'
 
 interface BookingStats {
   total: number
@@ -46,8 +63,18 @@ interface Booking {
   } | null
 }
 
+interface GroupedBooking {
+  classTitle: string
+  startDatetime: string
+  endDatetime: string
+  coach: string
+  location: string
+  bookings: Booking[]
+}
+
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([])
   const [stats, setStats] = useState<BookingStats>({ total: 0, confirmed: 0, cancelled: 0, today: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -55,8 +82,17 @@ export default function BookingsPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [classFilter, setClassFilter] = useState('all')
+  const [dateFilter, setDateFilter] = useState('')
+
   const fetchBookings = useCallback(async () => {
     try {
+      setLoading(true)
+      setError('')
+
       const { data, error } = await supabase
         .from('class_bookings')
         .select(`
@@ -91,15 +127,27 @@ export default function BookingsPage() {
         .order('booked_at', { ascending: false })
 
       if (error) throw error
-      setBookings((data || []) as unknown as Booking[])
+
+      const bookingsData = (data || []) as unknown as Booking[]
+      setBookings(bookingsData)
+      setFilteredBookings(bookingsData)
+
+      toast.success('Réservations actualisées')
     } catch (err) {
       console.error('Error fetching bookings:', err)
       setError('Erreur lors du chargement des réservations')
+      toast.error('Erreur lors du chargement des réservations')
+    } finally {
+      setLoading(false)
     }
   }, [supabase])
 
   const fetchStats = useCallback(async () => {
     try {
+      const today = new Date()
+      const todayStart = startOfDay(today).toISOString()
+      const todayEnd = endOfDay(today).toISOString()
+
       const [
         { count: totalBookings },
         { count: confirmedBookings },
@@ -110,7 +158,8 @@ export default function BookingsPage() {
         supabase.from('class_bookings').select('*', { count: 'exact', head: true }).eq('status', 'confirmed'),
         supabase.from('class_bookings').select('*', { count: 'exact', head: true }).eq('status', 'cancelled'),
         supabase.from('class_bookings').select('*', { count: 'exact', head: true })
-          .gte('booked_at', new Date().toISOString().split('T')[0])
+          .gte('booked_at', todayStart)
+          .lte('booked_at', todayEnd)
       ])
 
       setStats({
@@ -121,8 +170,6 @@ export default function BookingsPage() {
       })
     } catch (err) {
       console.error('Error fetching stats:', err)
-    } finally {
-      setLoading(false)
     }
   }, [supabase])
 
@@ -139,7 +186,6 @@ export default function BookingsPage() {
         return
       }
 
-      // User is admin, fetch data
       await Promise.all([fetchBookings(), fetchStats()])
     } catch (err) {
       console.error('Error checking admin access:', err)
@@ -155,37 +201,155 @@ export default function BookingsPage() {
       return
     }
 
-    // Check if user is admin
     checkAdminAccess()
   }, [user, authLoading, router, checkAdminAccess])
 
+  // Apply filters
+  useEffect(() => {
+    let filtered = [...bookings]
+
+    // Search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase()
+      filtered = filtered.filter(booking =>
+        booking.profiles?.full_name?.toLowerCase().includes(searchLower) ||
+        booking.profiles?.email?.toLowerCase().includes(searchLower) ||
+        booking.class_schedules?.classes?.title?.toLowerCase().includes(searchLower)
+      )
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(booking => booking.status === statusFilter)
+    }
+
+    // Class filter
+    if (classFilter !== 'all') {
+      filtered = filtered.filter(booking =>
+        booking.class_schedules?.classes?.title === classFilter
+      )
+    }
+
+    // Date filter
+    if (dateFilter) {
+      const selectedDate = parseISO(dateFilter)
+      const dayStart = startOfDay(selectedDate)
+      const dayEnd = endOfDay(selectedDate)
+
+      filtered = filtered.filter(booking => {
+        const bookingDate = parseISO(booking.class_schedules?.start_datetime)
+        return isWithinInterval(bookingDate, { start: dayStart, end: dayEnd })
+      })
+    }
+
+    setFilteredBookings(filtered)
+  }, [bookings, searchTerm, statusFilter, classFilter, dateFilter])
+
+  const handleRefresh = () => {
+    fetchBookings()
+    fetchStats()
+  }
+
+  const handleExport = () => {
+    try {
+      const exportData = filteredBookings.map(booking => ({
+        'Client': booking.profiles?.full_name || '',
+        'Email': booking.profiles?.email || '',
+        'Téléphone': booking.profiles?.phone || '',
+        'Cours': booking.class_schedules?.classes?.title || '',
+        'Coach': booking.class_schedules?.classes?.coach || '',
+        'Date/Heure': format(parseISO(booking.class_schedules?.start_datetime), 'dd/MM/yyyy HH:mm', { locale: fr }),
+        'Lieu': booking.class_schedules?.classes?.location || '',
+        'Statut': booking.status === 'confirmed' ? 'Confirmé' : booking.status === 'cancelled' ? 'Annulé' : booking.status,
+        'Abonnement': booking.user_subscriptions?.subscription_plans?.name || '',
+        'Réservé le': format(parseISO(booking.booked_at), 'dd/MM/yyyy HH:mm', { locale: fr })
+      }))
+
+      const ws = XLSX.utils.json_to_sheet(exportData)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Réservations')
+
+      const fileName = `reservations-${format(new Date(), 'yyyy-MM-dd')}.xlsx`
+      XLSX.writeFile(wb, fileName)
+
+      toast.success('Export réussi')
+    } catch (err) {
+      console.error('Error exporting:', err)
+      toast.error('Erreur lors de l\'export')
+    }
+  }
+
+  const getUniqueClasses = () => {
+    const classes = new Set<string>()
+    bookings.forEach(booking => {
+      if (booking.class_schedules?.classes?.title) {
+        classes.add(booking.class_schedules.classes.title)
+      }
+    })
+    return Array.from(classes).sort()
+  }
+
+  // Group bookings by class and datetime
+  const getGroupedBookings = (): GroupedBooking[] => {
+    const grouped = new Map<string, GroupedBooking>()
+
+    filteredBookings.forEach(booking => {
+      if (!booking.class_schedules) return
+
+      const key = `${booking.class_schedules.classes.title}-${booking.class_schedules.start_datetime}`
+
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          classTitle: booking.class_schedules.classes.title,
+          startDatetime: booking.class_schedules.start_datetime,
+          endDatetime: booking.class_schedules.end_datetime,
+          coach: booking.class_schedules.classes.coach,
+          location: booking.class_schedules.classes.location,
+          bookings: []
+        })
+      }
+
+      grouped.get(key)!.bookings.push(booking)
+    })
+
+    // Sort by datetime descending
+    return Array.from(grouped.values()).sort((a, b) =>
+      new Date(b.startDatetime).getTime() - new Date(a.startDatetime).getTime()
+    )
+  }
 
   if (authLoading || loading) {
     return (
-      <div className="flex-1 space-y-8 p-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Réservations</h1>
-            <p className="text-muted-foreground mt-2">
-              Gérez toutes les réservations de cours des membres
-            </p>
+      <div className="container mx-auto p-6">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+            <p className="text-muted-foreground">Chargement des réservations...</p>
           </div>
-        </div>
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Chargement des réservations...</p>
         </div>
       </div>
     )
   }
 
+  const groupedBookings = getGroupedBookings()
+
   return (
-    <div className="flex-1 space-y-8 p-8">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold">Réservations</h1>
-          <p className="text-muted-foreground mt-2">
-            Gérez toutes les réservations de cours des membres
-          </p>
+          <p className="text-muted-foreground">Gérez toutes les réservations de cours des membres</p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleRefresh} variant="outline" size="sm">
+            <IconRefresh className="h-4 w-4 mr-2" />
+            Actualiser
+          </Button>
+          <Button onClick={handleExport} variant="outline" size="sm">
+            <IconDownload className="h-4 w-4 mr-2" />
+            Exporter
+          </Button>
         </div>
       </div>
 
@@ -196,7 +360,7 @@ export default function BookingsPage() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Réservations</CardTitle>
@@ -210,7 +374,7 @@ export default function BookingsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Confirmées</CardTitle>
-            <IconClock className="h-4 w-4 text-muted-foreground" />
+            <IconCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.confirmed}</div>
@@ -230,7 +394,7 @@ export default function BookingsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Aujourd'hui</CardTitle>
-            <IconCalendarStats className="h-4 w-4 text-muted-foreground" />
+            <IconClock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.today}</div>
@@ -238,15 +402,151 @@ export default function BookingsPage() {
         </Card>
       </div>
 
-      {/* Bookings Table */}
+      {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle>Toutes les Réservations</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <BookingsTable bookings={bookings} />
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="relative">
+              <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="confirmed">Confirmé</SelectItem>
+                <SelectItem value="cancelled">Annulé</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={classFilter} onValueChange={setClassFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Cours" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les cours</SelectItem>
+                {getUniqueClasses().map((className) => (
+                  <SelectItem key={className} value={className}>
+                    {className}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              placeholder="Date"
+            />
+          </div>
         </CardContent>
       </Card>
+
+      {/* Grouped Bookings */}
+      <div className="space-y-4">
+        {groupedBookings.length === 0 ? (
+          <Card>
+            <CardContent className="py-12">
+              <div className="text-center text-muted-foreground">
+                <IconCalendarStats className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Aucune réservation trouvée</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          groupedBookings.map((group, index) => (
+            <Card key={index}>
+              <CardHeader className="bg-muted/50">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <CardTitle className="text-lg">{group.classTitle}</CardTitle>
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mt-1">
+                      <span className="flex items-center gap-1">
+                        <IconCalendar className="h-4 w-4" />
+                        {format(parseISO(group.startDatetime), 'EEEE d MMMM yyyy', { locale: fr })}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <IconClock className="h-4 w-4" />
+                        {format(parseISO(group.startDatetime), 'HH:mm', { locale: fr })} - {format(parseISO(group.endDatetime), 'HH:mm', { locale: fr })}
+                      </span>
+                      <span>Coach: {group.coach}</span>
+                      <span>Lieu: {group.location}</span>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="self-start sm:self-center">
+                    {group.bookings.length} réservation{group.bookings.length > 1 ? 's' : ''}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y">
+                  {group.bookings.map((booking) => (
+                    <div key={booking.id} className="p-4 hover:bg-muted/30 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <IconUser className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium">{booking.profiles?.full_name}</div>
+                            <div className="text-sm text-muted-foreground">{booking.profiles?.email}</div>
+                            {booking.profiles?.phone && (
+                              <div className="text-sm text-muted-foreground">{booking.profiles.phone}</div>
+                            )}
+                            {booking.user_subscriptions?.subscription_plans?.name && (
+                              <Badge variant="outline" className="mt-1 text-xs">
+                                {booking.user_subscriptions.subscription_plans.name}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-sm text-muted-foreground">
+                              Réservé le {format(parseISO(booking.booked_at), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                            </div>
+                            {booking.cancelled_at && (
+                              <div className="text-sm text-muted-foreground">
+                                Annulé le {format(parseISO(booking.cancelled_at), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                              </div>
+                            )}
+                          </div>
+                          <Badge
+                            variant={
+                              booking.status === 'confirmed'
+                                ? 'default'
+                                : 'secondary'
+                            }
+                          >
+                            {booking.status === 'confirmed' && 'Confirmé'}
+                            {booking.status === 'cancelled' && 'Annulé'}
+                            {booking.status === 'no_show' && 'Absent'}
+                            {!['confirmed', 'cancelled', 'no_show'].includes(booking.status) && booking.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      {booking.cancellation_reason && (
+                        <div className="mt-3 ml-13 p-3 bg-destructive/10 rounded-md text-sm">
+                          <strong>Raison d'annulation:</strong> {booking.cancellation_reason}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   )
 }
