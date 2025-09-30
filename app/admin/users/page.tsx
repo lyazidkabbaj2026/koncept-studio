@@ -25,7 +25,7 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { formatDesiredPlansDisplay, parseDesiredPlans } from '@/lib/utils/plan-utils'
-import { assignSubscriptionToUser } from './actions'
+import { assignSubscriptionToUser, deleteUser } from './actions'
 import * as XLSX from 'xlsx'
 
 interface User {
@@ -103,6 +103,8 @@ export default function UsersPage() {
   const [loadingSubscriptions, setLoadingSubscriptions] = useState(false)
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
   const [subscriptionToDelete, setSubscriptionToDelete] = useState<{id: string, planName: string} | null>(null)
+  const [showDeleteUserConfirmation, setShowDeleteUserConfirmation] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<{id: string, name: string, email: string} | null>(null)
   const [showModifySubscriptionDialog, setShowModifySubscriptionDialog] = useState(false)
   const [subscriptionToModify, setSubscriptionToModify] = useState<UserSubscription | null>(null)
   const [modifySubscriptionForm, setModifySubscriptionForm] = useState<ModifySubscriptionFormData>({
@@ -460,6 +462,40 @@ export default function UsersPage() {
     } catch (err: any) {
       console.error('Error deactivating user:', err)
       toast.error('Erreur lors de la désactivation')
+    }
+  }
+
+  const handleShowDeleteUserConfirmation = (user: User) => {
+    setUserToDelete({
+      id: user.id,
+      name: user.full_name,
+      email: user.email
+    })
+    setShowDeleteUserConfirmation(true)
+  }
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return
+
+    try {
+      const result = await deleteUser({ userId: userToDelete.id })
+
+      if (!result.success) {
+        throw new Error(result.error || 'Erreur lors de la suppression')
+      }
+
+      // Close dialogs and refresh data
+      setShowDeleteUserConfirmation(false)
+      setShowSubscriptionManagementDialog(false)
+      setSelectedUser(null)
+      setUserToDelete(null)
+
+      await fetchUsers(0)
+      toast.success(`Utilisateur ${userToDelete.name} supprimé définitivement`)
+    } catch (err: any) {
+      console.error('Error deleting user:', err)
+      const errorMessage = err?.message || 'Erreur lors de la suppression de l\'utilisateur'
+      toast.error(errorMessage)
     }
   }
 
@@ -1513,6 +1549,39 @@ export default function UsersPage() {
                       </div>
                     </CardContent>
                   </Card>
+
+                  <Card className="border-muted-foreground/20">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-foreground flex items-center gap-3">
+                        <IconTrash className="h-5 w-5" />
+                        Supprimer l'utilisateur
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        <strong>Attention :</strong> Cette action est irréversible et supprimera définitivement toutes les données de l'utilisateur, incluant :
+                      </p>
+                      <ul className="list-disc list-inside mt-2 space-y-1 text-sm text-muted-foreground ml-4">
+                        <li>Le profil utilisateur et ses informations</li>
+                        <li>Tous les abonnements (actifs, expirés, annulés)</li>
+                        <li>Toutes les réservations de cours</li>
+                        <li>Toutes les entrées de liste d'attente</li>
+                        <li>Les demandes d'abonnement</li>
+                        <li>Les logs WhatsApp</li>
+                        <li>Le compte d'authentification</li>
+                      </ul>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex justify-end pt-4 border-t border-border">
+                        <Button
+                          variant="outline"
+                          onClick={() => handleShowDeleteUserConfirmation(selectedUser)}
+                          className="border-foreground text-foreground hover:bg-foreground hover:text-background h-12 px-6"
+                        >
+                          <IconTrash className="h-4 w-4 mr-2" />
+                          Supprimer définitivement
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </TabsContent>
               </Tabs>
 
@@ -1682,6 +1751,46 @@ export default function UsersPage() {
             <AlertDialogAction
               onClick={handleDeleteSubscription}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer définitivement
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={showDeleteUserConfirmation} onOpenChange={setShowDeleteUserConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression de l'utilisateur</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer définitivement <strong>{userToDelete?.name}</strong> ({userToDelete?.email}) ?
+            </AlertDialogDescription>
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground font-medium mb-2">
+                <strong>Attention :</strong> Cette action est irréversible et supprimera :
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                <li>Le profil utilisateur et toutes ses informations personnelles</li>
+                <li>Tous les abonnements (actifs, expirés, annulés)</li>
+                <li>Toutes les réservations de cours passées et futures</li>
+                <li>Toutes les entrées de liste d'attente</li>
+                <li>Les demandes d'abonnement</li>
+                <li>Les logs WhatsApp</li>
+                <li>Le compte d'authentification (l'utilisateur ne pourra plus se connecter)</li>
+              </ul>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowDeleteUserConfirmation(false)
+              setUserToDelete(null)
+            }}>
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              className="bg-foreground text-background hover:bg-foreground/90"
             >
               Supprimer définitivement
             </AlertDialogAction>

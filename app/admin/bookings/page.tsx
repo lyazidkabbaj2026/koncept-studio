@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   IconCalendarStats,
   IconClock,
@@ -20,13 +21,15 @@ import {
   IconUser,
   IconCalendar,
   IconChevronLeft,
-  IconChevronRight
+  IconChevronRight,
+  IconUserPlus
 } from '@tabler/icons-react'
 import { useAuth } from '@/hooks/use-auth'
 import { format, parseISO, startOfDay, endOfDay, isWithinInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
+import { AdminBookingView } from '@/components/admin/booking/admin-booking-view'
 
 interface BookingStats {
   total: number
@@ -94,7 +97,7 @@ export default function BookingsPage() {
   const [currentPage, setCurrentPage] = useState(0)
   const pageSize = 10
 
-  const fetchBookings = useCallback(async () => {
+  const fetchBookings = useCallback(async (showToast = false) => {
     try {
       setLoading(true)
       setError('')
@@ -138,7 +141,9 @@ export default function BookingsPage() {
       setBookings(bookingsData)
       setFilteredBookings(bookingsData)
 
-      toast.success('Réservations actualisées')
+      if (showToast) {
+        toast.success('Réservations actualisées')
+      }
     } catch (err) {
       console.error('Error fetching bookings:', err)
       setError('Erreur lors du chargement des réservations')
@@ -253,7 +258,7 @@ export default function BookingsPage() {
   }, [bookings, searchTerm, statusFilter, classFilter, dateFilter])
 
   const handleRefresh = () => {
-    fetchBookings()
+    fetchBookings(true)
     fetchStats()
   }
 
@@ -353,23 +358,37 @@ export default function BookingsPage() {
           <h1 className="text-3xl font-bold">Réservations</h1>
           <p className="text-muted-foreground">Gérez toutes les réservations de cours des membres</p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={handleRefresh} variant="outline" size="sm">
-            <IconRefresh className="h-4 w-4 mr-2" />
-            Actualiser
-          </Button>
-          <Button onClick={handleExport} variant="outline" size="sm">
-            <IconDownload className="h-4 w-4 mr-2" />
-            Exporter
-          </Button>
-        </div>
       </div>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      <Tabs defaultValue="list" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="list" className="flex items-center gap-2">
+            <IconCalendarStats className="h-4 w-4" />
+            Liste des réservations
+          </TabsTrigger>
+          <TabsTrigger value="book" className="flex items-center gap-2">
+            <IconUserPlus className="h-4 w-4" />
+            Réserver pour un utilisateur
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-6 mt-6">
+          <div className="flex justify-end gap-2">
+            <Button onClick={handleRefresh} variant="outline" size="sm">
+              <IconRefresh className="h-4 w-4 mr-2" />
+              Actualiser
+            </Button>
+            <Button onClick={handleExport} variant="outline" size="sm">
+              <IconDownload className="h-4 w-4 mr-2" />
+              Exporter
+            </Button>
+          </div>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -588,6 +607,12 @@ export default function BookingsPage() {
           </div>
         </div>
       )}
+      </TabsContent>
+
+      <TabsContent value="book" className="mt-6">
+        <AdminBookingView adminId={user!.id} />
+      </TabsContent>
+      </Tabs>
     </div>
   )
 }
