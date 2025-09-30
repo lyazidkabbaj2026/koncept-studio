@@ -18,7 +18,9 @@ import {
   IconSearch,
   IconCheck,
   IconUser,
-  IconCalendar
+  IconCalendar,
+  IconChevronLeft,
+  IconChevronRight
 } from '@tabler/icons-react'
 import { useAuth } from '@/hooks/use-auth'
 import { format, parseISO, startOfDay, endOfDay, isWithinInterval } from 'date-fns'
@@ -87,6 +89,10 @@ export default function BookingsPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [classFilter, setClassFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState('')
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0)
+  const pageSize = 10
 
   const fetchBookings = useCallback(async () => {
     try {
@@ -243,6 +249,7 @@ export default function BookingsPage() {
     }
 
     setFilteredBookings(filtered)
+    setCurrentPage(0) // Reset to first page when filters change
   }, [bookings, searchTerm, statusFilter, classFilter, dateFilter])
 
   const handleRefresh = () => {
@@ -332,6 +339,11 @@ export default function BookingsPage() {
   }
 
   const groupedBookings = getGroupedBookings()
+  const totalPages = Math.ceil(groupedBookings.length / pageSize)
+  const paginatedBookings = groupedBookings.slice(
+    currentPage * pageSize,
+    (currentPage + 1) * pageSize
+  )
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -463,7 +475,7 @@ export default function BookingsPage() {
             </CardContent>
           </Card>
         ) : (
-          groupedBookings.map((group, index) => (
+          paginatedBookings.map((group, index) => (
             <Card key={index}>
               <CardHeader className="bg-muted/50">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -547,6 +559,35 @@ export default function BookingsPage() {
           ))
         )}
       </div>
+
+      {/* Pagination */}
+      {groupedBookings.length > 0 && totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4">
+          <div className="text-sm text-muted-foreground">
+            Page {currentPage + 1} sur {totalPages} • {groupedBookings.length} groupe{groupedBookings.length > 1 ? 's' : ''} de réservations
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+              disabled={currentPage === 0}
+            >
+              <IconChevronLeft className="h-4 w-4" />
+              Précédent
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+              disabled={currentPage >= totalPages - 1}
+            >
+              Suivant
+              <IconChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
