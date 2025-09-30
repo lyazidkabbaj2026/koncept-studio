@@ -32,13 +32,15 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconChevronDown,
-  IconTags
+  IconTags,
+  IconTrash
 } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
-import { getAdminSubscriptionRequests, updateSubscriptionRequest, assignSubscriptionToUser, type AdminSubscriptionRequest, type RequestStats } from './actions'
+import { getAdminSubscriptionRequests, updateSubscriptionRequest, assignSubscriptionToUser, deleteSubscriptionRequest, type AdminSubscriptionRequest, type RequestStats } from './actions'
 import * as XLSX from 'xlsx'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 
 export default function AdminSubscriptionRequestsPage() {
   const [requests, setRequests] = useState<AdminSubscriptionRequest[]>([])
@@ -49,6 +51,8 @@ export default function AdminSubscriptionRequestsPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [showSubscriptionTypeFilter, setShowSubscriptionTypeFilter] = useState(false)
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
+  const [requestToDelete, setRequestToDelete] = useState<AdminSubscriptionRequest | null>(null)
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('')
@@ -255,6 +259,30 @@ export default function AdminSubscriptionRequestsPage() {
       }
     } catch (error) {
       toast.error('Erreur lors de l\'assignation')
+    }
+  }
+
+  const handleShowDeleteConfirmation = (request: AdminSubscriptionRequest) => {
+    setRequestToDelete(request)
+    setShowDeleteConfirmation(true)
+  }
+
+  const handleDeleteRequest = async () => {
+    if (!requestToDelete) return
+
+    try {
+      const result = await deleteSubscriptionRequest(requestToDelete.id)
+
+      if (result.success) {
+        toast.success('Demande supprimée avec succès')
+        setShowDeleteConfirmation(false)
+        setRequestToDelete(null)
+        loadRequests()
+      } else {
+        toast.error(result.error || 'Erreur lors de la suppression')
+      }
+    } catch (error) {
+      toast.error('Erreur lors de la suppression')
     }
   }
 
@@ -513,6 +541,7 @@ export default function AdminSubscriptionRequestsPage() {
                             setSelectedRequest(request)
                             setShowDetailsModal(true)
                           }}
+                          title="Voir les détails"
                         >
                           <IconEye className="h-4 w-4" />
                         </Button>
@@ -524,6 +553,16 @@ export default function AdminSubscriptionRequestsPage() {
                           title={request.status === 'fulfilled' ? 'Déjà traité' : 'Assigner abonnement'}
                         >
                           <IconUserPlus className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleShowDeleteConfirmation(request)}
+                          disabled={request.status === 'fulfilled'}
+                          title={request.status === 'fulfilled' ? 'Impossible de supprimer une demande traitée' : 'Supprimer la demande'}
+                          className="border-foreground text-foreground hover:bg-foreground hover:text-background"
+                        >
+                          <IconTrash className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -679,6 +718,37 @@ export default function AdminSubscriptionRequestsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer la demande d'abonnement de <strong>{requestToDelete?.userName}</strong> pour le plan <strong>{requestToDelete?.planName}</strong> ?
+            </AlertDialogDescription>
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground">
+                Cette action est irréversible. La demande sera définitivement supprimée de la base de données.
+              </p>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowDeleteConfirmation(false)
+              setRequestToDelete(null)
+            }}>
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteRequest}
+              className="bg-foreground text-background hover:bg-foreground/90"
+            >
+              Supprimer définitivement
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

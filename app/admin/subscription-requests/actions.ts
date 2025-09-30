@@ -456,3 +456,77 @@ export async function assignSubscriptionToUser(
   }
 }
 
+/**
+ * Delete subscription request
+ */
+export async function deleteSubscriptionRequest(
+  requestId: string
+): Promise<ActionResult<string>> {
+  try {
+    const supabase = await createClient()
+
+    // Check if user is admin
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return { success: false, error: 'Authentication required' }
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.role !== 'admin') {
+      return { success: false, error: 'Admin access required' }
+    }
+
+    // Check if request exists and is not fulfilled
+    const { data: request, error: requestError } = await supabase
+      .from('subscription_requests')
+      .select('id, status')
+      .eq('id', requestId)
+      .single()
+
+    if (requestError || !request) {
+      return { success: false, error: 'Demande introuvable' }
+    }
+
+    if (request.status === 'fulfilled') {
+      return { success: false, error: 'Impossible de supprimer une demande déjà traitée' }
+    }
+
+    // Delete the request
+    const { error: deleteError } = await supabase
+      .from('subscription_requests')
+      .delete()
+      .eq('id', requestId)
+
+    if (deleteError) {
+      console.error('Error deleting subscription request:', deleteError)
+      return {
+        success: false,
+        error: 'Erreur lors de la suppression de la demande'
+      }
+    }
+
+    // Revalidate admin page
+    revalidatePath('/admin/subscription-requests')
+
+    return {
+      success: true,
+      data: requestId,
+    }
+  } catch (error) {
+    console.error('Error in deleteSubscriptionRequest:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Une erreur inattendue s\'est produite'
+    }
+  }
+}
+
