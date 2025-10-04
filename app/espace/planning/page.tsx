@@ -82,6 +82,32 @@ export default function UserPlanningPage() {
     )
   }
 
+  // Check if user has active subscription
+  if (!subscription) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="rounded-lg border border-border bg-card text-card-foreground shadow-sm p-6 sm:p-8 text-center space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-xl sm:text-2xl font-semibold text-foreground">
+                Abonnement requis
+              </h2>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                Vous n&apos;avez pas d&apos;abonnement actif. Pour accéder au planning, vous devez disposer d&apos;un abonnement actif.
+              </p>
+            </div>
+            <a
+              href="/espace/subscriptions"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full sm:w-auto"
+            >
+              Demander un abonnement ?
+            </a>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <UserCalendarView
       user={profile}

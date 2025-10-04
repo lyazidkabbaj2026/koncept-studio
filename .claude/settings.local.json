@@ -32,7 +32,15 @@
       "Bash(npm run lint)",
       "Bash(grep:*)",
       "Bash(sort:*)",
+<<<<<<< HEAD
       "WebFetch(domain:wasenderapi.com)"
+=======
+      "WebFetch(domain:wasenderapi.com)",
+      "Bash(dir:*)",
+      "Bash(npm run dev:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)"
+>>>>>>> 50d4463 (Add subscription access control to planning page)
     ],
     "deny": [],
     "ask": []
