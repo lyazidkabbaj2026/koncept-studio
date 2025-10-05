@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { IconUserCheck, IconMessage, IconCreditCard, IconUsers, IconUserPlus, IconPhone, IconUserMinus, IconChevronLeft, IconChevronRight, IconSearch, IconX, IconSettings, IconPlus, IconTrash, IconEye, IconUserX, IconDownload, IconRefresh, IconEdit } from '@tabler/icons-react'
+import { IconUserCheck, IconMessage, IconCreditCard, IconUsers, IconUserPlus, IconPhone, IconUserMinus, IconChevronLeft, IconChevronRight, IconSearch, IconX, IconSettings, IconPlus, IconTrash, IconEye, IconUserX, IconDownload, IconRefresh, IconEdit, IconCalendar, IconMinus, IconCoin, IconClock, IconMapPin, IconUser } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
@@ -116,6 +116,16 @@ export default function UsersPage() {
     plan_id: '',
     start_date: format(new Date(), 'yyyy-MM-dd')
   })
+
+  // Booking state
+  const [upcomingClasses, setUpcomingClasses] = useState<any[]>([])
+  const [loadingClasses, setLoadingClasses] = useState(false)
+  const [selectedSubscriptionForBooking, setSelectedSubscriptionForBooking] = useState<string>('')
+
+  // Credit management state
+  const [showCreditDialog, setShowCreditDialog] = useState(false)
+  const [creditAmount, setCreditAmount] = useState<number>(1)
+  const [selectedSubscriptionForCredits, setSelectedSubscriptionForCredits] = useState<UserSubscription | null>(null)
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0)
@@ -697,6 +707,180 @@ export default function UsersPage() {
     } catch (err: any) {
       console.error('Error assigning subscription:', err)
       toast.error(`Erreur lors de l'assignation: ${err?.message || 'Erreur inconnue'}`)
+    }
+  }
+
+  // Fetch upcoming classes for booking
+  const fetchUpcomingClasses = async () => {
+    try {
+      setLoadingClasses(true)
+      const now = new Date()
+      const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+
+      const { data, error } = await supabase
+        .from('class_schedules')
+        .select(`
+          id,
+          start_datetime,
+          end_datetime,
+          current_bookings,
+          is_cancelled,
+          classes (
+            id,
+            title,
+            coach,
+            location,
+            difficulty_level,
+            max_capacity
+          )
+        `)
+        .gte('start_datetime', now.toISOString())
+        .lte('start_datetime', twoWeeksFromNow.toISOString())
+        .eq('is_cancelled', false)
+        .order('start_datetime', { ascending: true })
+        .limit(50)
+
+      if (error) throw error
+
+      setUpcomingClasses(data || [])
+    } catch (err: any) {
+      console.error('Error fetching classes:', err)
+      toast.error('Erreur lors du chargement des cours')
+    } finally {
+      setLoadingClasses(false)
+    }
+  }
+
+  // Book class for user
+  const handleAdminBookClass = async (scheduleId: string) => {
+    if (!selectedUser || !selectedSubscriptionForBooking) {
+      toast.error('Veuillez sélectionner un abonnement')
+      return
+    }
+
+    try {
+      // Create booking directly
+      const { error: bookingError } = await supabase
+        .from('class_bookings')
+        .insert({
+          user_id: selectedUser.id,
+          schedule_id: scheduleId,
+          subscription_id: selectedSubscriptionForBooking,
+          status: 'confirmed',
+          created_at: new Date().toISOString()
+        })
+
+      if (bookingError) throw bookingError
+
+      // Update credits
+      const subscription = userSubscriptions.find(s => s.id === selectedSubscriptionForBooking)
+      if (subscription) {
+        const subscriptionType = subscription.plan_type
+
+        if (subscriptionType === 'abonnement') {
+          // Increment weekly credits used
+          const { error: updateError } = await supabase
+            .from('user_subscriptions')
+            .update({
+              weekly_credits_used: (subscription.weekly_credits_used || 0) + 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', selectedSubscriptionForBooking)
+
+          if (updateError) throw updateError
+        } else {
+          // Decrement credits remaining and increment credits used for carnet/PT
+          const { error: updateError } = await supabase
+            .from('user_subscriptions')
+            .update({
+              credits_remaining: Math.max(0, subscription.credits_remaining - 1),
+              credits_used: (subscription.credits_used || 0) + 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', selectedSubscriptionForBooking)
+
+          if (updateError) throw updateError
+        }
+      }
+
+      // Update current_bookings count
+      const classData = upcomingClasses.find(c => c.id === scheduleId)
+      if (classData) {
+        const { error: scheduleError } = await supabase
+          .from('class_schedules')
+          .update({
+            current_bookings: classData.current_bookings + 1
+          })
+          .eq('id', scheduleId)
+
+        if (scheduleError) throw scheduleError
+      }
+
+      toast.success('Réservation effectuée avec succès')
+
+      // Refresh data
+      await fetchUpcomingClasses()
+      await fetchUserSubscriptions(selectedUser.id)
+      await fetchUsers(0)
+    } catch (err: any) {
+      console.error('Error booking class:', err)
+      toast.error(`Erreur lors de la réservation: ${err.message}`)
+    }
+  }
+
+  // Increment/Decrement credits
+  const handleAdjustCredits = async (action: 'increment' | 'decrement') => {
+    if (!selectedSubscriptionForCredits || creditAmount <= 0) return
+
+    try {
+      const subscription = selectedSubscriptionForCredits
+      const amount = action === 'increment' ? creditAmount : -creditAmount
+
+      let updateData: any = {
+        updated_at: new Date().toISOString()
+      }
+
+      if (subscription.plan_type === 'abonnement') {
+        // For abonnement, modify weekly_credits_used
+        const newWeeklyCreditsUsed = Math.max(0, (subscription.weekly_credits_used || 0) + amount)
+
+        // Check if it exceeds weekly limit
+        if (newWeeklyCreditsUsed > (subscription.weekly_limit || 0)) {
+          toast.error(`La limite hebdomadaire est de ${subscription.weekly_limit} crédits`)
+          return
+        }
+
+        updateData.weekly_credits_used = newWeeklyCreditsUsed
+      } else {
+        // For carnet/personal training, modify credits_remaining and credits_used
+        const newCreditsRemaining = Math.max(0, subscription.credits_remaining + amount)
+        const newCreditsUsed = Math.max(0, subscription.credits_used - amount)
+
+        updateData.credits_remaining = newCreditsRemaining
+        updateData.credits_used = newCreditsUsed
+      }
+
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .update(updateData)
+        .eq('id', subscription.id)
+
+      if (error) throw error
+
+      toast.success(`Crédits ${action === 'increment' ? 'ajoutés' : 'retirés'} avec succès`)
+
+      // Refresh data
+      if (selectedUser) {
+        await fetchUserSubscriptions(selectedUser.id)
+        await fetchUsers(0)
+      }
+
+      setShowCreditDialog(false)
+      setCreditAmount(1)
+      setSelectedSubscriptionForCredits(null)
+    } catch (err: any) {
+      console.error('Error adjusting credits:', err)
+      toast.error(`Erreur lors de la modification des crédits: ${err.message}`)
     }
   }
 
@@ -1332,10 +1516,12 @@ export default function UsersPage() {
               </Card>
 
               <Tabs defaultValue="subscriptions" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="subscriptions">Abonnements</TabsTrigger>
-                  <TabsTrigger value="assign">Assigner nouveau</TabsTrigger>
-                  <TabsTrigger value="user-actions">Actions utilisateur</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 gap-1">
+                  <TabsTrigger value="subscriptions" className="text-xs md:text-sm">Abonnements</TabsTrigger>
+                  <TabsTrigger value="assign" className="text-xs md:text-sm">Assigner</TabsTrigger>
+                  <TabsTrigger value="booking" className="text-xs md:text-sm">Réserver</TabsTrigger>
+                  <TabsTrigger value="credits" className="text-xs md:text-sm">Crédits</TabsTrigger>
+                  <TabsTrigger value="user-actions" className="text-xs md:text-sm col-span-2 md:col-span-1">Actions</TabsTrigger>
                 </TabsList>
 
                 {/* Current and Historical Subscriptions */}
@@ -1516,6 +1702,247 @@ export default function UsersPage() {
                       </form>
                     </CardContent>
                   </Card>
+                </TabsContent>
+
+                {/* Book Classes Tab */}
+                <TabsContent value="booking" className="space-y-6">
+                  <h3 className="text-xl font-semibold text-foreground">Réserver un cours pour {selectedUser.full_name}</h3>
+
+                  {userSubscriptions.filter(s => s.status === 'active').length === 0 ? (
+                    <Card className="border-muted-foreground/20">
+                      <CardContent className="text-center py-12">
+                        <IconCalendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-foreground font-semibold text-lg mb-2">Aucun abonnement actif</p>
+                        <p className="text-sm text-muted-foreground">
+                          L'utilisateur doit avoir un abonnement actif pour réserver des cours
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <>
+                      <Card className="border-muted-foreground/20">
+                        <CardHeader>
+                          <CardTitle className="text-lg">Sélectionner l'abonnement à utiliser</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <Select value={selectedSubscriptionForBooking} onValueChange={setSelectedSubscriptionForBooking}>
+                            <SelectTrigger className="h-12">
+                              <SelectValue placeholder="Choisir un abonnement" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {userSubscriptions
+                                .filter(s => s.status === 'active')
+                                .map((sub) => (
+                                  <SelectItem key={sub.id} value={sub.id}>
+                                    <div className="flex items-center justify-between w-full">
+                                      <span className="font-medium">{sub.plan_name}</span>
+                                      <span className="ml-3 text-sm text-muted-foreground">
+                                        {sub.plan_type === 'abonnement'
+                                          ? `${sub.weekly_credits_used}/${sub.weekly_limit} cette semaine`
+                                          : `${sub.credits_remaining} crédits restants`
+                                        }
+                                      </span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-muted-foreground/20">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                          <CardTitle className="text-lg">Cours disponibles (14 prochains jours)</CardTitle>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={fetchUpcomingClasses}
+                            disabled={loadingClasses}
+                          >
+                            <IconRefresh className={`h-4 w-4 mr-2 ${loadingClasses ? 'animate-spin' : ''}`} />
+                            Actualiser
+                          </Button>
+                        </CardHeader>
+                        <CardContent>
+                          {loadingClasses ? (
+                            <div className="text-center py-8">
+                              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                              <p className="text-muted-foreground">Chargement des cours...</p>
+                            </div>
+                          ) : upcomingClasses.length === 0 ? (
+                            <div className="text-center py-8">
+                              <IconCalendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                              <p className="text-muted-foreground">Aucun cours disponible pour les 14 prochains jours</p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={fetchUpcomingClasses}
+                                className="mt-4"
+                              >
+                                Charger les cours
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                              {upcomingClasses.map((classSchedule) => {
+                                const classInfo = classSchedule.classes
+                                const isFull = classSchedule.current_bookings >= classInfo.max_capacity
+
+                                return (
+                                  <Card key={classSchedule.id} className={`border ${isFull ? 'opacity-60' : ''}`}>
+                                    <CardContent className="p-4">
+                                      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                                        <div className="flex-1 space-y-2 w-full">
+                                          <div className="flex items-center justify-between">
+                                            <h4 className="font-semibold text-foreground">{classInfo.title}</h4>
+                                            <Badge variant={isFull ? 'secondary' : 'default'} className="ml-2">
+                                              {classSchedule.current_bookings}/{classInfo.max_capacity}
+                                            </Badge>
+                                          </div>
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                                            <div className="flex items-center gap-1">
+                                              <IconCalendar className="h-3 w-3 shrink-0" />
+                                              <span className="truncate">{format(new Date(classSchedule.start_datetime), 'EEE d MMM yyyy', { locale: fr })}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <IconClock className="h-3 w-3 shrink-0" />
+                                              {format(new Date(classSchedule.start_datetime), 'HH:mm', { locale: fr })}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <IconUser className="h-3 w-3 shrink-0" />
+                                              <span className="truncate">{classInfo.coach}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <IconMapPin className="h-3 w-3 shrink-0" />
+                                              <span className="truncate">{classInfo.location}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleAdminBookClass(classSchedule.id)}
+                                          disabled={isFull || !selectedSubscriptionForBooking}
+                                          className="w-full sm:w-auto shrink-0"
+                                        >
+                                          {isFull ? 'Complet' : 'Réserver'}
+                                        </Button>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
+                </TabsContent>
+
+                {/* Credit Management Tab */}
+                <TabsContent value="credits" className="space-y-6">
+                  <h3 className="text-xl font-semibold text-foreground">Gérer les crédits</h3>
+
+                  {userSubscriptions.filter(s => s.status === 'active').length === 0 ? (
+                    <Card className="border-muted-foreground/20">
+                      <CardContent className="text-center py-12">
+                        <IconCoin className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-foreground font-semibold text-lg mb-2">Aucun abonnement actif</p>
+                        <p className="text-sm text-muted-foreground">
+                          L'utilisateur doit avoir un abonnement actif pour gérer les crédits
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid gap-4">
+                      {userSubscriptions
+                        .filter(s => s.status === 'active')
+                        .map((subscription) => {
+                          const isAbonnement = subscription.plan_type === 'abonnement'
+
+                          return (
+                            <Card key={subscription.id} className="border-2 border-primary/20">
+                              <CardHeader>
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <CardTitle className="text-lg">{subscription.plan_name}</CardTitle>
+                                    <p className="text-sm text-muted-foreground capitalize">{subscription.plan_type}</p>
+                                  </div>
+                                  <Badge variant="default">Actif</Badge>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                {isAbonnement ? (
+                                  // Abonnement: Show weekly credits
+                                  <div className="grid grid-cols-2 gap-6">
+                                    <div className="text-center space-y-2">
+                                      <div className="text-3xl font-bold text-foreground">
+                                        {subscription.weekly_credits_used || 0}
+                                      </div>
+                                      <div className="text-xs font-medium text-muted-foreground">Crédits utilisés cette semaine</div>
+                                    </div>
+                                    <div className="text-center space-y-2">
+                                      <div className="text-3xl font-bold text-foreground">
+                                        {subscription.weekly_limit || 0}
+                                      </div>
+                                      <div className="text-xs font-medium text-muted-foreground">Limite hebdomadaire</div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  // Carnet/PT: Show remaining and used credits
+                                  <div className="grid grid-cols-2 gap-6">
+                                    <div className="text-center space-y-2">
+                                      <div className="text-3xl font-bold text-foreground">
+                                        {subscription.credits_remaining}
+                                      </div>
+                                      <div className="text-xs font-medium text-muted-foreground">Crédits restants</div>
+                                    </div>
+                                    <div className="text-center space-y-2">
+                                      <div className="text-3xl font-bold text-foreground">
+                                        {subscription.credits_used}
+                                      </div>
+                                      <div className="text-xs font-medium text-muted-foreground">Crédits utilisés</div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                <div className="flex gap-2 pt-4 border-t border-border">
+                                  <Button
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => {
+                                      setSelectedSubscriptionForCredits(subscription)
+                                      setShowCreditDialog(true)
+                                    }}
+                                    disabled={isAbonnement && (subscription.weekly_credits_used || 0) >= (subscription.weekly_limit || 0)}
+                                  >
+                                    <IconPlus className="h-4 w-4 mr-2" />
+                                    {isAbonnement ? 'Ajouter utilisation' : 'Ajouter crédits'}
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => {
+                                      setSelectedSubscriptionForCredits(subscription)
+                                      setCreditAmount(1)
+                                      handleAdjustCredits('decrement')
+                                    }}
+                                    disabled={
+                                      isAbonnement
+                                        ? (subscription.weekly_credits_used || 0) === 0
+                                        : subscription.credits_remaining === 0
+                                    }
+                                  >
+                                    <IconMinus className="h-4 w-4 mr-2" />
+                                    {isAbonnement ? 'Retirer utilisation' : 'Retirer crédits'}
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )
+                        })}
+                    </div>
+                  )}
                 </TabsContent>
 
                 {/* User Actions */}
@@ -1797,6 +2224,110 @@ export default function UsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Credit Adjustment Dialog */}
+      <Dialog open={showCreditDialog} onOpenChange={setShowCreditDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <IconCoin className="h-5 w-5" />
+              {selectedSubscriptionForCredits?.plan_type === 'abonnement'
+                ? 'Ajouter une utilisation hebdomadaire'
+                : 'Ajouter des crédits'}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedSubscriptionForCredits && (
+            <div className="space-y-6">
+              <Card className="border-muted-foreground/20">
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">{selectedSubscriptionForCredits.plan_name}</h3>
+                    <p className="text-sm text-muted-foreground capitalize">
+                      {selectedSubscriptionForCredits.plan_type}
+                    </p>
+                    <div className="grid grid-cols-2 gap-4 pt-3 border-t border-border">
+                      {selectedSubscriptionForCredits.plan_type === 'abonnement' ? (
+                        <>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-foreground">
+                              {selectedSubscriptionForCredits.weekly_credits_used || 0}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Utilisés</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-foreground">
+                              {selectedSubscriptionForCredits.weekly_limit || 0}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Limite</div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-foreground">
+                              {selectedSubscriptionForCredits.credits_remaining}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Restants</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-foreground">
+                              {selectedSubscriptionForCredits.credits_used}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Utilisés</div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="space-y-3">
+                <Label htmlFor="credit_amount">
+                  {selectedSubscriptionForCredits.plan_type === 'abonnement'
+                    ? 'Nombre d\'utilisations à ajouter'
+                    : 'Nombre de crédits à ajouter'}
+                </Label>
+                <Input
+                  id="credit_amount"
+                  type="number"
+                  min="1"
+                  value={creditAmount}
+                  onChange={(e) => setCreditAmount(parseInt(e.target.value) || 1)}
+                  className="h-12 text-center text-lg font-semibold"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {selectedSubscriptionForCredits.plan_type === 'abonnement'
+                    ? `Les utilisations seront ajoutées au compteur hebdomadaire (max: ${selectedSubscriptionForCredits.weekly_limit})`
+                    : 'Les crédits seront ajoutés au solde actuel de l\'utilisateur'}
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowCreditDialog(false)
+                    setCreditAmount(1)
+                    setSelectedSubscriptionForCredits(null)
+                  }}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={() => handleAdjustCredits('increment')}
+                  disabled={creditAmount <= 0}
+                >
+                  <IconPlus className="h-4 w-4 mr-2" />
+                  Ajouter {creditAmount} {selectedSubscriptionForCredits.plan_type === 'abonnement' ? 'utilisation' : 'crédit'}{creditAmount > 1 ? 's' : ''}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
