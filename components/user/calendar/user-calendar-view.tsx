@@ -199,11 +199,11 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
     const today = getCurrentDate()
     const mondayOfThisWeek = startOfWeek(today, { weekStartsOn: 1 })
 
-    // Check if it's past Sunday 18:00, then show next week
+    // Check if it's past Saturday 11:45, then show next week
     const now = getCurrentDate()
-    const sundayOfThisWeek = addDays(mondayOfThisWeek, 6)
-    const rolloverTime = new Date(sundayOfThisWeek)
-    rolloverTime.setHours(18, 0, 0, 0)
+    const saturdayOfThisWeek = addDays(mondayOfThisWeek, 5)
+    const rolloverTime = new Date(saturdayOfThisWeek)
+    rolloverTime.setHours(11, 45, 0, 0)
 
     if (now >= rolloverTime) {
       return addDays(mondayOfThisWeek, 7) // Next week
@@ -555,6 +555,17 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
     }
   }
 
+  // Helper function to check if booking window is open
+  const isBookingWindowOpen = () => {
+    const now = getCurrentDate()
+    const mondayOfThisWeek = startOfWeek(now, { weekStartsOn: 1 })
+    const sundayOfThisWeek = addDays(mondayOfThisWeek, 6) // Sunday
+    const bookingWindowOpen = new Date(sundayOfThisWeek)
+    bookingWindowOpen.setHours(18, 0, 0, 0)
+
+    return now >= bookingWindowOpen
+  }
+
   const canUserBook = (event: ClassEvent) => {
     // During pre-launch, booking is disabled
     if (currentPhase === 'pre-launch') {
@@ -581,6 +592,11 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
       return false
     }
 
+    // Check if booking window is open (Sunday at 18:00:00)
+    if (!isBookingWindowOpen()) {
+      return false
+    }
+
     // Always return true - we'll handle credit/limit checks in handleBookClass
     return true
   }
@@ -601,7 +617,8 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
            event.current_bookings >= event.max_capacity &&
            !isEventPast(event.start_datetime) &&
            subscription &&
-           currentPhase !== 'pre-launch'
+           currentPhase !== 'pre-launch' &&
+           isBookingWindowOpen()
   }
 
   const handleEventClick = (event: ClassEvent) => {
@@ -821,6 +838,24 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                                                 </TooltipTrigger>
                                                 <TooltipContent>
                                                   <p>Réservations ouvertes le {format(launchMoment, 'd/MM à HH:mm')}</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </TooltipProvider>
+                                          ) : !isBookingWindowOpen() ? (
+                                            <TooltipProvider>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Button
+                                                    disabled
+                                                    size="sm"
+                                                    className="w-full text-xs h-6"
+                                                  >
+                                                    <IconCalendarX className="h-3 w-3 mr-1" />
+                                                    Bientôt
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>Réservations ouvertes dimanche à 18:00</p>
                                                 </TooltipContent>
                                               </Tooltip>
                                             </TooltipProvider>
@@ -1056,6 +1091,23 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                                             </TooltipContent>
                                           </Tooltip>
                                         </TooltipProvider>
+                                      ) : !isBookingWindowOpen() ? (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                disabled
+                                                className="flex-1"
+                                              >
+                                                <IconCalendarX className="h-4 w-4 mr-2" />
+                                                Bientôt disponible
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Réservations ouvertes dimanche à 18:00</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
                                       ) : canUserBook(event) ? (
                                         <Button
                                           onClick={(e) => {
@@ -1162,6 +1214,11 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                           <Button variant="outline" disabled>
                             <IconCalendarX className="h-4 w-4 mr-2" />
                             Réservations bientôt ouvertes
+                          </Button>
+                        ) : !isBookingWindowOpen() ? (
+                          <Button variant="outline" disabled>
+                            <IconCalendarX className="h-4 w-4 mr-2" />
+                            Réservations ouvertes dimanche à 18:00
                           </Button>
                         ) : canUserBook(selectedEvent) ? (
                           <Button
