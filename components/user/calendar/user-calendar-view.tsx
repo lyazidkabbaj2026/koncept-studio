@@ -558,9 +558,9 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
   // Helper function to check if booking window is open
   const isBookingWindowOpen = () => {
     const now = getCurrentDate()
-    const mondayOfThisWeek = startOfWeek(now, { weekStartsOn: 1 })
-    const sundayOfThisWeek = addDays(mondayOfThisWeek, 6) // Sunday
-    const bookingWindowOpen = new Date(sundayOfThisWeek)
+    // Check against the Sunday before the displayed week
+    const sundayBeforeDisplayedWeek = addDays(weekStartDate, -1) // Sunday before Monday
+    const bookingWindowOpen = new Date(sundayBeforeDisplayedWeek)
     bookingWindowOpen.setHours(18, 0, 0, 0)
 
     return now >= bookingWindowOpen
