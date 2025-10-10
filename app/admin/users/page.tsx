@@ -643,11 +643,21 @@ export default function UsersPage() {
 
       console.log('Modifying subscription with data:', modifySubscriptionForm)
 
+      // Fetch the new plan's details to get the credits
+      const { data: newPlan, error: planError } = await supabase
+        .from('subscription_plans')
+        .select('credits')
+        .eq('id', modifySubscriptionForm.plan_id)
+        .single()
+
+      if (planError) throw planError
+
       // Update subscription in database
       const { error } = await supabase
         .from('user_subscriptions')
         .update({
           plan_id: modifySubscriptionForm.plan_id,
+          credits_remaining: newPlan.credits,
           start_date: modifySubscriptionForm.start_date,
           end_date: modifySubscriptionForm.end_date,
           updated_at: new Date().toISOString()

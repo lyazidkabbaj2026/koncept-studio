@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { format, addDays, addWeeks, addMonths, startOfWeek } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { CalendarEvent } from './calendar-view'
@@ -148,11 +148,26 @@ export function ScheduleForm({ event, selectedDate, onClose }: ScheduleFormProps
 
   const handleDayOfWeekToggle = (day: number, checked: boolean) => {
     const currentDays = formData.recurrence_rule?.daysOfWeek || []
-    const newDays = checked 
+    const alreadyChecked = currentDays.includes(day)
+
+    if (alreadyChecked === checked) {
+      return // Already in the desired state
+    }
+
+    const newDays = checked
       ? [...currentDays, day].sort()
       : currentDays.filter(d => d !== day)
 
-    handleRecurrenceChange('daysOfWeek', newDays)
+    setFormData({
+      ...formData,
+      recurrence_rule: {
+        frequency: 'weekly' as const,
+        interval: formData.recurrence_rule?.interval || 1,
+        daysOfWeek: newDays,
+        endDate: formData.recurrence_rule?.endDate,
+        exceptionDates: formData.recurrence_rule?.exceptionDates
+      }
+    })
   }
 
   const generateRecurringEvents = (
@@ -162,19 +177,19 @@ export function ScheduleForm({ event, selectedDate, onClose }: ScheduleFormProps
   ): { start_datetime: string; end_datetime: string }[] => {
     const events: { start_datetime: string; end_datetime: string }[] = []
     const duration = endDateTime.getTime() - startDateTime.getTime()
-    
+
     // Set default end dates based on frequency if not provided
     let defaultEndDate: Date
     if (rule.frequency === 'daily') {
-      defaultEndDate = addDays(startDateTime, 7) // 1 week for daily
+      defaultEndDate = addDays(startDateTime, 30) // 30 days for daily
     } else if (rule.frequency === 'weekly') {
-      defaultEndDate = addWeeks(startDateTime, 4) // 4 weeks for weekly
+      defaultEndDate = addWeeks(startDateTime, 12) // 12 weeks (3 months) for weekly
     } else if (rule.frequency === 'monthly') {
       defaultEndDate = addMonths(startDateTime, 12) // 1 year for monthly
     } else {
       defaultEndDate = addDays(startDateTime, 365) // fallback
     }
-    
+
     const endDate = rule.endDate ? new Date(rule.endDate) : defaultEndDate
     const exceptionDates = rule.exceptionDates || []
     
@@ -293,7 +308,10 @@ export function ScheduleForm({ event, selectedDate, onClose }: ScheduleFormProps
       const startDateTime = new Date(`${formData.start_date}T${formData.start_time}`)
       const endDateTime = new Date(`${formData.start_date}T${formData.end_time}`)
 
-      if (formData.is_recurring && formData.recurrence_rule) {
+      // Check if recurring based on days selected
+      const isRecurring = formData.recurrence_rule?.daysOfWeek && formData.recurrence_rule.daysOfWeek.length > 0
+
+      if (isRecurring && formData.recurrence_rule) {
         // Generate all recurring events
         const recurringEvents = generateRecurringEvents(
           startDateTime,
@@ -428,161 +446,169 @@ export function ScheduleForm({ event, selectedDate, onClose }: ScheduleFormProps
 
           {/* Recurring Options */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2 mb-4">
-              <Checkbox
-                id="is_recurring"
-                checked={formData.is_recurring}
-                onCheckedChange={(checked) => handleInputChange('is_recurring', checked)}
-              />
-              <Label htmlFor="is_recurring" className="flex items-center space-x-2">
-                <IconRepeat className="h-4 w-4" />
-                <span>Cours récurrent</span>
-              </Label>
-            </div>
-
-            {formData.is_recurring && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Paramètres de récurrence</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Frequency */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Fréquence</Label>
-                      <Select
-                        value={formData.recurrence_rule?.frequency || 'weekly'}
-                        onValueChange={(value) => handleRecurrenceChange('frequency', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="daily">Quotidien</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Répéter</Label>
-                      <Select
-                        value={String(formData.recurrence_rule?.interval || 1)}
-                        onValueChange={(value) => handleRecurrenceChange('interval', parseInt(value))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[1, 2, 3, 4, 5, 6].map(i => (
-                            <SelectItem key={i} value={String(i)}>
-                              Tous les {i === 1 ? '' : i + ' '}jours
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* Days of Week (for weekly) */}
-                  {formData.recurrence_rule?.frequency === 'weekly' && (
-                    <div className="space-y-2">
-                      <Label>Jours de la semaine</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {weekDays.map(day => (
-                          <div key={day.value} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`day-${day.value}`}
-                              checked={formData.recurrence_rule?.daysOfWeek?.includes(day.value) || false}
-                              onCheckedChange={(checked) => handleDayOfWeekToggle(day.value, checked as boolean)}
-                            />
-                            <Label htmlFor={`day-${day.value}`} className="text-sm">
-                              {day.label}
-                            </Label>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <IconRepeat className="h-5 w-5" />
+                  Répéter ?
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Days of Week */}
+                <div className="space-y-3">
+                  <Label>Jours de la semaine</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Sélectionnez les jours où le cours doit se répéter (laisser vide pour un cours unique)
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {weekDays.map(day => {
+                      const isChecked = (formData.recurrence_rule?.daysOfWeek || []).includes(day.value)
+                      return (
+                        <div
+                          key={day.value}
+                          className={`flex items-center space-x-2 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
+                            isChecked
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                          onClick={() => handleDayOfWeekToggle(day.value, !isChecked)}
+                        >
+                          <div className="h-4 w-4 shrink-0 rounded-sm border border-primary flex items-center justify-center" style={{
+                            backgroundColor: isChecked ? 'currentColor' : 'transparent'
+                          }}>
+                            {isChecked && (
+                              <svg width="12" height="12" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11.4669 3.72684C11.7558 3.91574 11.8369 4.30308 11.648 4.59198L7.39799 11.092C7.29783 11.2452 7.13556 11.3467 6.95402 11.3699C6.77247 11.3931 6.58989 11.3355 6.45446 11.2124L3.70446 8.71241C3.44905 8.48022 3.43023 8.08494 3.66242 7.82953C3.89461 7.57412 4.28989 7.55529 4.5453 7.78749L6.75292 9.79441L10.6018 3.90792C10.7907 3.61902 11.178 3.53795 11.4669 3.72684Z" fill="white" fillRule="evenodd" clipRule="evenodd"></path>
+                              </svg>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* End Date */}
-                  <div className="space-y-2">
-                    <Label htmlFor="recurrence_end_date">Date de fin (optionnel)</Label>
-                    <Input
-                      id="recurrence_end_date"
-                      type="date"
-                      value={formData.recurrence_end_date || ''}
-                      onChange={(e) => handleInputChange('recurrence_end_date', e.target.value)}
-                    />
+                          <span className="text-sm font-medium flex-1">
+                            {day.label}
+                          </span>
+                        </div>
+                      )
+                    })}
                   </div>
+                  {formData.recurrence_rule?.daysOfWeek && formData.recurrence_rule.daysOfWeek.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {formData.recurrence_rule.daysOfWeek.length} jour{formData.recurrence_rule.daysOfWeek.length > 1 ? 's' : ''} sélectionné{formData.recurrence_rule.daysOfWeek.length > 1 ? 's' : ''}
+                    </p>
+                  )}
+                </div>
 
-                  {/* Exception Dates */}
-                  <div className="space-y-2">
-                    <Label>Dates d'exception (cours annulés)</Label>
+                {/* End Date - only show if days are selected */}
+                {formData.recurrence_rule?.daysOfWeek && formData.recurrence_rule.daysOfWeek.length > 0 && (
+                  <>
                     <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <Input
-                          type="date"
-                          placeholder="Ajouter une date d'exception"
-                          id="exception-date-input"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault()
-                              const input = e.target as HTMLInputElement
-                              if (input.value) {
+                      <Label htmlFor="recurrence_end_date">Date de fin (optionnel)</Label>
+                      <Input
+                        id="recurrence_end_date"
+                        type="date"
+                        value={formData.recurrence_end_date || ''}
+                        onChange={(e) => handleInputChange('recurrence_end_date', e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Par défaut: 12 semaines à partir de la date de début
+                      </p>
+                    </div>
+
+                    {/* Exception Dates */}
+                    <div className="space-y-2">
+                      <Label>Dates d'exception (cours annulés)</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Spécifiez les dates où le cours ne doit pas avoir lieu
+                      </p>
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            type="date"
+                            placeholder="Ajouter une date d'exception"
+                            id="exception-date-input"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                const input = e.target as HTMLInputElement
+                                if (input.value) {
+                                  const currentExceptions = formData.recurrence_rule?.exceptionDates || []
+                                  if (!currentExceptions.includes(input.value)) {
+                                    handleRecurrenceChange('exceptionDates', [...currentExceptions, input.value])
+                                  }
+                                  input.value = ''
+                                }
+                              }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const input = document.getElementById('exception-date-input') as HTMLInputElement
+                              if (input && input.value) {
                                 const currentExceptions = formData.recurrence_rule?.exceptionDates || []
                                 if (!currentExceptions.includes(input.value)) {
                                   handleRecurrenceChange('exceptionDates', [...currentExceptions, input.value])
                                 }
                                 input.value = ''
                               }
-                            }
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const input = document.getElementById('exception-date-input') as HTMLInputElement
-                            if (input && input.value) {
-                              const currentExceptions = formData.recurrence_rule?.exceptionDates || []
-                              if (!currentExceptions.includes(input.value)) {
-                                handleRecurrenceChange('exceptionDates', [...currentExceptions, input.value])
-                              }
-                              input.value = ''
-                            }
-                          }}
-                        >
-                          Ajouter
-                        </Button>
-                      </div>
-                      
-                      {formData.recurrence_rule?.exceptionDates && formData.recurrence_rule.exceptionDates.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {formData.recurrence_rule.exceptionDates.map((date, index) => (
-                            <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                              {format(new Date(date), 'dd/MM/yyyy', { locale: fr })}
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-auto p-0 w-4 h-4"
-                                onClick={() => {
-                                  const newExceptions = formData.recurrence_rule?.exceptionDates?.filter((_, i) => i !== index) || []
-                                  handleRecurrenceChange('exceptionDates', newExceptions)
-                                }}
-                              >
-                                <IconX className="h-3 w-3" />
-                              </Button>
-                            </Badge>
-                          ))}
+                            }}
+                          >
+                            Ajouter
+                          </Button>
                         </div>
-                      )}
+
+                        {formData.recurrence_rule?.exceptionDates && formData.recurrence_rule.exceptionDates.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {formData.recurrence_rule.exceptionDates.map((date, index) => (
+                              <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                                {format(new Date(date), 'dd/MM/yyyy', { locale: fr })}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-auto p-0 w-4 h-4"
+                                  onClick={() => {
+                                    const newExceptions = formData.recurrence_rule?.exceptionDates?.filter((_, i) => i !== index) || []
+                                    handleRecurrenceChange('exceptionDates', newExceptions)
+                                  }}
+                                >
+                                  <IconX className="h-3 w-3" />
+                                </Button>
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+
+                    {/* Recurrence Summary */}
+                    <Alert>
+                      <IconRepeat className="h-4 w-4" />
+                      <AlertDescription>
+                        <div className="space-y-1">
+                          <p className="font-semibold">Résumé:</p>
+                          <ul className="text-sm space-y-1 ml-4 list-disc">
+                            <li>
+                              Cours chaque semaine le{' '}
+                              {formData.recurrence_rule.daysOfWeek.map(d => weekDays.find(wd => wd.value === d)?.label).join(', ')}
+                            </li>
+                            <li>
+                              {formData.recurrence_end_date
+                                ? `Jusqu'au ${format(new Date(formData.recurrence_end_date), 'dd/MM/yyyy', { locale: fr })}`
+                                : 'Pendant 12 semaines par défaut'
+                              }
+                            </li>
+                            {formData.recurrence_rule.exceptionDates && formData.recurrence_rule.exceptionDates.length > 0 && (
+                              <li>{formData.recurrence_rule.exceptionDates.length} date(s) d'exception</li>
+                            )}
+                          </ul>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </div>
           </div>
 
