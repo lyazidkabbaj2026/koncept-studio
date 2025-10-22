@@ -846,28 +846,43 @@ export default function UsersPage() {
       const subscription = selectedSubscriptionForCredits
       const amount = action === 'increment' ? creditAmount : -creditAmount
 
+      // Get current admin user
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      if (!currentUser) {
+        toast.error('Session expirée. Veuillez vous reconnecter.')
+        return
+      }
+
       let updateData: any = {
         updated_at: new Date().toISOString()
       }
 
+      let previousValue: number
+      let newValue: number
+      let fieldModified: string
+
       if (subscription.plan_type === 'abonnement') {
         // For abonnement, modify weekly_credits_used
-        const newWeeklyCreditsUsed = Math.max(0, (subscription.weekly_credits_used || 0) + amount)
+        previousValue = subscription.weekly_credits_used || 0
+        newValue = Math.max(0, previousValue + amount)
 
         // Check if it exceeds weekly limit
-        if (newWeeklyCreditsUsed > (subscription.weekly_limit || 0)) {
+        if (newValue > (subscription.weekly_limit || 0)) {
           toast.error(`La limite hebdomadaire est de ${subscription.weekly_limit} crédits`)
           return
         }
 
-        updateData.weekly_credits_used = newWeeklyCreditsUsed
+        updateData.weekly_credits_used = newValue
+        fieldModified = 'weekly_credits_used'
       } else {
         // For carnet/personal training, modify credits_remaining and credits_used
-        const newCreditsRemaining = Math.max(0, subscription.credits_remaining + amount)
+        previousValue = subscription.credits_remaining
+        newValue = Math.max(0, previousValue + amount)
         const newCreditsUsed = Math.max(0, subscription.credits_used - amount)
 
-        updateData.credits_remaining = newCreditsRemaining
+        updateData.credits_remaining = newValue
         updateData.credits_used = newCreditsUsed
+        fieldModified = 'credits_remaining'
       }
 
       const { error } = await supabase
@@ -876,6 +891,25 @@ export default function UsersPage() {
         .eq('id', subscription.id)
 
       if (error) throw error
+
+      // Log the credit change
+      const { error: logError } = await supabase
+        .from('credit_change_logs')
+        .insert({
+          user_id: selectedUser!.id,
+          subscription_id: subscription.id,
+          admin_id: currentUser.id,
+          previous_value: previousValue,
+          new_value: newValue,
+          change_amount: amount,
+          subscription_type: subscription.plan_type,
+          field_modified: fieldModified
+        })
+
+      if (logError) {
+        console.error('Error logging credit change:', logError)
+        // Don't fail the operation if logging fails
+      }
 
       toast.success(`Crédits ${action === 'increment' ? 'ajoutés' : 'retirés'} avec succès`)
 

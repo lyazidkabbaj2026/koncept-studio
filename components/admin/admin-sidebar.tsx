@@ -26,7 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { IconCalendar, IconUsers, IconSettings, IconLogout, IconBarbell, IconCalendarEvent, IconCreditCard, IconCalendarStats, IconX, IconClock, IconBrandWhatsapp, IconSun, IconMoon, IconFileText, IconUserCheck } from '@tabler/icons-react'
+import { IconCalendar, IconUsers, IconSettings, IconLogout, IconBarbell, IconCalendarEvent, IconCreditCard, IconCalendarStats, IconX, IconClock, IconBrandWhatsapp, IconSun, IconMoon, IconFileText, IconUserCheck, IconHistory } from '@tabler/icons-react'
 import { useTheme } from 'next-themes'
 import { Badge } from '@/components/ui/badge'
 
@@ -75,6 +75,11 @@ const navigation = [
     title: 'Forfaits',
     href: '/admin/subscription-plans',
     icon: IconCreditCard,
+  },
+  {
+    title: 'Historique Crédits',
+    href: '/admin/credit-logs',
+    icon: IconHistory,
   },
   {
     title: 'WhatsApp Logs',
@@ -203,7 +208,7 @@ export function AdminSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="flex-1 flex flex-col px-3 py-4 overflow-hidden">
+      <SidebarContent className="flex-1 flex flex-col px-3 pt-2 pb-4 overflow-hidden">
         <div className="flex flex-col flex-1">
           <SidebarMenu className="space-y-1 flex-1">
             {navigation.slice(0, -1).map((item) => (
@@ -229,7 +234,7 @@ export function AdminSidebar() {
           </SidebarMenu>
 
           <div className="mt-auto">
-            <SidebarSeparator className="-mx-3 w-auto mb-3" />
+            <SidebarSeparator className="-mx-3 w-auto mb-1" />
 
             <SidebarMenu className="space-y-1">
               {navigation.slice(-1).map((item) => (

@@ -239,6 +239,67 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_change_logs: {
+        Row: {
+          admin_id: string
+          change_amount: number
+          created_at: string
+          field_modified: string
+          id: string
+          new_value: number
+          previous_value: number
+          subscription_id: string
+          subscription_type: string
+          user_id: string
+        }
+        Insert: {
+          admin_id: string
+          change_amount: number
+          created_at?: string
+          field_modified: string
+          id?: string
+          new_value: number
+          previous_value: number
+          subscription_id: string
+          subscription_type: string
+          user_id: string
+        }
+        Update: {
+          admin_id?: string
+          change_amount?: number
+          created_at?: string
+          field_modified?: string
+          id?: string
+          new_value?: number
+          previous_value?: number
+          subscription_id?: string
+          subscription_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_change_logs_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_change_logs_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "user_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_change_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
