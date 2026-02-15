@@ -1,0 +1,48 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /C:*)",
+      "Bash(Get-Process -Name \"node\")",
+      "Bash(Stop-Process -Force)",
+      "Bash(Get-Process -Name \"node\" -ErrorAction SilentlyContinue)",
+      "Bash(tasklist)",
+      "Bash(findstr:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run build:*)",
+      "Bash(git push:*)",
+      "Bash(sed:*)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(tree:*)",
+      "Bash(dir publicimagesicons)",
+      "Bash(del \"scripts\\generate-icons.js\")",
+      "WebFetch(domain:21st.dev)",
+      "Bash(npm install:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_press_key",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_wait_for",
+      "Bash(npm run lint)",
+      "Bash(grep:*)",
+      "Bash(sort:*)",
+<<<<<<< HEAD
+      "WebFetch(domain:wasenderapi.com)"
+=======
+      "WebFetch(domain:wasenderapi.com)",
+      "Bash(dir:*)",
+      "Bash(npm run dev:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)"
+>>>>>>> 50d4463 (Add subscription access control to planning page)
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

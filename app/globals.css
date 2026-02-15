@@ -1,0 +1,237 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 0% 20%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89%;
+    --input: 0 0% 89%;
+    --ring: 0 0% 9%;
+    --radius: 0.75rem;
+    --chart-1: 0 0% 20%;
+    --chart-2: 0 0% 30%;
+    --chart-3: 0 0% 40%;
+    --chart-4: 0 0% 50%;
+    --chart-5: 0 0% 60%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 15%;
+    --sidebar-primary: 0 0% 9%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 0 0% 89%;
+    --sidebar-ring: 0 0% 9%;
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 0 0% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 0 0% 9%;
+    --sidebar-accent: 0 0% 14.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 14.9%;
+    --sidebar-ring: 0 0% 83.1%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    @apply bg-background text-foreground min-h-screen;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
+
+/* Modern UI utilities */
+@layer utilities {
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .dark .glass-effect {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .gradient-border {
+    background: linear-gradient(145deg, hsl(var(--primary)), hsl(var(--muted)));
+    padding: 1px;
+  }
+
+  .gradient-border > * {
+    background: hsl(var(--background));
+    border-radius: calc(var(--radius) - 1px);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.8s ease-out;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--muted-foreground)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .shadow-brutal {
+    box-shadow: 2px 2px 0px 0px hsl(var(--foreground));
+  }
+
+  .shadow-soft {
+    box-shadow: 0 4px 20px -4px hsl(var(--foreground) / 0.1);
+  }
+
+  .dark .shadow-soft {
+    box-shadow: 0 4px 20px -4px hsl(var(--background) / 0.3);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Sonner Toast Custom Styles */
+[data-sonner-toaster] {
+  --normal-bg: hsl(var(--background));
+  --normal-border: hsl(var(--border));
+  --normal-text: hsl(var(--foreground));
+  --success-bg: hsl(var(--background));
+  --success-border: hsl(142 76% 36%);
+  --success-text: hsl(var(--foreground));
+  --error-bg: hsl(var(--background));
+  --error-border: hsl(var(--destructive));
+  --error-text: hsl(var(--foreground));
+}
+
+[data-sonner-toast] {
+  background: var(--normal-bg) !important;
+  border: 1px solid var(--normal-border) !important;
+  color: var(--normal-text) !important;
+  font-size: 16px !important;
+  padding: 16px 20px !important;
+  min-height: 60px !important;
+  max-width: 500px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: none !important;
+  opacity: 1 !important;
+}
+
+[data-sonner-toast][data-type="success"] {
+  background: var(--normal-bg) !important;
+  border-color: var(--normal-border) !important;
+  color: var(--normal-text) !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  background: var(--normal-bg) !important;
+  border-color: var(--normal-border) !important;
+  color: var(--normal-text) !important;
+}
+
+[data-sonner-toast] [data-close-button] {
+  background: hsl(var(--muted)) !important;
+  color: hsl(var(--muted-foreground)) !important;
+  border: none !important;
+  border-radius: 4px !important;
+  width: 20px !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 14px !important;
+  font-weight: bold !important;
+  transition: all 0.2s ease !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  background: hsl(var(--muted-foreground) / 0.1) !important;
+  transform: scale(1.05) !important;
+}
+
+[data-sonner-toast] [data-title] {
+  font-weight: 500 !important;
+  font-size: 16px !important;
+  line-height: 1.4 !important;
+}
+
+[data-sonner-toast] [data-description] {
+  font-size: 14px !important;
+  opacity: 0.8 !important;
+  margin-top: 4px !important;
+}
