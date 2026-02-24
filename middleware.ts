@@ -3,13 +3,14 @@ import type { NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
-  
-  if (request.nextUrl.pathname === '/reset-password') {
-    return NextResponse.next()
-  }
+  const { pathname } = request.nextUrl
   
   const { supabaseResponse, user } = await updateSession(request)
-
+  
+  if (pathname === '/reset-password' || pathname === '/auth/callback') {
+    return supabaseResponse
+  }
+  
   const url = request.nextUrl.clone()
 
   // Protected routes that require authentication

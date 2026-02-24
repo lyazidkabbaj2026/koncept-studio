@@ -64,6 +64,7 @@ export default function UserPlanningPage() {
         setSubscription(subscriptionData)
       } catch (error) {
         console.error('Error initializing page:', error)
+        setIsLoading(false)
       } finally {
         setIsLoading(false)
       }

@@ -48,14 +48,7 @@ export default function ResetPasswordForm() {
         toast.error('Les mots de passe ne correspondent pas')
         return
       }
-      
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        toast.error("Votre session a expiré. Veuillez recommencer la procédure.")
-        router.push('/forgot-password')
-        return
-      }
-      
+
       const { error } = await supabase.auth.updateUser({
         password: formData.password
       })
@@ -73,8 +66,7 @@ export default function ResetPasswordForm() {
       toast.success('Mot de passe mis à jour avec succès !')
 
       // Redirect to login or dashboard
-      router.push('/espace/planning')
-      router.refresh()
+      window.location.href = '/espace/planning'
 
     } catch (error) {
       toast.error('Une erreur est survenue lors de la mise à jour')
