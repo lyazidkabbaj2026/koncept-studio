@@ -86,7 +86,7 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <ResetPasswordForm />
+            <ResetPasswordForm key={user.id}/>
           </CardContent>
         </Card>
       </div>

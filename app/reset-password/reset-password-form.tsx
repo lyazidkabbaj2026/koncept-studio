@@ -49,6 +49,17 @@ export default function ResetPasswordForm() {
         return
       }
 
+      //PRE-FLIGHT SYNC: Force the client to look at cookies before updating
+      // This is the secret sauce to fix "Auth session missing"
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError || !session) {
+        console.error("Session sync failed:", sessionError)
+        toast.error("Session introuvable. Veuillez rafraîchir la page.")
+        setLoading(false)
+        return
+      }
+      
       const { error } = await supabase.auth.updateUser({
         password: formData.password
       })
