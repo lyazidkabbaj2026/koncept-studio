@@ -82,7 +82,38 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
 
   // Studio launch logic - 2025 dates
   // Get current effective date
-  const getCurrentDate = () => new Date()
+  const getCurrentDate = () => {
+    const now = new Date();
+
+    // 1. Get the exact time components for Morocco (handling DST & Ramadan automatically)
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Africa/Casablanca',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false, // Use 24h format for easy parsing
+    });
+
+    const parts = formatter.formatToParts(now);
+
+    // Helper to extract parts safely
+    const getPart = (type: string) => parseInt(parts.find((p) => p.type === type)?.value || '0', 10);
+
+    // 2. Construct a new Date object.
+    // We use the numbers from Morocco, but creating a "Local" Date object.
+    // This effectively tricks the browser into thinking the device is in Morocco.
+    return new Date(
+      getPart('year'),
+      getPart('month') - 1, // Important: JavaScript months are 0-11
+      getPart('day'),
+      getPart('hour'),
+      getPart('minute'),
+      getPart('second')
+    );
+  };
 
   // Launch dates
   const prelaunchStart = new Date(2025, 8, 21) // Sept 21, 2025

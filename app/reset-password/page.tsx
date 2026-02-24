@@ -71,7 +71,14 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
       </div>
     )
   }
-
+  
+  if (params.code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(params.code)
+    if (error) {
+      console.error('Code exchange failed:', error.message)
+      redirect('/forgot-password?error=Link+invalid+or+expired')
+    }
+  }
   // Check if user is authenticated (coming from email link)
   const { data: { user } } = await supabase.auth.getUser()
 
