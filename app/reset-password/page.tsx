@@ -15,7 +15,7 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
   const params = await searchParams
   const supabase = await createClient()
 
-  // If there's an error from the email link
+  // 1. If Supabase sent an error in the URL (like link expired), show it immediately
   if (params.error) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-background via-muted/10 to-background p-4 relative">
@@ -72,16 +72,22 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
     )
   }
   
-  if (params.code) {
+  // 2. Check if we already have a session (e.g. user refreshed the page)
+  const { data: { user: existingUser } } = await supabase.auth.getUser()
+
+  // 3. Only exchange the code if we don't have a user yet
+  if (!existingUser && params.code) {
     const { error } = await supabase.auth.exchangeCodeForSession(params.code)
     if (error) {
-      console.error('Code exchange failed:', error.message)
-      redirect('/forgot-password?error=Link+invalid+or+expired')
+      console.error('Exchange error:', error.message)
+      return redirect('/forgot-password?error=invalid_link')
     }
   }
-  // Check if user is authenticated (coming from email link)
+  
+  // 4. Final verification
   const { data: { user } } = await supabase.auth.getUser()
 
+  // If no user after exchange, the link is dead or used
   if (!user) {
     redirect('/forgot-password')
   }

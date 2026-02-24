@@ -48,7 +48,14 @@ export default function ResetPasswordForm() {
         toast.error('Les mots de passe ne correspondent pas')
         return
       }
-
+      
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        toast.error("Votre session a expiré. Veuillez recommencer la procédure.")
+        router.push('/forgot-password')
+        return
+      }
+      
       const { error } = await supabase.auth.updateUser({
         password: formData.password
       })
