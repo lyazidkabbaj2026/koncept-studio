@@ -271,7 +271,7 @@ export class BookingService {
         }
       }
 
-      // 3. Cancel the booking
+      /* 3. Cancel the booking
       const { error: cancelError } = await this.supabase
         .from('class_bookings')
         .update({
@@ -309,6 +309,28 @@ export class BookingService {
 
       if (!refundResult.success || refundResult.rows_affected === 0) {
         return { success: false, error: 'Aucune ligne mise à jour pour le remboursement' }
+      }*/
+
+      // Replace Steps 3 and 4 with this single atomic call:
+      const subscription = booking.user_subscriptions;
+      const subscriptionType = subscription?.subscription_plans?.type;
+
+      if (!subscription || !subscriptionType) {
+        return { success: false, error: 'Informations d\'abonnement manquantes ou invalides' };
+      }
+
+      const { data: refundResult, error: refundError } = await this.supabase.rpc('cancel_booking_and_refund', {
+        p_booking_id: bookingId,
+        p_user_id: user.id,
+        p_subscription_id: subscription.id,
+        p_subscription_type: subscriptionType
+      });
+
+      if (refundError || !refundResult?.success) {
+        return {
+          success: false,
+          error: refundResult?.error || refundError?.message || 'Échec de l\'annulation et du remboursement'
+        };
       }
 
       // 5. Check for waitlist and promote if space is available
