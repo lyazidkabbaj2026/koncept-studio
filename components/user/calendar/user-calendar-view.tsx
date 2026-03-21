@@ -151,7 +151,7 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
       return Math.random() * (max - min) + min
     }
 
-    const interval = setInterval(function() {
+    const interval = setInterval(function () {
       const timeLeft = animationEnd - Date.now()
 
       if (timeLeft <= 0) {
@@ -529,7 +529,7 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
       setLoading(true)
       const now = getCurrentDate()
       const weekEnd = addDays(weekStart, 6)
-      
+
       // Fetch events for the specified week
       const { data: eventsData, error: eventsError } = await supabase
         .from('calendar_events')
@@ -586,54 +586,53 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
     }
   }
 
+  // New Helper to show the correct UI message
+  const getOpeningTimeMessage = (eventDate: Date) => {
+    const day = eventDate.getDay();
+    if ([1, 2, 4].includes(day)) return "dimanche à 17:00"; // Mon, Tue, Thu
+    if ([3, 5, 6].includes(day)) return "jeudi à 17:00";    // Wed, Fri, Sat
+    return "bientôt";
+  };
+
   // Helper function to check if booking window is open
   const isBookingWindowOpen = () => {
-    const now = getCurrentDate()
-    // Check against the Sunday before the displayed week
-    const sundayBeforeDisplayedWeek = addDays(weekStartDate, -1) // Sunday before Monday
-    const bookingWindowOpen = new Date(sundayBeforeDisplayedWeek)
-    bookingWindowOpen.setHours(18, 0, 0, 0)
-
-    return now >= bookingWindowOpen
+    const now = getCurrentDate();
+    const sundayBeforeDisplayedWeek = addDays(weekStartDate, -1);
+    const bookingWindowOpen = new Date(sundayBeforeDisplayedWeek);
+    bookingWindowOpen.setHours(17, 0, 0, 0); // Changed from 18:00 to 17:00
+    return now >= bookingWindowOpen;
   }
 
-const isEventBookingOpen = (eventDate: Date) => {
-  const now = getCurrentDate();
-  
-  // 1. Updated master Sunday 17:30 rule
-  // This ensures the NEW week doesn't open until Sunday at 17:30
-  const sundayBeforeDisplayedWeek = addDays(weekStartDate, -1);
-  const masterOpening = new Date(sundayBeforeDisplayedWeek);
-  
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-  const isAfterFiveThirtyPM = currentHour > 17 || (currentHour === 17 && currentMinute >= 30);
+  const isEventBookingOpen = (eventDate: Date) => {
+    const now = getCurrentDate();
 
-  // Check if we are still before the Sunday of the displayed week
-  if (isPast(masterOpening) || isSameDay(now, masterOpening)) {
-    // If it is Sunday, only allow if after 17:30
-    if (isSameDay(now, masterOpening) && !isAfterFiveThirtyPM) {
-      return false;
+    // Get the start of the week for the specific EVENT (Monday)
+    const eventWeekStart = startOfWeek(eventDate, { weekStartsOn: 1 });
+    const eventDayOfWeek = eventDate.getDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat
+
+    // Window 1: Sunday before the event at 17:00
+    const window1Opening = new Date(eventWeekStart);
+    window1Opening.setDate(window1Opening.getDate() - 1);
+    window1Opening.setHours(17, 0, 0, 0);
+
+    // Window 2: Wednesday of the event's week at 17:00
+    const window2Opening = new Date(eventWeekStart);
+    window2Opening.setDate(window2Opening.getDate() + 2);
+    window2Opening.setHours(17, 0, 0, 0);
+
+    const window1Days = [1, 2, 3];
+    const window2Days = [4, 5, 6];
+
+    if (window1Days.includes(eventDayOfWeek)) {
+      return now >= window1Opening;
     }
-  } else {
-    // We are in a week prior to the displayed week
+
+    if (window2Days.includes(eventDayOfWeek)) {
+      return now >= window2Opening;
+    }
+
     return false;
-  }
-
-  // 2. Rolling "Today/Tomorrow" constraint
-  // Is it today?
-  if (isSameDay(eventDate, now)) return true;
-
-  // Is it tomorrow?
-  const tomorrow = addDays(now, 1);
-  if (isSameDay(eventDate, tomorrow)) {
-    // Open if current time is after 17:30
-    return isAfterFiveThirtyPM;
-  }
-
-  // 3. Future dates stay closed ("Bientôt")
-  return false;
-};
+  };
 
   const canUserBook = (event: ClassEvent) => {
     // During pre-launch, booking is disabled
@@ -682,12 +681,12 @@ const isEventBookingOpen = (eventDate: Date) => {
 
   const canJoinWaitlist = (event: ClassEvent) => {
     return !event.user_booking &&
-           !event.user_waitlist_position &&
-           event.current_bookings >= event.max_capacity &&
-           !isEventPast(event.start_datetime) &&
-           subscription &&
-           currentPhase !== 'pre-launch' &&
-           isEventBookingOpen(new Date(event.start_datetime))
+      !event.user_waitlist_position &&
+      event.current_bookings >= event.max_capacity &&
+      !isEventPast(event.start_datetime) &&
+      subscription &&
+      currentPhase !== 'pre-launch' &&
+      isEventBookingOpen(new Date(event.start_datetime))
   }
 
   const handleEventClick = (event: ClassEvent) => {
@@ -844,7 +843,7 @@ const isEventBookingOpen = (eventDate: Date) => {
                                 event.user_waitlist_position && "border-l-muted-foreground bg-muted hover:bg-muted/80",
                                 !event.user_booking && !event.user_waitlist_position && "border-l-border bg-background hover:bg-muted/50"
                               )}
-                              onClick={() => handleEventClick(event)}>
+                                onClick={() => handleEventClick(event)}>
                                 <CardContent className="p-3">
                                   <div className="space-y-2">
                                     <div>
@@ -906,7 +905,7 @@ const isEventBookingOpen = (eventDate: Date) => {
                                                   </Button>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
-                                                  <p>Réservations ouvertes le {format(launchMoment, 'd/MM à HH:mm')}</p>
+                                                  <p>Réservations ouvertes {getOpeningTimeMessage(startTime)}</p>
                                                 </TooltipContent>
                                               </Tooltip>
                                             </TooltipProvider>
@@ -924,7 +923,7 @@ const isEventBookingOpen = (eventDate: Date) => {
                                                   </Button>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
-                                                  <p>Réservations ouvertes dimanche à 18:00</p>
+                                                  <p>Réservations ouvertes {getOpeningTimeMessage(startTime)}</p>
                                                 </TooltipContent>
                                               </Tooltip>
                                             </TooltipProvider>
@@ -1082,7 +1081,7 @@ const isEventBookingOpen = (eventDate: Date) => {
                             event.user_waitlist_position && "border-l-muted-foreground bg-muted",
                             !event.user_booking && !event.user_waitlist_position && "border-l-accent bg-accent/5"
                           )}
-                          onClick={() => handleEventClick(event)}>
+                            onClick={() => handleEventClick(event)}>
                             <CardContent className="p-4">
                               <div className="space-y-3">
                                 <div className="space-y-2">
@@ -1156,7 +1155,7 @@ const isEventBookingOpen = (eventDate: Date) => {
                                               </Button>
                                             </TooltipTrigger>
                                             <TooltipContent>
-                                              <p>Réservations ouvertes le {format(launchMoment, 'd/MM à HH:mm')}</p>
+                                              <p>Réservations ouvertes {getOpeningTimeMessage(startTime)}</p>
                                             </TooltipContent>
                                           </Tooltip>
                                         </TooltipProvider>
@@ -1173,7 +1172,7 @@ const isEventBookingOpen = (eventDate: Date) => {
                                               </Button>
                                             </TooltipTrigger>
                                             <TooltipContent>
-                                              <p>Réservations ouvertes dimanche à 18:00</p>
+                                              <p>Réservations ouvertes {getOpeningTimeMessage(startTime)}</p>
                                             </TooltipContent>
                                           </Tooltip>
                                         </TooltipProvider>
@@ -1230,7 +1229,7 @@ const isEventBookingOpen = (eventDate: Date) => {
             <DialogHeader>
               <DialogTitle className="text-xl font-bold">{selectedEvent?.title}</DialogTitle>
             </DialogHeader>
-            
+
             {selectedEvent && (
               <div className="space-y-6">
                 {/* Header Info */}
@@ -1256,7 +1255,7 @@ const isEventBookingOpen = (eventDate: Date) => {
                       {format(new Date(selectedEvent.start_datetime), 'EEEE d MMMM yyyy', { locale: fr })}
                     </div>
                   </div>
-                  
+
                   <div className="flex gap-2">
                     {selectedEvent.user_booking ? (
                       <Button
@@ -1284,10 +1283,10 @@ const isEventBookingOpen = (eventDate: Date) => {
                             <IconCalendarX className="h-4 w-4 mr-2" />
                             Réservations bientôt ouvertes
                           </Button>
-                        ) : !isBookingWindowOpen() ? (
+                        ) : isEventBookingOpen(new Date(selectedEvent.start_datetime)) ? (
                           <Button variant="outline" disabled>
                             <IconCalendarX className="h-4 w-4 mr-2" />
-                            Réservations ouvertes dimanche à 18:00
+                            Ouverture : {getOpeningTimeMessage(new Date(selectedEvent.start_datetime))}
                           </Button>
                         ) : canUserBook(selectedEvent) ? (
                           <Button
@@ -1403,15 +1402,15 @@ const isEventBookingOpen = (eventDate: Date) => {
                           <span>{Math.round((selectedEvent.current_bookings / selectedEvent.max_capacity) * 100)}%</span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-2">
-                          <div 
+                          <div
                             className={cn(
                               "h-2 rounded-full transition-all",
                               selectedEvent.current_bookings / selectedEvent.max_capacity >= 0.9 ? "bg-destructive" :
-                              selectedEvent.current_bookings / selectedEvent.max_capacity >= 0.7 ? "bg-muted" :
-                              "bg-muted-foreground"
+                                selectedEvent.current_bookings / selectedEvent.max_capacity >= 0.7 ? "bg-muted" :
+                                  "bg-muted-foreground"
                             )}
-                            style={{ 
-                              width: `${Math.min(100, (selectedEvent.current_bookings / selectedEvent.max_capacity) * 100)}%` 
+                            style={{
+                              width: `${Math.min(100, (selectedEvent.current_bookings / selectedEvent.max_capacity) * 100)}%`
                             }}
                           />
                         </div>
@@ -1462,7 +1461,7 @@ const isEventBookingOpen = (eventDate: Date) => {
                               className={cn(
                                 "h-4 w-4",
                                 level <= (selectedEvent.difficulty_level === 'all_levels' ? 1 :
-                                         selectedEvent.difficulty_level === 'intermediate' ? 3 : 5)
+                                  selectedEvent.difficulty_level === 'intermediate' ? 3 : 5)
                                   ? "text-muted-foreground fill-muted-foreground"
                                   : "text-muted-foreground"
                               )}
