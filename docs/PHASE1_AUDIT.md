@@ -91,3 +91,33 @@ scope of the block, who can flag).
    channel/timing.
 5. Approve key rotation and `.env.production` removal.
 6. Choose design direction A (Atelier), B (Cadence) or C (Charbon).
+
+## Phase 3 — implemented (2026-08-30)
+
+See `docs/DEPLOYMENT_PHASE3.md` for the run order. Summary of changes:
+
+- Atomic DB layer (`book_class_v2`, `cancel_booking_v2`, `join_waitlist_v2`,
+  `leave_waitlist_v2`, `admin_book_class_v2`, `admin_refund_schedule_bookings`,
+  `flag_no_show`, `unflag_no_show`) with schedule row-locks, real-count capacity
+  checks, type-aware credit movements, an append-only `credit_ledger`, and a
+  no-show penalty system (24h, window-anchored, one per booking).
+- Broken `promote_from_waitlist` trigger dropped (it referenced a nonexistent
+  function and silently failed on every cancellation since creation); promotion
+  now happens inside `cancel_booking_v2` without double-charging.
+- Cancellation deadline standardized on 3h (server-enforced, settings aligned).
+- Security: admin/owner checks added to leaky SECURITY DEFINER read functions;
+  legacy self-service credit RPCs revoked from `anon` immediately and from
+  `authenticated` post-deploy (lockdown script).
+- Auth: device-independent password-reset route (`/auth/confirm`, token_hash);
+  visible error on the forgot-password form; JWT-expired auto-refresh-and-retry
+  fetch wrapper for the shared browser client.
+- New daily idempotent J−7 plan-expiry WhatsApp notification cron.
+- Admin UI: mark/unmark no-show on past bookings; calendar modal gained a
+  "Quitter la liste d'attente" action; fixed an inverted condition that
+  prevented booking from the event modal; corrected the window-2 opening label
+  (mercredi, not jeudi).
+- Data fixes in migration: 5 drifted `current_bookings` counters recomputed;
+  settings deadline values 24/1 → 3/3.
+- Regression tests: `docs/audit/phase3-validation.sql` (transactional, always
+  rolls back) covering booking/capacity/waitlist/refund/promotion/no-show,
+  plus 3 read-only production invariants.
