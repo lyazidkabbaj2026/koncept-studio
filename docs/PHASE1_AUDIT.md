@@ -68,6 +68,20 @@ production database (read-only queries; no writes, no schema changes, no deploym
    after business rules confirmed.
 5. Redesign (6): only after a direction is approved.
 
+## Decisions recorded (2026-08-30)
+
+1. Supabase visibility: owner runs the read-only dump scripts in `docs/audit/` and pastes results.
+2. August closure was intentional; September schedules await the owner's go-ahead (studio-side action).
+3. Identities confirmed: "Etoo" = Ito ouhafsa; "Mohammed Amine" = "Amine Amor" = Med Amine AMOR.
+4. Cancellation deadline: standardize on the currently active rule (3 hours) everywhere, including
+   the admin settings values. Notification channel for all notifications: WhatsApp.
+5. Approved: rotation of the leaked Supabase service-role and Wasender keys, and removal of
+   `.env.production` from the repository (done on this branch; see `docs/SECURITY_KEY_ROTATION.md`).
+6. UI redesign: **Direction C — «Charbon» (Sport / Performance)** approved.
+
+Still open: waitlist credit-at-join rule, and the no-show business rules (penalty start,
+scope of the block, who can flag).
+
 ## Open questions
 
 1. Grant Supabase access (connect project or run provided read-only SQL dump).
