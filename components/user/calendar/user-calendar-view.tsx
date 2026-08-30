@@ -753,7 +753,7 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
               <p className="text-sm">
                 Votre compte a été suspendu. Veuillez contacter le studio pour résoudre cette situation.
               </p>
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <Button variant="outline" onClick={() => window.open('tel:0663235797')}>
                   Appeler le studio
                 </Button>

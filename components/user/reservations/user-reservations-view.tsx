@@ -259,7 +259,7 @@ export function UserReservationsView({ userId, userSubscriptionStatus }: UserRes
               <p className="text-sm">
                 Votre compte a été suspendu. Veuillez contacter le studio pour résoudre cette situation.
               </p>
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <Button variant="outline" onClick={() => window.open('tel:0663235797')}>
                   Appeler le studio
                 </Button>
@@ -288,8 +288,8 @@ export function UserReservationsView({ userId, userSubscriptionStatus }: UserRes
     <div className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8 text-center sm:text-left">
-          <h1 className="text-3xl lg:text-4xl font-bold text-gradient mb-3">Mes réservations</h1>
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gradient mb-2">Mes réservations</h1>
           <p className="text-muted-foreground text-sm sm:text-base">
             Gérez vos cours réservés et votre liste d'attente
           </p>
