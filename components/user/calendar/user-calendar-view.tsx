@@ -1434,22 +1434,23 @@ export function UserCalendarView({ user, subscription: initialSubscription }: Us
                         </span>
                       </div>
                       <div className="mt-3">
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-muted-foreground">Taux de remplissage</span>
-                          <span>{Math.round((selectedEvent.current_bookings / selectedEvent.max_capacity) * 100)}%</span>
+                        <div className="flex justify-between text-sm mb-1.5">
+                          <span className="text-muted-foreground">Remplissage</span>
+                          <span className="font-mono text-xs tabular-nums">
+                            {selectedEvent.current_bookings}/{selectedEvent.max_capacity}
+                          </span>
                         </div>
-                        <div className="w-full bg-muted rounded-full h-2">
-                          <div
-                            className={cn(
-                              "h-2 rounded-full transition-all",
-                              selectedEvent.current_bookings / selectedEvent.max_capacity >= 0.9 ? "bg-destructive" :
-                                selectedEvent.current_bookings / selectedEvent.max_capacity >= 0.7 ? "bg-muted" :
-                                  "bg-muted-foreground"
-                            )}
-                            style={{
-                              width: `${Math.min(100, (selectedEvent.current_bookings / selectedEvent.max_capacity) * 100)}%`
-                            }}
-                          />
+                        {/* Segmented bar: one tick per place (Direction «Charbon») */}
+                        <div className="flex gap-0.5" aria-hidden="true">
+                          {Array.from({ length: Math.min(selectedEvent.max_capacity, 24) }).map((_, i) => (
+                            <span
+                              key={i}
+                              className={cn(
+                                "h-2 flex-1 rounded-[1px] transition-colors",
+                                i < selectedEvent.current_bookings ? "bg-primary" : "bg-muted"
+                              )}
+                            />
+                          ))}
                         </div>
                       </div>
                     </CardContent>
