@@ -71,6 +71,11 @@ export function formatStudioDayMonth(value: string | Date): string {
   return studioFormat(value, { weekday: 'long', day: '2-digit', month: 'long' })
 }
 
+/** "lun. 21 sept. 2026" — compact, for dense tables. */
+export function formatStudioShortDate(value: string | Date): string {
+  return studioFormat(value, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+}
+
 /** "21 septembre 2026" — no weekday, for subscription dates. */
 export function formatStudioLongDate(value: string | Date): string {
   return studioFormat(value, { day: '2-digit', month: 'long', year: 'numeric' })
@@ -79,4 +84,32 @@ export function formatStudioLongDate(value: string | Date): string {
 /** "21/09/2026 à 17:30" */
 export function formatStudioDateTime(value: string | Date): string {
   return `${studioFormat(value, { day: '2-digit', month: '2-digit', year: 'numeric' })} à ${formatStudioTime(value)}`
+}
+
+/**
+ * "Now", as a Date whose LOCAL components read as the studio's wall clock.
+ *
+ * Comparisons like `now >= sundayAt17` are written against a Date's local
+ * getters, so they only mean "17:00 at the studio" if `now` carries the
+ * studio's wall clock. On a device in Morocco with current zone rules this is
+ * the same as `new Date()`; on a device abroad, or one whose rules are stale,
+ * it is not — which is exactly when the booking window used to open at the
+ * wrong hour.
+ *
+ * The returned Date is a stand-in for comparing wall clocks, not a real
+ * instant: do not send it to the database or subtract it from a real Date.
+ */
+export function studioNow(): Date {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: STUDIO_TZ,
+    year: 'numeric', month: 'numeric', day: 'numeric',
+    hour: 'numeric', minute: 'numeric', second: 'numeric',
+    hour12: false,
+  }).formatToParts(corrected(new Date()))
+
+  const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value || '0', 10)
+  // Intl renders midnight as hour 24 in some ICU versions.
+  const hour = get('hour') % 24
+
+  return new Date(get('year'), get('month') - 1, get('day'), hour, get('minute'), get('second'))
 }
