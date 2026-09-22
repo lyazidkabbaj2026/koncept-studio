@@ -27,34 +27,22 @@
  * UTC — which every runtime renders identically, because UTC needs no rules.
  * The result is the same on every device, always.
  *
- * THE COST: automatic Ramadan and DST handling is gone. When Morocco changes
- * its clocks, someone has to change this number. That is the trade this app
- * needs — the platforms lag the country by weeks, and a wrong class time is
- * worse than a manual edit twice a year.
+ * There is no cost to this any more: with a permanently fixed offset there is
+ * nothing for a timezone database to tell us that we do not already know.
  *
- * TO CHANGE IT: set NEXT_PUBLIC_STUDIO_UTC_OFFSET in Vercel to the studio's
- * offset from UTC, in minutes, and redeploy (it is inlined at build time).
- *   Morocco standard (UTC+1) ....  60
- *   Morocco during Ramadan  ....   0
- *   Morocco since Sept 2026 ....    0   <- current, and the default below
+ * MOROCCO IS PERMANENTLY UTC+0 (owner, 2026-09-22): no seasonal change, no
+ * Ramadan shift. The studio's wall clock and UTC are the same clock, for good,
+ * so the offset below is a stated constant rather than configuration — there
+ * is no environment variable to forget, mis-scope, or leave behind after a
+ * deploy. If that decision is ever reversed, change this one number (60 for
+ * UTC+1) and redeploy; nothing else in the app needs to move.
  * ---------------------------------------------------------------------------
  */
 
 /** Kept for display and for logging only — never used to resolve a time. */
 export const STUDIO_TZ_LABEL = 'Africa/Casablanca'
 
-export const STUDIO_UTC_OFFSET_MINUTES = (() => {
-  const raw = process.env.NEXT_PUBLIC_STUDIO_UTC_OFFSET
-  if (raw === undefined || raw === '') return 0
-  const parsed = Number(raw)
-  // A typo would move every displayed time, so refuse anything that is not a
-  // sane whole-minute offset rather than silently shifting the timetable.
-  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || Math.abs(parsed) > 840) {
-    console.error(`Ignoring invalid NEXT_PUBLIC_STUDIO_UTC_OFFSET: ${raw} — falling back to UTC+0`)
-    return 0
-  }
-  return parsed
-})()
+export const STUDIO_UTC_OFFSET_MINUTES = 0
 
 /** The instant, moved so that reading it as UTC gives the studio's wall clock. */
 function shifted(value: string | Date): Date {
@@ -110,6 +98,40 @@ export function formatStudioDateTime(value: string | Date): string {
  */
 export function studioNow(): Date {
   const d = shifted(new Date())
+  return new Date(
+    d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(),
+    d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds()
+  )
+}
+
+/**
+ * Take a Date whose LOCAL components are the intended studio wall clock and
+ * return the instant to store.
+ *
+ * The admin schedule form builds its dates from `new Date("2026-09-21T17:30")`
+ * and then does all its recurrence arithmetic with local getters and setters,
+ * so every date it produces carries the wall clock the admin typed. What it
+ * must not do is hand that to `.toISOString()`, which converts using the
+ * admin's own offset: the same "17:30" then lands on a different instant
+ * depending on the laptop it was typed on. This reads those components as
+ * studio time instead, so the stored instant is the same either way.
+ */
+export function studioWallClockToISO(value: Date): string {
+  return new Date(
+    Date.UTC(
+      value.getFullYear(), value.getMonth(), value.getDate(),
+      value.getHours(), value.getMinutes(), value.getSeconds()
+    ) - STUDIO_UTC_OFFSET_MINUTES * 60_000
+  ).toISOString()
+}
+
+/**
+ * The inverse: a stored instant, as a Date whose LOCAL components read as the
+ * studio wall clock. Used to load an existing schedule back into the form so
+ * editing it does not silently move it.
+ */
+export function studioWallClockFromISO(value: string | Date): Date {
+  const d = shifted(value)
   return new Date(
     d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(),
     d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds()

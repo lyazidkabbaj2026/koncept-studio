@@ -141,31 +141,43 @@ user could call in a loop to self-grant credits). Do not skip or delay it.
   when the class is genuinely full — it can no longer overbook. Say the word
   if you want a true override; it would need an explicit trigger bypass.
 
-## Studio clock (2026-09-22)
+## Studio clock — Morocco is permanently UTC+0 (2026-09-22)
 
-Member-facing times do not go through a timezone name any more. `Africa/
-Casablanca` is resolved from each runtime's copy of the IANA database, and
-those copies disagree for weeks after a rule change — which is how the same
-class came to show 17:30 on one phone and 18:30 on another.
+Morocco has settled on UTC+0 with no seasonal or Ramadan change. The studio's
+wall clock and UTC are now the same clock, permanently.
 
-`lib/utils/studio-time.ts` now shifts the instant by an offset stated outright
-and formats in UTC, which every runtime renders identically. One number, one
-place, no per-device variance.
+**Nothing in the app resolves a timezone name any more.** `Africa/Casablanca`
+is looked up in whatever copy of the IANA database a runtime carries, and those
+copies disagree for weeks after a rule change — which is how one class came to
+show 17:30 on one phone and 18:30 on another. `lib/utils/studio-time.ts` now
+shifts the instant by a stated constant (`STUDIO_UTC_OFFSET_MINUTES = 0`) and
+formats in UTC, which every runtime renders identically. There is no
+environment variable: nothing to forget, mis-scope, or leave stale after a
+deploy. `NEXT_PUBLIC_STUDIO_TZ_OFFSET_OVERRIDE` and `NEXT_PUBLIC_STUDIO_UTC_OFFSET`
+are no longer read and should be deleted from Vercel.
 
-**When Morocco changes its clocks**, set `NEXT_PUBLIC_STUDIO_UTC_OFFSET` in
-Vercel to the studio's offset from UTC in minutes and redeploy (it is inlined
-at build time):
+It works in both directions. Reads go through `formatStudio*`; writes go
+through `studioWallClockToISO`, so the schedule form stores the same instant
+for "17:30" whichever machine the admin types it on. That was the original
+defect: the September timetable was generated on a laptop at UTC+1 and every
+class landed an hour off when the country moved.
 
-| Situation | Value |
-|---|---|
-| Morocco standard, UTC+1 | `60` |
-| Morocco during Ramadan / since Sept 2026, UTC+0 | `0` or unset |
+`supabase/migrations/20260922010000_studio_time_is_utc.sql` does the same on
+the database side — the booking-window helpers and the no-show penalty
+messages move off the zone name, and the Sunday weekly-credit reset moves from
+16:00 to 17:00 UTC, which is 17:00 at the studio. Run it once; it is idempotent
+and has a rollback.
 
-Unset means 0, which is correct today, so a missed env var cannot silently
-move the timetable. `NEXT_PUBLIC_STUDIO_TZ_OFFSET_OVERRIDE` from the earlier
-attempt is no longer read and should be deleted from Vercel.
+The daily crons were pinned to UTC hours chosen when the studio was UTC+1, so
+they all slid an hour earlier in local terms. Two are restored to their
+intended local time; expiry stays at midnight, which is now midnight locally:
 
-The Postgres-side `AT TIME ZONE 'Africa/Casablanca'` in the window helpers
-still depends on the database's own tzdata. It feeds no-show penalty timing
-only, not booking access, so it is left as-is — but it will be an hour off
-until Supabase ships updated zone rules.
+| Job | Was | Now | Studio time |
+|---|---|---|---|
+| cleanup-waitlist | `59 17 * * *` | `59 18 * * *` | 18:59, clear of the 17:00 booking rush |
+| expire-subscriptions | `0 0 * * *` | unchanged | midnight |
+| expiring-subscriptions (J-7) | `0 8 * * *` | `0 9 * * *` | 09:00, not 08:00 |
+
+**If the decision is ever reversed**, change `STUDIO_UTC_OFFSET_MINUTES` to 60,
+run the SQL rollback, and move the cron hours back. Those are the only places
+the offset lives.
