@@ -140,3 +140,32 @@ user could call in a loop to self-grant credits). Do not skip or delay it.
 - `forcePromoteFromWaitlist` (admin) is now stopped by the capacity trigger
   when the class is genuinely full — it can no longer overbook. Say the word
   if you want a true override; it would need an explicit trigger bypass.
+
+## Studio clock (2026-09-22)
+
+Member-facing times do not go through a timezone name any more. `Africa/
+Casablanca` is resolved from each runtime's copy of the IANA database, and
+those copies disagree for weeks after a rule change — which is how the same
+class came to show 17:30 on one phone and 18:30 on another.
+
+`lib/utils/studio-time.ts` now shifts the instant by an offset stated outright
+and formats in UTC, which every runtime renders identically. One number, one
+place, no per-device variance.
+
+**When Morocco changes its clocks**, set `NEXT_PUBLIC_STUDIO_UTC_OFFSET` in
+Vercel to the studio's offset from UTC in minutes and redeploy (it is inlined
+at build time):
+
+| Situation | Value |
+|---|---|
+| Morocco standard, UTC+1 | `60` |
+| Morocco during Ramadan / since Sept 2026, UTC+0 | `0` or unset |
+
+Unset means 0, which is correct today, so a missed env var cannot silently
+move the timetable. `NEXT_PUBLIC_STUDIO_TZ_OFFSET_OVERRIDE` from the earlier
+attempt is no longer read and should be deleted from Vercel.
+
+The Postgres-side `AT TIME ZONE 'Africa/Casablanca'` in the window helpers
+still depends on the database's own tzdata. It feeds no-show penalty timing
+only, not booking access, so it is left as-is — but it will be an hour off
+until Supabase ships updated zone rules.
